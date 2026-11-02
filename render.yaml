@@ -1,0 +1,15 @@
+services:
+  # One Node process serves the static game and hosts the leaderboard API.
+  # No npm dependencies, no database — Render just needs to run the server.
+  - type: web
+    name: zombie-hunter-survival
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: echo "Zombie Hunter has no npm dependencies"
+    startCommand: node server/index.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "24.0.0"

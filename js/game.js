@@ -1,0 +1,816 @@
+/*
+ * Zombie Hunter: Survival — Vampire Survivors style engine
+ * Move = aim direction, all weapons auto-fire
+ */
+window.ZH = window.ZH || {};
+(function (ZH) {
+  'use strict';
+  var TAU = Math.PI * 2;
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function rand(a, b) { return a + Math.random() * (b - a); }
+
+  var Game = {
+    canvas: null, ctx: null, dpr: 1, W: 0, H: 0,
+    state: 'boot',            /* boot|menu|select|playing|paused|dead|victory|levelup|results */
+    stageId: 0, stage: null,
+    arena: null,
+    player: null,
+    zombies: [], bullets: [], enemyBullets: [],
+    pickups: [], particles: [], decals: [], ghosts: [], floaters: [], ambient: [],
+    camera: { x: 0, y: 0, zoom: 1 },
+    shake: 0, t: 0, elapsed: 0, lastTs: 0, acc: 0,
+    coins: 0, score: 0, exp: 0,
+    levelUpPending: false, levelUpChoices: [],
+    bossZoneActive: false,
+    input: { joyX: 0, joyY: 0 },
+    touch: { enabled: false },
+    hudCache: {},
+    quality: 1,
+    result: null,
+    lock: false
+  };
+  ZH.Game = Game;
+
+  /* ------------------------------ boot ------------------------------ */
+  Game.boot = function (canvas, ui) {
+    this.canvas = canvas;
+    this.ui = ui;
+    this.ctx = canvas.getContext('2d');
+    this.resize();
+    this.bindInput();
+    this.state = 'menu';
+    var self = this;
+    window.addEventListener('resize', function () { self.resize(); });
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden && self.state === 'playing') self.pause();
+    });
+    this.lastTs = performance.now();
+    requestAnimationFrame(function (ts) { self.frame(ts); });
+  };
+
+  Game.resize = function () {
+    var c = this.canvas;
+    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.W = c.clientWidth || window.innerWidth;
+    this.H = c.clientHeight || window.innerHeight;
+    c.width = Math.round(this.W * this.dpr);
+    c.height = Math.round(this.H * this.dpr);
+    this.quality = this.W * this.H > 1400 * 900 ? 1 : 0.9;
+  };
+
+  /* -------------------------------- stage -------------------------------- */
+  Game.startStage = function (stageId, primaryWeapon) {
+    var stage = ZH.STAGES[stageId] || ZH.STAGES[0];
+    if (!stage) return;
+    this.stageId = stageId || 0;
+    this.stage = stage;
+    // stage data is shared, so reset every wave's runtime flags
+    for (var wi = 0; wi < stage.waves.length; wi++) {
+      var rw = stage.waves[wi];
+      rw.used = false;
+      rw.active = false;
+      rw.timer = 0;
+      rw.interval = 0;
+      rw.waveT = 0;
+      rw.spawned = 0;
+      rw.fired = 0;
+      if (rw.__origStart == null) rw.__origStart = rw.startTime;
+      rw.startTime = rw.__origStart;
+    }
+    this.arena = ZH.Arena.get(stage.tile || 'street', (stageId || 0) * 123);
+    this.resetSimulation();
+    var save = ZH.Save.get();
+    this.player = ZH.createSurvivor({
+      x: this.arena.w / 2, y: this.arena.h / 2,
+      weapon: primaryWeapon || save.currentWeapon || 'Gun'
+    });
+    this.player.primaryWeapon = this.player.weapon;
+    var owner = save.weapons || [];
+    if (owner.indexOf(this.player.primaryWeapon) === -1) {
+      // fall back to the first weapon the survivor actually owns
+      var fallback = 'pistol';
+      for (var oi = 0; oi < owner.length; oi++) {
+        if (ZH.WEAPONS && ZH.WEAPONS[owner[oi]]) { fallback = owner[oi]; break; }
+      }
+      this.player.primaryWeapon = fallback;
+      this.player.weapon = fallback;
+      if (!this.player.weapons[fallback]) {
+        this.player.weapons[fallback] = { level: 1, class: fallback, timer: 0 };
+      }
+    }
+    this.player.supplies = {};
+    this.camera.x = this.player.x;
+    this.camera.y = this.player.y;
+    this.state = 'playing';
+    if (document.body) document.body.classList.add('in-game');
+    ZH.Audio.unlock();
+    if (this.ui) { this.ui.hideScreens && this.ui.hideScreens(); this.ui.resetHud && this.ui.resetHud(); }
+    this.levelUpPending = false;
+    this.bossZoneActive = false;
+    this.waveCycle = 0;
+    this.elapsed = 0;
+    this.coins = 0; this.score = 0; this.exp = 0;
+    if (window.ZH && ZH.Anim) ZH.Anim.banner(stage.name, 'SURVIVE 20 MINUTES');
+    this.lastTs = performance.now();
+  };
+
+  Game.startCampaign = function (id) {
+    Game.startStage(id - 1 >= 0 ? id - 1 : 0);
+  };
+
+  Game.startEndless = function () {
+    // Start endless mode - use stage 0 or create endless
+    Game.startStage(0);
+    Game.elapsed = 0;
+    Game.coins = 0; Game.score = 0; Game.exp = 0;
+  };
+
+  Game.retry = function () {
+    if (this.stageId !== undefined) {
+      this.startStage(this.stageId);
+    } else {
+      this.startStage(0);
+    }
+  };
+
+  Game.quit = function () {
+    this.state = 'menu';
+    if (document.body) document.body.classList.remove('in-game');
+    if (this.ui) this.ui.showMenu();
+  };
+
+  Game.nextLevel = function () {
+    if (this.stageId < (ZH.STAGES ? ZH.STAGES.length - 1 : 0)) {
+      this.startStage(this.stageId + 1);
+    } else {
+      this.quit();
+    }
+  };
+
+  Game.resetSimulation = function () {
+    this.zombies = []; this.bullets = []; this.enemyBullets = [];
+    this.pickups = []; this.particles = []; this.decals = [];
+    this.ghosts = []; this.floaters = [];
+    this.coins = 0; this.score = 0; this.exp = 0;
+    this.shake = 0;
+  };
+
+  /* -------------------------------- waves -------------------------------- */
+  Game.updateWaves = function (dt) {
+    if (!this.stage || this.bossZoneActive) return;
+    var t = this.elapsed; // stage data uses SECONDS for startTime/duration
+
+    // The authored waves cover only the opening ~138s, but a stage is won
+    // at 1200s (the original runs concurrent waves the whole time). Once
+    // every normal wave is spent, recycle them so the pressure never stops.
+    if (this.allWavesSpent()) this.recycleWaves();
+
+    for (var w = 0; w < this.stage.waves.length; w++) {
+      var wave = this.stage.waves[w];
+      if (wave.active) {
+        // waveT is the window clock; it must NOT reset on every spawn
+        wave.waveT = (wave.waveT || 0) + dt;
+        wave.timer = (wave.timer || 0) + dt;
+        if (wave.timer >= wave.interval) {
+          wave.timer -= wave.interval;
+          // `max` is a CONCURRENT cap (as in the original: the wave keeps
+          // feeding the horde for its whole window while the count stays
+          // under max), not a one-shot lifetime total.
+          if (this.waveAlive(wave.enemy) < (wave.max || 20)) {
+            wave.spawned = (wave.spawned || 0) + 1;
+            this.spawnWaveEnemies(wave);
+          }
+        }
+        if (wave.waveT >= wave.duration) {
+          wave.active = false;
+        }
+      } else if (t >= wave.startTime && !wave.used) {
+        wave.used = true;
+        if (wave.bossZone) {
+          // boss zones fire once per cycle, on a longer cadence later on
+          if (wave.fired && wave.fired > 0 && this.waveCycle > 0 &&
+              this.waveCycle % 4 !== 0) {
+            // skip this cycle — bosses are rare after the first showing
+          } else {
+            wave.fired = (wave.fired || 0) + 1;
+            this.activateBossZone(wave);
+          }
+        } else {
+          wave.active = true;
+          wave.timer = 0;
+          wave.waveT = 0;
+          wave.spawned = 0;
+          var interval = wave.freq === 'HI' ? 0.1 : wave.freq === 'MID' ? 0.35 : 0.7;
+          wave.interval = interval / (this.difficultyMul || 1);
+          // duration is already in seconds in the stage data
+        }
+      }
+    }
+  };
+
+  Game.allWavesSpent = function () {
+    if (!this.stage) return false;
+    var anyBossPending = false;
+    for (var i = 0; i < this.stage.waves.length; i++) {
+      var wv = this.stage.waves[i];
+      if (wv.active) return false;
+      if (wv.bossZone) {
+        // a boss wave still counts as pending only on the very first cycle
+        if (!wv.fired) anyBossPending = true;
+        continue;
+      }
+      if (!wv.used) return false;
+    }
+    // if a first-cycle boss is still queued, wait for it
+    if (anyBossPending && this.elapsed < 400) return false;
+    return true;
+  };
+
+  Game.recycleWaves = function () {
+    this.waveCycle = (this.waveCycle || 0) + 1;
+    // the recycle only runs once per idle moment — push every normal wave
+    // back into the queue with a fresh window so spawning resumes.
+    for (var i = 0; i < this.stage.waves.length; i++) {
+      var wv = this.stage.waves[i];
+      if (wv.bossZone) {
+        // bosses: re-arm, they gate themselves through `fired`/cycle
+        wv.used = false;
+        wv.startTime = this.elapsed + 60 + this.waveCycle * 30;
+        continue;
+      }
+      wv.used = false;
+      wv.active = false;
+      wv.spawned = 0;
+      wv.waveT = 0;
+      wv.timer = 0;
+      // stagger the relaunch across the next 45 seconds, not all at once
+      wv.startTime = this.elapsed + (i % 12) * 3.5;
+    }
+  };
+
+  /* how many live enemies of this wave's type are on the field */
+  Game.waveAlive = function (type) {
+    var n = 0;
+    for (var i = 0; i < this.zombies.length; i++) {
+      var z = this.zombies[i];
+      if (!z.dead && z.type === type) n++;
+    }
+    return n;
+  };
+
+  Game.spawnWaveEnemies = function (wave) {
+    if (this.zombies.length > 150) return;
+    var pos = this.findSpawnPoint(600);
+    var z = ZH.createEnemy(wave.enemy, pos.x, pos.y, this.elapsed / 1200);
+    if (z) this.zombies.push(z);
+  };
+
+  Game.activateBossZone = function (wave) {
+    this.bossZoneActive = true;
+    this.bossZoneT = 0;
+    ZH.Anim.banner('BOSS APPROACHING', 'Get ready!');
+    var bosses = wave.bosses || [];
+    for (var i = 0; i < bosses.length; i++) {
+      var pos = this.findSpawnPoint(800);
+      var b = ZH.createBoss(bosses[i].type, pos.x, pos.y);
+      if (b) this.zombies.push(b);
+    }
+  };
+
+  Game.findSpawnPoint = function (dist) {
+    var p = this.player;
+    for (var i = 0; i < 20; i++) {
+      var ang = rand(0, TAU);
+      var d = dist + rand(-50, 100);
+      var x = p.x + Math.cos(ang) * d;
+      var y = p.y + Math.sin(ang) * d;
+      x = clamp(x, 150, this.arena.w - 150);
+      y = clamp(y, 150, this.arena.h - 150);
+      if (Math.hypot(x - p.x, y - p.y) > 400) return { x: x, y: y };
+    }
+    return { x: p.x + rand(-600, 600), y: p.y + rand(-600, 600) };
+  };
+
+  /* -------------------------------- input --------------------------------
+     Touch-only scheme: a visible thumbstick on the left, action buttons on
+     the right. There is no keyboard path left — pointer events cover fingers
+     and mouse alike, so the same widget is drivable on a desktop too. */
+  Game.bindInput = function () {
+    var self = this;
+    var joy = document.getElementById('joystick');
+    var knob = document.getElementById('joy-knob');
+    if (!joy) return;
+
+    var R = 46;        /* knob travel before it clamps */
+    var DEAD = 9;      /* below this the stick reads as neutral */
+    var pid = null;
+
+    function setStick(dx, dy) {
+      var d = Math.hypot(dx, dy);
+      if (d > R) { dx = dx / d * R; dy = dy / d * R; d = R; }
+      if (knob) knob.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px)';
+      if (d < DEAD) { self.input.joyX = 0; self.input.joyY = 0; }
+      else { self.input.joyX = dx / R; self.input.joyY = dy / R; }
+    }
+
+    function release() {
+      pid = null;
+      self.input.joyX = 0;
+      self.input.joyY = 0;
+      if (knob) knob.style.transform = 'translate(0px,0px)';
+      joy.classList.remove('is-active');
+    }
+
+    joy.addEventListener('pointerdown', function (e) {
+      if (self.state !== 'playing') return;
+      pid = e.pointerId;
+      joy.classList.add('is-active');
+      try { joy.setPointerCapture(e.pointerId); } catch (err) { /* capture is best-effort */ }
+      var r = joy.getBoundingClientRect();
+      setStick(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+      e.preventDefault();
+    });
+
+    joy.addEventListener('pointermove', function (e) {
+      if (pid === null || e.pointerId !== pid) return;
+      var r = joy.getBoundingClientRect();
+      setStick(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+      e.preventDefault();
+    });
+
+    function end(e) { if (pid !== null && e.pointerId === pid) release(); }
+    joy.addEventListener('pointerup', end);
+    joy.addEventListener('pointercancel', end);
+    joy.addEventListener('lostpointercapture', end);
+  };
+
+  Game.applyInput = function () {
+    var p = this.player;
+    if (!p) return;
+    var mx = this.input.joyX || 0;
+    var my = this.input.joyY || 0;
+
+    var len = Math.hypot(mx, my);
+    if (len > 1) { var i = 1 / len; mx *= i; my *= i; }
+
+    p.moveX = mx; p.moveY = my;
+
+    // Move direction IS the aim direction (original model)
+    if (len > 0.01) {
+      p.aimDir = Math.atan2(my, mx);
+      p.facing = mx >= 0 ? 1 : -1;
+    }
+  };
+
+  /* combat roll: burst of speed, untouchable for the duration */
+  Game.dash = function () {
+    var p = this.player;
+    if (!p || p.dead || this.state !== 'playing') return false;
+    if ((p.dashCd || 0) > 0) return false;
+
+    var mx = p.moveX, my = p.moveY;
+    var len = Math.hypot(mx, my);
+    if (len < 0.01) {                 /* standing still: roll where you aim */
+      mx = Math.cos(p.aimDir || 0);
+      my = Math.sin(p.aimDir || 0);
+      len = 1;
+    }
+    p.dashVX = mx / len;
+    p.dashVY = my / len;
+    p.dashT = 0.2;
+    p.dashCd = p.dashMax || 2.2;
+    p.invuln = Math.max(p.invuln || 0, 0.35);
+    if (ZH.Audio) ZH.Audio.play('dash');
+    return true;
+  };
+
+  /* top up every magazine that is not already full or loading */
+  Game.reload = function () {
+    var p = this.player;
+    if (!p || !p.weapons || p.dead || this.state !== 'playing') return false;
+    var started = false;
+    for (var name in p.weapons) {
+      var w = p.weapons[name];
+      var def = ZH.WEAPONS && ZH.WEAPONS[name];
+      if (!def) continue;
+      if (w.mag == null) { w.mag = def.mag; w.reloading = 0; }
+      if (w.reloading > 0 || w.mag >= def.mag) continue;
+      w.reloading = def.reload || 1.5;
+      started = true;
+    }
+    if (started && ZH.Audio) ZH.Audio.play('reload');
+    return started;
+  };
+
+  Game.pause = function () {
+    if (this.state !== 'playing') return;
+    this.state = 'paused';
+    if (this.ui) this.ui.showPause();
+  };
+
+  Game.resume = function () {
+    if (this.state !== 'paused') return;
+    this.state = 'playing';
+    if (this.ui) this.ui.hideScreens();
+    this.lastTs = performance.now();
+  };
+
+  /* ------------------------------ update ------------------------------ */
+  Game.update = function (dt) {
+    if (this.state !== 'playing') return;
+    this.t += dt;
+    this.elapsed += dt;
+
+    var p = this.player;
+    this.applyInput();
+
+    // combat roll: hold the locked dash vector while it lasts
+    if (p.dashCd > 0) p.dashCd = Math.max(0, p.dashCd - dt);
+    if (p.dashT > 0) {
+      p.dashT -= dt;
+      p.x += p.dashVX * p.speed * 3.4 * dt;
+      p.y += p.dashVY * p.speed * 3.4 * dt;
+      p.walkPhase += dt * 14;
+      if (p.dashT <= 0) p.invuln = Math.max(p.invuln, 0.12);
+    }
+
+    if (ZH.updateSurvivor) ZH.updateSurvivor(p, dt, this);
+    if (ZH.updateEnemies) ZH.updateEnemies(this.zombies, dt, this);
+    if (ZH.updateProjectiles) ZH.updateProjectiles(this.bullets, dt, this);
+    if (ZH.updateProjectiles) ZH.updateProjectiles(this.enemyBullets, dt, this);
+    if (ZH.updatePickups) ZH.updatePickups(this.pickups, dt, this);
+
+    // all weapons fire automatically along the aim direction
+    this.autoFire(dt);
+
+    // particles
+    for (var i = this.particles.length - 1; i >= 0; i--) {
+      var pt = this.particles[i];
+      pt.life -= dt;
+      if (pt.life <= 0) { this.particles.splice(i, 1); continue; }
+      pt.vy += (pt.grav || 0) * dt;
+      pt.vx *= Math.pow(0.9, dt * 60);
+      pt.x += pt.vx * dt;
+      pt.y += pt.vy * dt;
+    }
+    // floaters
+    for (var f = this.floaters.length - 1; f >= 0; f--) {
+      var fl = this.floaters[f];
+      fl.life -= dt;
+      fl.y += fl.vy * dt;
+      if (fl.life <= 0) this.floaters.splice(f, 1);
+    }
+    // remove dead
+    for (var z = this.zombies.length - 1; z >= 0; z--) {
+      if (this.zombies[z].dead && this.zombies[z].removeT <= 0) this.zombies.splice(z, 1);
+      else if (this.zombies[z].dead) this.zombies[z].removeT -= dt;
+    }
+
+    this.shake = Math.max(0, this.shake - dt * 40);
+
+    // boss zone closes once every boss is downed, unfreezing the waves
+    if (this.bossZoneActive) {
+      if (!this.bossZoneT) this.bossZoneT = 0;
+      this.bossZoneT += dt;
+      var anyBoss = false;
+      for (var bi = 0; bi < this.zombies.length; bi++) {
+        if (this.zombies[bi].boss && !this.zombies[bi].dead) { anyBoss = true; break; }
+      }
+      // safety latch: never let a boss zone freeze the run forever
+      if (!anyBoss || this.bossZoneT > 120) {
+        this.bossZoneActive = false;
+        this.bossZoneT = 0;
+        if (this.ui && ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('ZONE CLEAR', 'The horde resumes');
+      }
+    }
+
+    this.updateWaves(dt);
+    this.updateCamera(dt);
+    this.pushHud();
+
+    // check win (20 minutes)
+    if (this.elapsed >= 1200 && !this.bossZoneActive) {
+      this.finishStage(true);
+      return;
+    }
+
+    if (p.hp <= 0 && p.dead) {
+      p.deadT += dt;
+      if (p.deadT > 2) this.finishStage(false);
+      return;
+    }
+
+    // level-up XP gate (survivor-style, every weapon is free)
+    if (p.expToNext && p.exp != null && p.exp >= p.expToNext) {
+      var n = p.expToNext || 100;
+      p.exp = Math.max(0, p.exp - n);
+      p.expToNext = Math.round(n * 1.35);
+      p.level = (p.level || 1) + 1;
+      p.invuln = 1.2;
+      if (this.ui) this.ui.showLevelUp();
+    }
+  };
+
+  /* push survivor state into the DOM HUD (hp, weapon, coins, wave…) */
+  Game.pushHud = function () {
+    if (!this.ui || !this.ui.updateHud || !this.player) return;
+    var p = this.player;
+    var wid = p.primaryWeapon || 'pistol';
+    var w = (ZH.WEAPONS && ZH.WEAPONS[wid]) || { id: wid, name: wid, short: wid.toUpperCase(), mag: 1, reload: 1.5 };
+    var live = (p.weapons && p.weapons[wid]) || {};
+    var magMax = w.mag || 1;
+    var magNow = live.mag == null ? magMax : Math.max(0, Math.round(live.mag));
+    var relTotal = w.reload || 1.5;
+    var relLeft = live.reloading || 0;
+    // find the active boss for the boss bar
+    var boss = null;
+    for (var i = 0; i < this.zombies.length; i++) {
+      if (this.zombies[i].boss && !this.zombies[i].dead) { boss = this.zombies[i]; break; }
+    }
+    this.ui.updateHud({
+      hp: Math.max(0, p.hp), maxHp: p.maxHp,
+      dashCd: p.dashCd || 0, dashMax: p.dashMax || 2.2,
+      mag: magNow, weapon: w,
+      reloading: relLeft > 0,
+      reloadFrac: relLeft > 0 ? Math.min(1, 1 - relLeft / relTotal) : 0,
+      coins: this.coins, score: this.score,
+      wave: Math.floor(this.elapsed / 30) + 1,
+      left: this.zombies.length,
+      mode: this.mode || 'campaign',
+      levelName: this.stage ? this.stage.name : '',
+      boss: boss ? { name: (boss.type || 'BOSS').toUpperCase(), hp: boss.hp, max: boss.maxHp } : null
+    });
+  };
+
+  Game.updateCamera = function (dt) {
+    var p = this.player;
+    if (!p) return;
+    var k = 1 - Math.exp(-8 * dt);
+    this.camera.x = lerp(this.camera.x, p.x, k);
+    this.camera.y = lerp(this.camera.y, p.y, k);    this.camera.zoom = lerp(this.camera.zoom, 0.9, k);
+  };
+
+  /* ------------------------------ render ------------------------------ */
+  Game.frame = function (ts) {
+    var dt = Math.min(0.05, (ts - this.lastTs) / 1000) || 0.016;
+    this.lastTs = ts;
+    this.update(dt);
+    this.render();
+    var self = this;
+    requestAnimationFrame(function (t2) { self.frame(t2); });
+  };
+
+  Game.render = function () {
+    if (!this.player || this.state === 'levelup') return;
+    var ctx = this.ctx;
+    if (!ctx) return;
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    ctx.clearRect(0, 0, this.W, this.H);
+    ctx.fillStyle = '#0a0d10';
+    ctx.fillRect(0, 0, this.W, this.H);
+
+    if (!this.arena || !this.player || this.state === 'menu') {
+      return;
+    }
+
+    // Survivors auto-fire along move direction (handled in update)
+
+
+    var z = this.camera.zoom;
+    var shakeX = 0, shakeY = 0;
+    if (this.shake > 0.2) {
+      shakeX = rand(-this.shake, this.shake);
+      shakeY = rand(-this.shake, this.shake);
+    }
+
+    ctx.save();
+    ctx.translate(this.W / 2 + shakeX, this.H / 2 + shakeY);
+    ctx.scale(z, z);
+    ctx.translate(-this.camera.x, -this.camera.y);
+
+    // draw arena (chunked open-world tiles)
+    if (this.arena && this.arena.draw) {
+      var vx0 = this.camera.x - this.W / 2 / z;
+      var vy0 = this.camera.y - this.H / 2 / z;
+      var vx1 = this.camera.x + this.W / 2 / z;
+      var vy1 = this.camera.y + this.H / 2 / z;
+      this.arena.draw(ctx, vx0, vy0, vx1, vy1);
+    }
+
+    // decals
+    for (var d = 0; d < this.decals.length; d++) {
+      var dc = this.decals[d];
+      ctx.save();
+      ctx.translate(dc.x, dc.y);
+      ctx.rotate(dc.rot);
+      ctx.globalAlpha = dc.alpha;
+      ctx.fillStyle = '#54100c';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, dc.r, dc.r * 0.62, 0, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // pickups
+    for (var p = 0; p < this.pickups.length; p++) {
+      var pk = this.pickups[p];
+      var bob = Math.sin(this.t * 4 + p) * 3;
+      ctx.save();
+      ctx.translate(pk.x, pk.y + bob);
+      if (pk.type === 'exp') {
+        ctx.fillStyle = '#4fc3f7';
+        ctx.beginPath(); ctx.arc(0, 0, 6, 0, TAU); ctx.fill();
+      } else if (pk.type === 'coin') {
+        ctx.fillStyle = '#ffd166';
+        ctx.beginPath(); ctx.arc(0, 0, 5, 0, TAU); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // characters sorted by y
+    var order = this.zombies.slice();
+    order.push(this.player);
+    order.sort(function (a, b) { return a.y - b.y; });
+
+    for (var oi = 0; oi < order.length; oi++) {
+      var e = order[oi];
+      if (e === this.player) {
+        ZH.Rig.draw(ctx, {
+          x: e.x, y: e.y, s: 1.0, kind: 'hunter', variant: 'hunter',
+          facing: e.facing, aim: e.aimDir || 0, weapon: e.primaryWeapon,
+          dead: e.dead ? clamp(e.deadT, 0, 1) : 0,
+          pose: { t: this.t, moving: Math.hypot(e.moveX, e.moveY), walkPhase: e.walkPhase || 0 }
+        });
+      } else {
+        ZH.Rig.draw(ctx, {
+          x: e.x, y: e.y, s: e.scale || 1, kind: 'zombie', variant: e.variant,
+          facing: e.facing || 1, aim: e.aimDir || 0,
+          flash: e.hurtFlash || 0,
+          seed: e.seed || 0,
+          pose: { t: this.t, moving: 0.7, walkPhase: e.walkPhase || 0 }
+        });
+        // boss health bar
+        if (e.boss && e.hp) {
+          var bw = 80, bh = 6;
+          ctx.fillStyle = 'rgba(0,0,0,0.7)';
+          ctx.fillRect(e.x - bw/2 - 2, e.y - 80, bw + 4, bh + 4);
+          ctx.fillStyle = '#300';
+          ctx.fillRect(e.x - bw/2, e.y - 78, bw, bh);
+          var frac = e.hp / e.maxHp;
+          ctx.fillStyle = '#f44';
+          ctx.fillRect(e.x - bw/2, e.y - 78, bw * frac, bh);
+        }
+      }
+    }
+
+    // bullets
+    for (var b = 0; b < this.bullets.length; b++) {
+      var bl = this.bullets[b];
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath(); ctx.arc(bl.x, bl.y, 3, 0, TAU); ctx.fill();
+    }
+    for (var eb = 0; eb < this.enemyBullets.length; eb++) {
+      var ebl = this.enemyBullets[eb];
+      ctx.fillStyle = '#a9e83f';
+      ctx.beginPath(); ctx.arc(ebl.x, ebl.y, 4, 0, TAU); ctx.fill();
+    }
+
+    // particles
+    for (var pi = 0; pi < this.particles.length; pi++) {
+      var p2 = this.particles[pi];
+      ctx.globalAlpha = p2.life / p2.max;
+      ctx.fillStyle = p2.color;
+      ctx.beginPath(); ctx.arc(p2.x, p2.y, p2.size, 0, TAU); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.restore();
+
+    // HUD lives in the DOM (ui.updateHud); no canvas duplicate
+  };
+
+  Game.renderHUD = function (ctx) {
+    if (!this.player) return;
+    var p = this.player;
+    // HP bar
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(20, this.H - 40, 200, 20);
+    ctx.fillStyle = '#333';
+    ctx.fillRect(22, this.H - 38, 196, 16);
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(22, this.H - 38, 196 * (p.hp / p.maxHp), 16);
+    ctx.fillStyle = '#fff';
+    ctx.font = '14px Rajdhani';
+    ctx.fillText('HP: ' + Math.ceil(p.hp) + '/' + p.maxHp, 30, this.H - 26);
+
+    // Time
+    var min = Math.floor(this.elapsed / 60);
+    var sec = Math.floor(this.elapsed % 60);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 24px Rajdhani';
+    ctx.textAlign = 'center';
+    ctx.fillText(min + ':' + (sec < 10 ? '0' : '') + sec, this.W/2, 40);
+    ctx.textAlign = 'left';
+
+    // Level
+    ctx.fillText('LV ' + (p.level || 1), 20, 40);
+    // XP bar
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(20, 50, 150, 10);
+    ctx.fillStyle = '#3498db';
+    ctx.fillRect(22, 52, 146 * ((p.exp || 0) / (p.expToNext || 100)), 6);
+  };
+
+  Game.autoFire = function (dt) {
+    var p = this.player;
+    if (!p || !p.weapons) return;
+    var world = this;
+    dt = dt || 0.016;
+    for (var name in p.weapons) {
+      var w = p.weapons[name];
+      var def = ZH.WEAPONS && ZH.WEAPONS[name];
+      if (!def) continue;
+      if (w.mag == null) { w.mag = def.mag; w.reloading = 0; }
+
+      /* reload in progress — hold fire until it finishes */
+      if (w.reloading > 0) {
+        w.reloading -= dt;
+        if (w.reloading <= 0) {
+          w.reloading = 0;
+          w.mag = def.mag;
+          if (ZH.Audio) ZH.Audio.play('reloadDone');
+        }
+        continue;
+      }
+
+      w.timer = (w.timer || 0) - dt;
+      if (w.timer > 0) continue;
+
+      /* magazine dry: auto-reload (the button just starts it early) */
+      if (w.mag <= 0) {
+        w.reloading = def.reload || 1.5;
+        if (ZH.Audio) ZH.Audio.play('reload');
+        continue;
+      }
+
+      w.timer = ZH.fireWeapon(name, w.level || 1, p, world);
+      w.mag -= 1;
+    }
+  };
+
+  Game.finishStage = function (win) {
+    this.state = 'results';
+    if (document.body) document.body.classList.remove('in-game');
+    var p = this.player;
+    var coinsEarned = 0;
+    if (win && this.stage && this.stage.rewards) {
+      var rewards = this.stage.rewards;
+      var idx = p.level < 3 ? 0 : (p.level < 6 ? 1 : 2);
+      coinsEarned = rewards[idx] || rewards[0] || 0;
+    }
+    // collected scrap is always banked (like the original)
+    coinsEarned += this.coins || 0;
+    var score = (p ? p.kills : 0) * 10 + (win ? 500 : 0);
+    this.score = score;
+    this.result = {
+      win: win,
+      mode: this.mode || 'campaign',
+      stage: this.stage ? this.stage.name : 'Unknown',
+      levelName: this.stage ? this.stage.name : 'Unknown',
+      nextLevel: win && this.stageId < (ZH.STAGES ? ZH.STAGES.length - 1 : 0),
+      wave: Math.floor(this.elapsed / 30) + 1,
+      time: this.elapsed,
+      kills: p ? p.kills : 0,
+      score: score,
+      coins: coinsEarned
+    };
+    if (p) {
+      // coins are banked exactly once here — clearLevel/recordRun must not
+      // add them again, so they receive 0 for the coin field.
+      ZH.Save.addCoins(coinsEarned);
+      ZH.Save.recordRun({
+        mode: this.mode || 'campaign',
+        kills: p.kills || 0,
+        time: this.elapsed,
+        coins: 0,
+        died: !win,
+        wave: Math.floor(this.elapsed / 30) + 1
+      });
+      if (win) ZH.Save.clearLevel(this.stageId, 0);
+    }
+    if (this.ui) this.ui.showResults(this.result);
+  };
+
+  /* frame loop */
+  Game.frame = function (ts) {
+    var dt = Math.min(0.05, (ts - this.lastTs) / 1000) || 0.016;
+    this.lastTs = ts;
+    this.update(dt);
+    this.render();
+    var self = this;
+    requestAnimationFrame(function (t2) { self.frame(t2); });
+  };
+
+})(typeof window !== 'undefined' ? window.ZH || (window.ZH = {}) : {});
+

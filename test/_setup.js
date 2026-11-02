@@ -1,0 +1,29 @@
+/*
+ * Shared test bootstrap: gives the browser modules a window-shaped sandbox
+ * so the simulation, campaign data and save system can be tested in Node.
+ */
+'use strict';
+
+function memStorage() {
+  const map = new Map();
+  return {
+    getItem: (k) => (map.has(k) ? map.get(k) : null),
+    setItem: (k, v) => map.set(k, String(v)),
+    removeItem: (k) => map.delete(k),
+    clear: () => map.clear()
+  };
+}
+
+global.window = global;
+global.window.localStorage = memStorage();
+global.window.devicePixelRatio = 1;
+global.ZH = {};
+
+require('../js/rig.js');
+require('../js/arena.js');
+require('../js/weapons.js');
+require('../js/levels.js');
+require('../js/storage.js');
+require('../js/entities.js');
+
+module.exports = { ZH: global.ZH, memStorage };

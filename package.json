@@ -1,0 +1,17 @@
+{
+  "name": "zombie-hunter-survival",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zombie Hunter: Survival — a top-down survival shooter with procedural skeletal characters, 15 campaign missions, endless mode and a leaderboard",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js",
+    "test": "node test/run.js"
+  },
+  "keywords": ["game", "canvas", "zombie", "survival", "animejs"],
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

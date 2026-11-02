@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0b0f10">
+<meta name="description" content="Zombie Hunter: Survival — a top-down survival shooter. Four chapters, fifteen missions, endless night, and a lot of things that used to be people.">
+<title>Zombie Hunter: Survival</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e1415'/%3E%3Ccircle cx='32' cy='30' r='15' fill='%2387975f'/%3E%3Ccircle cx='26' cy='27' r='3.4' fill='%23e9ff72'/%3E%3Ccircle cx='39' cy='27' r='3.4' fill='%23e9ff72'/%3E%3Cpath d='M24 44h16l-2 9H26z' fill='%23cfc7ae'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css?v=1">
+</head>
+<body>
+<div id="app">
+
+  <canvas id="game" aria-label="Zombie Hunter game canvas"></canvas>
+
+  <!-- ------------------------------- HUD ------------------------------- -->
+  <div id="hud" class="hud" aria-hidden="true">
+    <div class="hud-top">
+      <div class="hud-block hud-level">
+        <span class="hud-kicker" id="hud-mode">CAMPAIGN</span>
+        <span class="hud-title" id="hud-level">ASHFALL STREETS</span>
+      </div>
+      <div class="hud-wave">
+        <span class="hud-kicker">WAVE</span>
+        <span class="hud-wave-num" id="hud-wave">1</span>
+      </div>
+      <div class="hud-block hud-right">
+        <div class="hud-pill"><span class="pip coin"></span><span id="hud-coins">0</span></div>
+        <div class="hud-pill"><span class="pip score"></span><span id="hud-score">0</span></div>
+        <button id="btn-pause" class="icon-btn" aria-label="Pause">II</button>
+      </div>
+    </div>
+
+    <div id="boss-bar" class="boss-bar">
+      <span id="boss-name">ROTT</span>
+      <div class="bar"><i id="boss-fill"></i></div>
+    </div>
+
+    <div class="hud-bottom">
+      <div class="vitals">
+        <div class="vitals-row">
+          <span class="hud-kicker">VITALS</span>
+          <span class="hp-num" id="hp-text">100 / 100</span>
+        </div>
+        <div class="bar hp"><i id="hp-fill"></i></div>
+        <div class="dash-row">
+          <span class="hud-kicker">DASH</span>
+          <div class="bar dash"><i id="dash-fill"></i></div>
+        </div>
+      </div>
+
+      <div class="weapon-card">
+        <div class="weapon-info">
+          <span class="hud-kicker" id="hud-weapon-type">SIDEARM</span>
+          <span class="weapon-name" id="hud-weapon-name">M9 SIDEARM</span>
+        </div>
+        <div class="ammo">
+          <span id="hud-mag">14</span><span class="ammo-sep">/</span><span id="hud-magmax">14</span>
+        </div>
+        <div class="reload-bar"><i id="reload-fill"></i></div>
+      </div>
+    </div>
+
+    <div id="weapon-slots" class="weapon-slots"></div>
+    <div class="enemy-count"><span class="pip hostile"></span><span id="hud-left">0</span> LEFT</div>
+  </div>
+
+  <!-- --------------------------- touch controls --------------------------- -->
+  <div id="joystick" class="joystick" aria-hidden="true">
+    <div class="joy-ring"></div>
+    <div id="joy-knob" class="joy-knob"></div>
+  </div>
+
+  <div id="mobile-controls" class="mobile-controls" aria-hidden="true">
+    <button id="btn-reload" class="touch-btn">RELOAD</button>
+    <button id="btn-dash" class="touch-btn accent">ROLL</button>
+  </div>
+
+  <div id="banner" class="banner"><div class="banner-title"></div><div class="banner-sub"></div></div>
+  <div id="toast" class="toast"></div>
+
+  <!-- ------------------------------ MENU ------------------------------- -->
+  <section id="screen-menu" class="screen menu-screen">
+    <div class="menu-grain"></div>
+    <div class="menu-layout">
+      <div class="menu-left">
+        <div class="logo-wrap" data-anim>
+          <div class="logo-kicker">SURVIVAL</div>
+          <h1 class="logo">ZOMBIE<br><span>HUNTER</span></h1>
+          <div class="logo-rule"></div>
+          <p class="logo-sub">Four chapters. Fifteen missions. One night that never ends.</p>
+        </div>
+        <div class="menu-actions" data-anim>
+          <button class="btn primary" id="btn-campaign"><span>CAMPAIGN</span><em>15 missions · 4 bosses</em></button>
+          <button class="btn" id="btn-endless"><span>ENDLESS NIGHT</span><em>How long can you last?</em></button>
+          <div class="menu-row">
+            <button class="btn ghost" id="btn-shop">ARSENAL</button>
+            <button class="btn ghost" id="btn-board">LEADERBOARD</button>
+            <button class="btn ghost" id="btn-help">HOW TO PLAY</button>
+          </div>
+        </div>
+        <div class="menu-stats" data-anim>
+          <div class="stat"><span id="menu-coins">0</span><small>SCRAP</small></div>
+          <div class="stat"><span id="menu-best">1</span><small>BEST MISSION</small></div>
+          <div class="stat"><span id="menu-kills">0</span><small>KILLS</small></div>
+          <div class="stat"><span id="menu-endless">0</span><small>BEST WAVE</small></div>
+        </div>
+      </div>
+      <div class="menu-right">
+        <canvas id="menu-hunter" width="300" height="340" aria-hidden="true"></canvas>
+        <div class="menu-weapon-pick" id="menu-weapon-pick">
+          <div class="mw-label">SURVIVOR PRIMARY</div>
+          <div class="mw-chips" id="mw-chips"></div>
+          <div class="mw-hint">This weapon starts every run. Choose once, fight forever.</div>
+        </div>
+        <div class="menu-badge">NO SURVIVORS RECORDED</div>
+      </div>
+    </div>
+    <div class="menu-foot">
+      <span>Original procedural art · built with anime.js</span>
+      <button class="linkish" id="btn-mute">SOUND: ON</button>
+    </div>
+  </section>
+
+  <!-- ------------------------------ LEVELS ------------------------------ -->
+  <section id="screen-levels" class="screen panel-screen">
+    <div class="panel wide">
+      <header class="panel-head">
+        <div>
+          <span class="kicker">CAMPAIGN</span>
+          <h2>SELECT MISSION</h2>
+        </div>
+        <div class="head-right">
+          <div class="coin-chip"><span class="pip coin"></span><span id="levels-coins">0</span></div>
+          <button class="btn small ghost" data-back="menu">BACK</button>
+        </div>
+      </header>
+      <div id="levels-list" class="levels-list"></div>
+    </div>
+  </section>
+
+  <!-- ------------------------------- SHOP ------------------------------- -->
+  <section id="screen-shop" class="screen panel-screen">
+    <div class="panel wide">
+      <header class="panel-head">
+        <div>
+          <span class="kicker">SAFEHOUSE</span>
+          <h2>ARSENAL</h2>
+        </div>
+        <div class="head-right">
+          <div class="coin-chip"><span class="pip coin"></span><span id="shop-coins">0</span></div>
+          <button class="btn small ghost" data-back="menu">BACK</button>
+        </div>
+      </header>
+      <div class="shop-scroll">
+        <h3 class="section-title">WEAPONS</h3>
+        <div id="weapon-grid" class="weapon-grid"></div>
+        <h3 class="section-title">PERMANENT UPGRADES</h3>
+        <div id="upgrade-grid" class="upgrade-grid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ----------------------------- BRIEFING ----------------------------- -->
+  <section id="screen-briefing" class="screen panel-screen">
+    <div class="panel brief">
+      <header class="panel-head">
+        <div>
+          <span class="kicker" id="brief-chapter">CHAPTER 1</span>
+          <h2 id="brief-name">FIRST CONTACT</h2>
+        </div>
+        <button class="btn small ghost" id="btn-brief-back">BACK</button>
+      </header>
+      <p class="brief-text" id="brief-text">The street is quiet.</p>
+      <div class="brief-grid">
+        <div class="brief-cell">
+          <span class="kicker">OBJECTIVE</span>
+          <p id="brief-objective">Clear every wave.</p>
+        </div>
+        <div class="brief-cell">
+          <span class="kicker">HORDE</span>
+          <p id="brief-horde">Walkers, runners</p>
+        </div>
+        <div class="brief-cell">
+          <span class="kicker">REWARD</span>
+          <p id="brief-reward">140 scrap</p>
+        </div>
+      </div>
+      <div class="loadout">
+        <span class="kicker">LOADOUT</span>
+        <div id="loadout-list" class="loadout-list"></div>
+      </div>
+      <button class="btn primary big" id="btn-start"><span>DEPLOY</span><em>Enter the street</em></button>
+    </div>
+  </section>
+
+  <!-- ------------------------------ PAUSE ------------------------------- -->
+  <section id="screen-pause" class="screen panel-screen dim">
+    <div class="panel narrow">
+      <header class="panel-head"><div><span class="kicker">STANDBY</span><h2>PAUSED</h2></div></header>
+      <div class="stack">
+        <button class="btn primary" id="btn-resume"><span>RESUME</span></button>
+        <button class="btn" id="btn-restart"><span>RESTART MISSION</span></button>
+        <button class="btn ghost" id="btn-pause-mute"><span>SOUND: ON</span></button>
+        <button class="btn ghost" id="btn-quit"><span>ABANDON</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ----------------------------- RESULTS ------------------------------ -->
+  <section id="screen-results" class="screen panel-screen">
+    <div class="panel results">
+      <div class="result-stamp" id="res-stamp">MISSION CLEARED</div>
+      <h2 id="res-title">FIRST CONTACT</h2>
+      <p class="result-sub" id="res-sub">The street is quiet again. For now.</p>
+      <div class="result-stats" id="res-stats"></div>
+      <div class="result-coins">
+        <span class="kicker">SCRAP EARNED</span>
+        <span class="big-coins" id="res-coins">0</span>
+      </div>
+      <div class="result-unlock" id="res-unlock"></div>
+
+      <div class="submit-block" id="res-submit">
+        <label class="kicker" for="name-input">CALLSIGN FOR THE LEADERBOARD</label>
+        <div class="submit-row">
+          <input id="name-input" maxlength="14" autocomplete="off" spellcheck="false" placeholder="HUNTER">
+          <button class="btn small" id="btn-submit-score"><span>SUBMIT</span></button>
+        </div>
+        <div class="board-mini" id="res-board"></div>
+      </div>
+
+      <div class="result-actions">
+        <button class="btn primary" id="btn-next"><span>NEXT MISSION</span></button>
+        <button class="btn" id="btn-retry"><span>RETRY</span></button>
+        <button class="btn ghost" id="btn-res-menu"><span>MENU</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- --------------------------- LEADERBOARD ---------------------------- -->
+  <section id="screen-board" class="screen panel-screen">
+    <div class="panel wide">
+      <header class="panel-head">
+        <div><span class="kicker">SURVIVOR LOG</span><h2>LEADERBOARD</h2></div>
+        <button class="btn small ghost" data-back="menu">BACK</button>
+      </header>
+      <div class="tabs">
+        <button class="tab is-active" data-mode="endless">ENDLESS NIGHT</button>
+        <button class="tab" data-mode="campaign">CAMPAIGN</button>
+      </div>
+      <div class="board-head">
+        <span>#</span><span>CALLSIGN</span><span>WAVE</span><span>KILLS</span><span>SCORE</span>
+      </div>
+      <div id="board-body" class="board-body"></div>
+      <p class="board-note" id="board-note"></p>
+    </div>
+  </section>
+
+  <!-- ------------------------------- HELP ------------------------------- -->
+  <section id="screen-help" class="screen panel-screen">
+    <div class="panel">
+      <header class="panel-head">
+        <div><span class="kicker">FIELD MANUAL</span><h2>HOW TO PLAY</h2></div>
+        <button class="btn small ghost" data-back="menu">BACK</button>
+      </header>
+      <div class="help-grid">
+        <div class="help-col">
+          <h3>CONTROLS</h3>
+          <ul class="keys">
+            <li><b>Thumbstick</b><span>Move — your hunter aims where they walk</span></li>
+            <li><b>Auto-fire</b><span>Weapons shoot on their own</span></li>
+            <li><b>ROLL</b><span>Combat roll (i-frames)</span></li>
+            <li><b>RELOAD</b><span>Reload early — or wait for the click</span></li>
+            <li><b>II</b><span>Pause</span></li>
+          </ul>
+          <p class="help-note">Drag the thumbstick on the left to move. ROLL and RELOAD sit on the right, under your thumb.</p>
+        </div>
+        <div class="help-col">
+          <h3>SURVIVAL RULES</h3>
+          <ul class="rules">
+            <li><b>Clear every wave</b> to finish a mission. The last wave of a chapter is a boss.</li>
+            <li><b>Scrap</b> is dropped by the dead. Spend it in the Arsenal between missions.</li>
+            <li><b>Rolling</b> makes you briefly untouchable — use it to slip out of a bite.</li>
+            <li><b>Ammo</b> is unlimited, magazines are not. Reload before the horde reaches you.</li>
+            <li><b>Spitters</b> keep their distance and lob acid. Close the gap or shoot them first.</li>
+            <li><b>Brutes</b> soak damage. Shotguns and the sniper are your friends.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script src="js/vendor/anime.min.js?v=1"></script>
+<script src="js/rig.js?v=1"></script>
+<script src="js/arena.js?v=3"></script>
+<script src="js/weapons.js?v=1"></script>
+<script src="js/levels.js?v=1"></script>
+<script src="js/entities.js?v=1"></script>
+<script src="js/audio.js?v=1"></script>
+<script src="js/storage.js?v=1"></script>
+<script src="js/anim.js?v=1"></script>
+<script src="js/net.js?v=1"></script>
+<script src="js/game.js?v=3"></script>
+<script src="js/game-patch.js?v=1"></script>
+<script src="js/ui.js?v=1"></script>
+<script src="js/main.js?v=1"></script>
+</body>
+</html>

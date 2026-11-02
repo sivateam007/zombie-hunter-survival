@@ -1,0 +1,59 @@
+# Freebuff runtime marker (Own keeps this separately)
+.freebuff/
+
+# local preview server scratch
+preview_server.log
+preview_server.err
+preview_server.err
+
+# temp screenshots / ocr frames / one-off pngs
+*.png
+!zombie-hunter-*.png
+!screenshot_menu*.png
+!zh_touch_controls.png
+ocr_frames/
+t.png
+
+# project data / dumps / analysis outputs
+data/
+*.json
+!package.json
+!render.yaml
+!data/leaderboard.json
+
+# original-game forensics / extraction scripts
+zh_orig/
+zh_orig_src/
+zh_orig_assets/
+extract_assets.sh
+scan_assets.py
+parse_*.js
+test_*.js
+locate_zh_assets.js
+inspect*.js
+read_levels.js
+list_workspace.js
+zh_*.js
+zh_*.txt
+zh_*.json
+zh_*.png
+smoke.js
+original_*.png
+orig_*.png
+our_*.png
+zh_game.png
+zh_stage1.png
+zh_start.png
+zh_weapon.png
+zh_level1.png
+zh_check1.png
+test_escape.js
+zombie-hunter-menu.png
+zombie-hunter-death.png
+
+# node_modules (if any are ever added)
+node_modules/
+
+# OS junk
+.DS_Store
+Thumbs.db

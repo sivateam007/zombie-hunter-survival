@@ -1,0 +1,676 @@
+/* ---------------------------------------------------------------
+ * Zombie Hunter: Survival — arena art
+ *
+ * A large open-world city built from a grid of city blocks and
+ * streets. The base surface + decorations are pre-baked into screen
+ * tiles the size of `CHUNK`, so only the tiles on screen exist in
+ * memory and never the full map.
+ */
+window.ZH = window.ZH || {};
+(function (ZH) {
+  'use strict';
+  var TAU = Math.PI * 2;
+
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  /* colour helper (mirror of rig.js shade so arena props can shade hex) */
+  var _shadeCache = {};
+  function hexToRgb(hex) {
+    var v = parseInt(String(hex).slice(1), 16);
+    return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+  }
+  function shade(hex, amount) {
+    if (!amount) return hex;
+    var key = hex + '|' + amount.toFixed(2);
+    if (_shadeCache[key]) return _shadeCache[key];
+    var c = hexToRgb(hex);
+    var t = amount > 0 ? 255 : 0;
+    var a = Math.abs(amount);
+    var out = 'rgb(' + Math.round(lerp(c[0], t, a)) + ',' +
+      Math.round(lerp(c[1], t, a)) + ',' +
+      Math.round(lerp(c[2], t, a)) + ')';
+    _shadeCache[key] = out;
+    return out;
+  }
+
+  /* deterministic RNG (same seed -> same world every run) */
+  function rng(seed) {
+    var s = (seed >>> 0) || 1;
+    return function () {
+      s ^= s << 13; s >>>= 0;
+      s ^= s >> 17; s ^= s << 5; s >>>= 0;
+      return s / 4294967296;
+    };
+  }
+  function rr(rnd, a, b) { return a + rnd() * (b - a); }
+  function hash(seed, a, b) {
+    var h = (seed ^ ((a | 0) * 374761393) ^ ((b | 0) * 668265263)) >>> 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
+    return (h ^ (h >>> 16)) >>> 0;
+  }
+
+  var THEMES = {
+    street:  { name: 'Ashfall Streets',     base: '#2b2c2e', fog: 'rgba(38,44,50,0.55)', ambient: 'ash',   lamp: '#ffd9a0' },
+    factory: { name: 'Rust Meat Plant',     base: '#33302b', fog: 'rgba(56,42,28,0.5)',  ambient: 'dust',  lamp: '#ffc978' },
+    hospital:{ name: 'Mercy Hospital',     base: '#33393a', fog: 'rgba(40,60,58,0.5)',  ambient: 'dust',  lamp: '#cfefff' },
+    rooftop: { name: 'Rooftop Last Stand',  base: '#22262e', fog: 'rgba(24,32,48,0.62)', ambient: 'rain',  lamp: '#9ec8ff' }
+  };
+
+  /* world dimensions + tile constants */
+  var WORLD = 6144;          /* big open city */
+  var CHUNK = 512;           /* render tile */
+  var CELL = 1024;           /* block pitch (stops at world edges) */
+  var CELL_GRID = WORLD / CELL;     /* 6x6 blocks */
+  var CHUNK_GRID = Math.ceil(WORLD / CHUNK);   /* 12x12 chunks */
+  var CELL_HALF = CELL / 2;
+  var ROAD_HALF = 96;       /* street width / 2 */
+  var WALL = 54;            /* perimeter ring */
+
+  /* ------- base surfaces (world-aligned, no global stripe) ---------- */
+  function streetBase(ctx, w, h, ox, oy, rnd) {
+    ctx.fillStyle = '#2c2d30'; ctx.fillRect(ox, oy, w, h);
+    for (var i = 0; i < 42; i++) {
+      var x = ox + rr(rnd, 0, w), y = oy + rr(rnd, 0, h);
+      var rw = rr(rnd, 60, 300), rh = rr(rnd, 40, 170);
+      ctx.fillStyle = 'rgba(' + Math.round(rr(rnd, 34, 66)) + ',' +
+        Math.round(rr(rnd, 34, 64)) + ',' + Math.round(rr(rnd, 36, 68)) + ',' + rr(rnd, 0.04, 0.1) + ')';
+      ctx.beginPath();
+      ctx.ellipse(x, y, rw, rh, rr(rnd, 0, TAU), 0, TAU); ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(14,15,17,0.55)';
+    for (var c = 0; c < 36; c++) {
+      var cx = ox + rr(rnd, 0, w), cy = oy + rr(rnd, 0, h);
+      ctx.lineWidth = rr(rnd, 0.7, 2.1); ctx.beginPath(); ctx.moveTo(cx, cy);
+      var a = rr(rnd, 0, TAU);
+      for (var k = 0; k < 5; k++) { a += rr(rnd, -0.7, 0.7); cx += Math.cos(a) * rr(rnd, 10, 44); cy += Math.sin(a) * rr(rnd, 10, 44); ctx.lineTo(cx, cy); }
+      ctx.stroke();
+    }
+    for (var m = 0; m < 4; m++) {
+      var mx = ox + rr(rnd, 200, w - 200), my = oy + rr(rnd, 200, h - 200);
+      ctx.fillStyle = '#1e1f21'; ctx.beginPath(); ctx.arc(mx, my, 22, 0, TAU); ctx.fill();
+      ctx.strokeStyle = 'rgba(120,120,124,0.35)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(mx, my, 17, 0, TAU); ctx.stroke();
+    }
+  }
+
+  function concreteBase(ctx, w, h, ox, oy, rnd) {
+    var tile = 128;
+    ctx.fillStyle = '#3a3730'; ctx.fillRect(ox, oy, w, h);
+    for (var y = (oy / tile | 0) * tile; y < oy + h; y += tile) {
+      for (var x = (ox / tile | 0) * tile; x < ox + w; x += tile) {
+        var v = rr(rnd, -14, 12);
+        ctx.fillStyle = 'rgb(' + (58 + v) + ',' + (54 + v) + ',' + (46 + v) + ')';
+        ctx.fillRect(x, y, tile - 2, tile - 2);
+      }
+    }
+    ctx.strokeStyle = 'rgba(20,18,15,0.55)'; ctx.lineWidth = 2;
+    ctx.strokeRect(ox, oy, w, h);
+    for (var gx = (ox / tile | 0) * tile; gx < ox + w; gx += tile) {
+      ctx.beginPath(); ctx.moveTo(gx, oy); ctx.lineTo(gx, oy + h); ctx.stroke();
+    }
+    for (var gy = (oy / tile | 0) * tile; gy < oy + h; gy += tile) {
+      ctx.beginPath(); ctx.moveTo(ox, gy); ctx.lineTo(ox + w, gy); ctx.stroke();
+    }
+    for (var i = 0; i < 30; i++) {
+      var sx = ox + rr(rnd, 0, w), sy = oy + rr(rnd, 0, h), srx = rr(rnd, 14, 62);
+      ctx.fillStyle = rnd() > 0.55 ? 'rgba(18,16,14,0.2)' : 'rgba(94,50,26,0.14)';
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, srx, srx * rr(rnd, 0.4, 0.9), rr(rnd, 0, TAU), 0, TAU); ctx.fill();
+    }
+    for (var d = 0; d < 5; d++) {
+      var dx = ox + rr(rnd, 120, w - 120), dy = oy + rr(rnd, 120, h - 120);
+      ctx.fillStyle = '#1a1917'; ctx.fillRect(dx, dy, 46, 30);
+      ctx.strokeStyle = 'rgba(150,150,150,0.28)'; ctx.lineWidth = 1.5;
+      for (var b = 0; b < 4; b++) {
+        ctx.beginPath(); ctx.moveTo(dx + 6, dy + 6 + b * 6); ctx.lineTo(dx + 40, dy + 6 + b * 6); ctx.stroke();
+      }
+    }
+  }
+
+  function hospitalBase(ctx, w, h, ox, oy, rnd) {
+    var tile = 96;
+    ctx.fillStyle = '#40484a'; ctx.fillRect(ox, oy, w, h);
+    for (var y = (oy / tile | 0) * tile; y < oy + h; y += tile) {
+      for (var x = (ox / tile | 0) * tile; x < ox + w; x += tile) {
+        var v = rr(rnd, -10, 12);
+        ctx.fillStyle = 'rgb(' + (72 + v) + ',' + (84 + v) + ',' + (86 + v) + ')';
+        ctx.fillRect(x + 1, y + 1, tile - 3, tile - 3);
+        ctx.fillStyle = 'rgba(255,255,255,0.03)'; ctx.fillRect(x + 6, y + 6, tile - 14, 4);
+      }
+    }
+    ctx.strokeStyle = 'rgba(18,22,22,0.35)'; ctx.lineWidth = 1.5;
+    ctx.strokeRect(ox, oy, w, h);
+    for (var gx = (ox / tile | 0) * tile; gx < ox + w; gx += tile) {
+      ctx.beginPath(); ctx.moveTo(gx, oy); ctx.lineTo(gx, oy + h); ctx.stroke();
+    }
+    for (var gy = (oy / tile | 0) * tile; gy < oy + h; gy += tile) {
+      ctx.beginPath(); ctx.moveTo(ox, gy); ctx.lineTo(ox + w, gy); ctx.stroke();
+    }
+    for (var i = 0; i < 22; i++) {
+      var sx = ox + rr(rnd, 0, w), sy = oy + rr(rnd, 0, h), ang = rr(rnd, 0, TAU), len = rr(rnd, 40, 260);
+      var grd = ctx.createLinearGradient(sx, sy, sx + Math.cos(ang) * len, sy + Math.sin(ang) * len);
+      grd.addColorStop(0, 'rgba(96,20,16,0.5)'); grd.addColorStop(1, 'rgba(96,20,16,0)');
+      ctx.strokeStyle = grd; ctx.lineWidth = rr(rnd, 6, 24);
+      ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + Math.cos(ang) * len, sy + Math.sin(ang) * len); ctx.stroke();
+    }
+    for (var p = 0; p < 34; p++) {
+      ctx.save();
+      ctx.translate(ox + rr(rnd, 0, w), oy + rr(rnd, 0, h)); ctx.rotate(rr(rnd, 0, TAU));
+      ctx.fillStyle = 'rgba(215,214,200,' + rr(rnd, 0.1, 0.3) + ')'; ctx.fillRect(-5, -7, 10, 14);
+      ctx.restore();
+    }
+  }
+
+  function roofBase(ctx, w, h, ox, oy, rnd) {
+    ctx.fillStyle = '#23262b'; ctx.fillRect(ox, oy, w, h);
+    for (var i = 0; i < 2600; i++) {
+      var v = rr(rnd, 26, 62);
+      ctx.fillStyle = 'rgba(' + Math.round(v) + ',' + Math.round(v + 2) + ',' + Math.round(v + 6) + ',' + rr(rnd, 0.2, 0.7) + ')';
+      ctx.fillRect(ox + rr(rnd, 0, w), oy + rr(rnd, 0, h), rr(rnd, 1, 3), rr(rnd, 1, 3));
+    }
+    ctx.strokeStyle = 'rgba(12,14,17,0.6)';
+    for (var s = 0; s < 12; s++) {
+      ctx.lineWidth = rr(rnd, 2, 6); ctx.beginPath();
+      var x = ox + rr(rnd, 0, w), y = oy + rr(rnd, 0, h); ctx.moveTo(x, y);
+      for (var k = 0; k < 6; k++) { x += rr(rnd, -220, 220); y += rr(rnd, -80, 140); ctx.lineTo(x, y); }
+      ctx.stroke();
+    }
+    for (var p = 0; p < 7; p++) {
+      var px = ox + rr(rnd, 100, w - 100), py = oy + rr(rnd, 100, h - 100), pr = rr(rnd, 40, 110);
+      ctx.fillStyle = 'rgba(30,44,66,0.55)'; ctx.beginPath();
+      ctx.ellipse(px, py, pr, pr * rr(rnd, 0.45, 0.8), rr(rnd, 0, TAU), 0, TAU); ctx.fill();
+      ctx.strokeStyle = 'rgba(140,190,235,0.16)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(px, py - 4, pr * 0.7, pr * 0.3, 0.3, 0, TAU); ctx.stroke();
+    }
+  }
+
+  /* ------- props (drawn in chunk local space; caller translates first) */
+  function drawCar(ctx, x, y, rot, color, rnd) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    var w = 92, h = 46;
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath();
+    ctx.ellipse(0, 6, w * 0.55, h * 0.55, 0, 0, TAU); ctx.fill();
+    var grd = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
+    grd.addColorStop(0, color); grd.addColorStop(0.55, shade(color, -0.25)); grd.addColorStop(1, shade(color, -0.5));
+    ctx.fillStyle = grd;
+    var r = 12;
+    ctx.beginPath();
+    ctx.moveTo(-w / 2 + r, -h / 2); ctx.lineTo(w / 2 - r, -h / 2);
+    ctx.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r);
+    ctx.lineTo(w / 2, h / 2 - r); ctx.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2);
+    ctx.lineTo(-w / 2 + r, h / 2); ctx.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r);
+    ctx.lineTo(-w / 2, -h / 2 + r); ctx.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(28,40,48,0.92)'; ctx.fillRect(-16, -h / 2 + 6, 26, h - 12);
+    ctx.fillStyle = 'rgba(22,32,38,0.85)'; ctx.fillRect(16, -h / 2 + 8, 16, h - 16);
+    ctx.strokeStyle = 'rgba(180,200,210,0.2)'; ctx.lineWidth = 1.2;
+    ctx.strokeRect(-16, -h / 2 + 6, 26, h - 12);
+    ctx.fillStyle = 'rgba(110,58,28,0.4)';
+    for (var i = 0; i < 12; i++) { ctx.beginPath();
+      ctx.arc(rr(rnd, -w / 2 + 6, w / 2 - 6), rr(rnd, -h / 2 + 4, h / 2 - 4), rr(rnd, 2, 7), 0, TAU); ctx.fill(); }
+    ctx.fillStyle = '#141518'; ctx.fillRect(-w / 2 + 4, -h / 2 - 3, 20, 6);
+    ctx.fillRect(-w / 2 + 4, h / 2 - 3, 20, 6); ctx.fillRect(w / 2 - 24, -h / 2 - 3, 20, 6);
+    ctx.fillRect(w / 2 - 24, h / 2 - 3, 20, 6);
+    ctx.restore();
+  }
+
+  function drawCrate(ctx, x, y, size, rot) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(-size / 2 + 3, -size / 2 + 4, size, size);
+    var g = ctx.createLinearGradient(-size / 2, -size / 2, size / 2, size / 2);
+    g.addColorStop(0, '#7a5c34'); g.addColorStop(0.5, '#5d4526'); g.addColorStop(1, '#3f2f1b');
+    ctx.fillStyle = g; ctx.fillRect(-size / 2, -size / 2, size, size);
+    ctx.strokeStyle = 'rgba(28,20,12,0.75)'; ctx.lineWidth = 2;
+    ctx.strokeRect(-size / 2 + 2, -size / 2 + 2, size - 4, size - 4);
+    ctx.beginPath(); ctx.moveTo(-size / 2 + 2, -size / 2 + 2); ctx.lineTo(size / 2 - 2, size / 2 - 2);
+    ctx.moveTo(size / 2 - 2, -size / 2 + 2); ctx.lineTo(-size / 2 + 2, size / 2 - 2); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawBarrel(ctx, x, y, color) {
+    ctx.save(); ctx.translate(x, y);
+    ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath();
+    ctx.ellipse(2, 4, 17, 17, 0, 0, TAU); ctx.fill();
+    var g = ctx.createRadialGradient(-5, -5, 2, 0, 0, 18);
+    g.addColorStop(0, shade(color, 0.18)); g.addColorStop(1, shade(color, -0.45));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 16, 0, TAU); ctx.fill();
+    ctx.strokeStyle = 'rgba(20,20,20,0.55)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, 12, 0, TAU); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, 5, 0, TAU); ctx.stroke();
+    ctx.fillStyle = 'rgba(160,60,30,0.25)'; ctx.beginPath(); ctx.arc(4, 6, 8, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawAcUnit(ctx, x, y, w, h, rot) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(-w / 2 + 4, -h / 2 + 5, w, h);
+    var g = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
+    g.addColorStop(0, '#7c8288'); g.addColorStop(1, '#454b50'); ctx.fillStyle = g;
+    ctx.fillRect(-w / 2, -h / 2, w, h);
+    ctx.strokeStyle = 'rgba(20,24,28,0.7)'; ctx.lineWidth = 2;
+    ctx.strokeRect(-w / 2 + 2, -h / 2 + 2, w - 4, h - 4);
+    ctx.strokeStyle = 'rgba(18,22,26,0.8)'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(0, 0, Math.min(w, h) * 0.32, 0, TAU); ctx.stroke();
+    for (var i = 0; i < 4; i++) {
+      var a = i / 4 * TAU + 0.4;
+      ctx.beginPath(); ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(a) * Math.min(w, h) * 0.3, Math.sin(a) * Math.min(w, h) * 0.3); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawGurney(ctx, x, y, rot) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(-30, -18, 64, 40);
+    ctx.fillStyle = '#9aa5a8'; ctx.fillRect(-32, -20, 64, 40);
+    ctx.fillStyle = '#c9d3d4'; ctx.fillRect(-28, -16, 56, 32);
+    ctx.fillStyle = '#8b9094'; ctx.fillRect(-40, -22, 8, 44); ctx.fillRect(32, -22, 8, 44);
+    ctx.fillStyle = 'rgba(120,20,16,0.5)'; ctx.beginPath();
+    ctx.ellipse(6, 2, 20, 11, 0.4, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawTree(ctx, x, y, scale, rnd) {
+    var s = scale || 1;
+    ctx.fillStyle = 'rgba(40,30,18,0.85)'; ctx.fillRect(x - 2 * s, y - 14 * s, 4 * s, 18 * s);
+    ctx.fillStyle = shade('#3c6a3a', 0.0);
+    ctx.beginPath(); ctx.arc(x, y - 30 * s, 24 * s, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(x - 14 * s, y - 22 * s, 17 * s, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + 15 * s, y - 24 * s, 17 * s, 0, TAU); ctx.fill();
+  }
+
+  function drawBench(ctx, x, y, rot, rnd) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.fillStyle = shade('#5a4a3a', 0.0);
+    ctx.fillRect(-26, -9, 52, 4); ctx.fillRect(-22, -13, 4, 8); ctx.fillRect(18, -13, 4, 8);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(-26, -9 + 2, 52, 2);
+    ctx.restore();
+  }
+
+  function drawPlanter(ctx, x, y, rot, rnd) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(-16, -14, 32, 10);
+    var g = ctx.createLinearGradient(-16, -14, 16, -4);
+    g.addColorStop(0, '#8a6a44'); g.addColorStop(1, '#5d4426');
+    ctx.fillStyle = g; ctx.fillRect(-16, -14, 32, 10);
+    ctx.fillStyle = 'rgba(20,20,20,0.35)'; ctx.fillRect(-16, -4, 32, 4);
+    ctx.fillStyle = shade('#3c6a3a', 0.0);
+    for (var i = 0; i < 6; i++) { ctx.beginPath();
+      ctx.arc(rr(rnd, -14, 14), rr(rnd, -14, -4), rr(rnd, 5, 8), 0, TAU); ctx.fill(); }
+    ctx.restore();
+  }
+
+  function drawBarricade(ctx, x, y, rot, rnd) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(-30, -7, 60, 14);
+    ctx.fillStyle = '#3a3a3a'; ctx.fillRect(-28, -5, 56, 8);
+    for (var i = 0; i < 8; i++) {
+      ctx.fillStyle = 'rgba(120,120,120,0.5)'; ctx.fillRect(-28 + i * 8, -5, 3, 8);
+    }
+    ctx.fillStyle = 'rgba(190,60,30,0.55)'; ctx.fillRect(-30, -11, 60, 5);
+    ctx.restore();
+  }
+
+  /* ------- per-chunk baking, lazy + capped ---------------------------- */
+  function streetRoads(ctx, ox, oy, cw, ch, cx, cy) {
+    var mask = 'rgba(30,32,34,0.9)';
+    for (var i = (ox / CELL | 0) - 1; i * CELL <= ox + cw; i++) {
+      var rx = i * CELL;
+      var x0 = Math.max(ox, rx - ROAD_HALF), x1 = Math.min(ox + cw, rx + ROAD_HALF);
+      if (x1 > x0) { ctx.fillStyle = mask; ctx.fillRect(x0, oy, x1 - x0, ch); }
+    }
+    for (var j = (oy / CELL | 0) - 1; j * CELL <= oy + ch; j++) {
+      var ry = j * CELL;
+      var y0 = Math.max(oy, ry - ROAD_HALF), y1 = Math.min(oy + ch, ry + ROAD_HALF);
+      if (y1 > y0) { ctx.fillStyle = mask; ctx.fillRect(ox, y0, cw, y1 - y0); }
+    }
+    for (var i = (ox / CELL | 0) - 1; i * CELL <= ox + cw; i++) {
+      var rx = i * CELL;
+      if (rx >= ox && rx <= ox + cw) {
+        ctx.fillStyle = 'rgba(160,152,116,0.32)';
+        ctx.fillRect(rx - 2, oy, 4, ch);
+        ctx.strokeStyle = 'rgba(220,206,140,0.5)'; ctx.lineWidth = 6;
+        ctx.setLineDash([56, 48]); ctx.beginPath();
+        ctx.moveTo(rx, oy); ctx.lineTo(rx, oy + ch); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(220,206,140,0.18)';
+        ctx.fillRect(rx - 14, oy, 24, ch);
+      }
+    }
+    for (var j = (oy / CELL | 0) - 1; j * CELL <= oy + ch; j++) {
+      var ry = j * CELL;
+      if (ry >= oy && ry <= oy + ch) {
+        ctx.fillStyle = 'rgba(160,152,116,0.32)'; ctx.fillRect(ox, ry - 2, cw, 4);
+        ctx.strokeStyle = 'rgba(220,206,140,0.5)'; ctx.lineWidth = 6;
+        ctx.setLineDash([56, 48]); ctx.beginPath();
+        ctx.moveTo(ox, ry); ctx.lineTo(ox + cw, ry); ctx.stroke(); ctx.setLineDash([]);
+      }
+    }
+    for (var j = (oy / CELL | 0) - 1; j * CELL <= oy + ch; j++) {
+      var ry = j * CELL;
+      for (var i = (ox / CELL | 0) - 1; i * CELL <= ox + cw; i++) {
+        var rx = i * CELL;
+        if (rx + ROAD_HALF < ox || rx - ROAD_HALF > ox + cw) continue;
+        if (ry + ROAD_HALF < oy || ry - ROAD_HALF > oy + ch) continue;
+        var yx0 = Math.max(ox, rx - 70), yx1 = Math.min(ox + cw, rx + 70);
+        var yy0 = Math.max(oy, ry - 120), yy1 = Math.min(oy + ch, ry + 120);
+        if (yx1 <= yx0 || yy1 <= yy0) continue;
+        ctx.fillStyle = 'rgba(207,201,174,0.5)';
+        for (var s = yx0; s < yx1; s += 16) ctx.fillRect(s, yy0, 13, yy1 - yy0);
+        ctx.fillStyle = 'rgba(0,0,0,0.42)'; ctx.fillRect(rx - 3, ry + 7, 6, 20);
+        ctx.fillStyle = 'rgba(255,228,178,0.9)'; ctx.beginPath();
+        ctx.arc(rx, ry + 10, 3.2, 0, TAU); ctx.fill();
+      }
+    }
+  }
+
+  function blockDecor(ctx, ox, oy, cx, cy, bi, bj, kind, rnd, worldKey) {
+    var bx0 = bi * CELL + ROAD_HALF, by0 = bj * CELL + ROAD_HALF;
+    var bx1 = (bi + 1) * CELL - ROAD_HALF, by1 = (bj + 1) * CELL - ROAD_HALF;
+    if (bx0 <= ox) bx0 = ox; if (by0 <= oy) by0 = oy;
+    if (bx1 >= ox + CHUNK) bx1 = ox + CHUNK; if (by1 >= oy + CHUNK) by1 = oy + CHUNK;
+    if (bx1 <= bx0 || by1 <= by0) return;
+    var bw = bx1 - bx0, bh = by1 - by0;
+    ctx.fillStyle = 'rgba(120,115,100,0.42)'; ctx.fillRect(bx0, by0, bw, bh);
+    ctx.fillStyle = 'rgba(70,70,72,0.18)'; ctx.fillRect(bx0 + 6, by0 + 6, bw - 12, bh - 12);
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 2;
+    ctx.strokeRect(bx0, by0, bw, bh); ctx.strokeRect(bx0 + 6, by0 + 6, bw - 12, bh - 12);
+    var cx0 = bx0 + bw / 2, cy0 = by0 + bh / 2;
+    var hx = cx0 + (rr(rnd, -bw * 0.22, bw * 0.22)), hy = cy0 + (rr(rnd, -bh * 0.22, bh * 0.22));
+    var hw = bw * (0.30 + rr(rnd, 0, 0.18)), hh = bh * (0.26 + rr(rnd, 0, 0.18));
+    ctx.save(); ctx.translate(hx, hy);
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(-hw / 2, -hh / 2 + 6, hw, hh + 10);
+    var grd = ctx.createLinearGradient(0, -hh / 2, 0, hh / 2);
+    grd.addColorStop(0, '#5a5f63'); grd.addColorStop(0.5, '#55575c'); grd.addColorStop(1, '#3c4145');
+    ctx.fillStyle = grd; ctx.fillRect(-hw / 2, -hh / 2, hw, hh);
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 3; ctx.strokeRect(-hw / 2 + 2, -hh / 2 + 2, hw - 4, hh - 4);
+    ctx.fillStyle = 'rgba(150,160,165,0.25)';
+    var wxStep = hw / 5, wyStep = hh / 6;
+    for (var wy = -hh / 2 + 8; wy < hh / 2; wy += wyStep) {
+      for (var wx = -hw / 2 + 6; wx < hw / 2; wx += wxStep) {
+        ctx.fillRect(wx, wy, 7, 9);
+      }
+    }
+    ctx.fillStyle = 'rgba(20,20,20,0.7)'; ctx.fillRect(-hw / 2, hh / 2 - 6, hw, 6);
+    ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(-hw / 2, hh / 2 - 6, 4, 6);
+    ctx.fillRect(hw / 2 - 4, hh / 2 - 6, 4, 6);
+    ctx.restore();
+
+    if (kind === 1) {
+      drawTree(ctx, bx0 + rr(rnd, 60, bw - 60), by0 + rr(rnd, 60, bh - 60), 1.2 + rr(rnd, 0, 0.3), rnd);
+      drawBench(ctx, bx0 + rr(rnd, 60, bw - 60), by0 + rr(rnd, 60, bh - 60), rr(rnd, 0, TAU), rnd);
+      drawPlanter(ctx, bx0 + rr(rnd, 60, bw - 60), by0 + rr(rnd, 60, bh - 60), rr(rnd, 0, TAU), rnd);
+    } else if (kind === 2) {
+      var parked = 3 + (rr(rnd) < 0.4 ? 2 : 0);
+      for (var p = 0; p < parked; p++) {
+        var pcx = bx0 + 40 + rr(rnd, 20, bw - 80), pcy = by0 + 40 + rr(rnd, 20, bh - 80);
+        drawCar(ctx, pcx, pcy, (bi + p + bj) * TAU / parked + rr(rnd, -0.4, 0.4), '#6a4a3c', rnd);
+      }
+      drawBarrel(ctx, bx0 + rr(rnd, 60, bw - 60), by0 + rr(rnd, 60, bh - 60), '#7a4a2c', rnd);
+      drawCrate(ctx, bx0 + rr(rnd, 60, bw - 60), by0 + rr(rnd, 60, bh - 60), rr(rnd, 30, 40), rr(rnd, 0, 1), rnd);
+    } else if (kind === 3) {
+      for (var p = 0; p < 4; p++) {
+        drawBarrel(ctx, bx0 + rr(rnd, 60, bw - 60), by0 + rr(rnd, 60, bh - 60), '#5b6a72', rnd);
+        drawCrate(ctx, bx0 + rr(rnd, 60, bw - 60), by0 + rr(rnd, 60, bh - 60), rr(rnd, 30, 44), rr(rnd, 0, 1), rnd);
+      }
+      drawBench(ctx, bx0 + rr(rnd, 60, bw - 60), by0 + rr(rnd, 60, bh - 60), rr(rnd, 0, TAU), rnd);
+    } else if (kind === 4) {
+      drawBarricade(ctx, bx0 + rr(rnd, 80, bw - 80), by0 + rr(rnd, 60, bh - 60), rr(rnd, 0, TAU), rnd);
+      drawBarrel(ctx, bx0 + rr(rnd, 60, bw - 60), by0 + rr(rnd, 60, bh - 60), '#5b6a72', rnd);
+      drawCrate(ctx, bx0 + rr(rnd, 60, bw - 60), by0 + rr(rnd, 60, bh - 60), rr(rnd, 32, 44), rr(rnd, 0, 0.4), rnd);
+    } else {
+      drawCrate(ctx, bx0 + rr(rnd, 60, bw - 60), by0 + rr(rnd, 60, bh - 60), rr(rnd, 40, 56), rr(rnd, 0, 0.5), rnd);
+      drawBarrel(ctx, bx0 + rr(rnd, 60, bw - 60), by0 + rr(rnd, 60, bh - 60), '#4d6a34', rnd);
+      drawAcUnit(ctx, bx0 + rr(rnd, 80, bw - 80), by0 + rr(rnd, 60, bh - 60), 90, 60, rr(rnd, -0.3, 0.3), rnd);
+    }
+  }
+
+  var _PROP_DRAW = [
+    function (ctx, x, y, rnd) { drawBarrel(ctx, x, y, '#5b6a72', rnd); },
+    function (ctx, x, y, rnd) { drawCrate(ctx, x, y, rr(rnd, 30, 40), rr(rnd, 0, 1), rnd); },
+    function (ctx, x, y, rnd) { drawPlanter(ctx, x, y, rr(rnd, 0, TAU), rnd); },
+    function (ctx, x, y, rnd) { drawBench(ctx, x, y, rr(rnd, 0, TAU), rnd); },
+    function (ctx, x, y, rnd) {
+      var carCols = ['#4c5d63', '#6a4a3c', '#3f4b32', '#5a5a63', '#6d3f3a'];
+      drawCar(ctx, x, y, rr(rnd, 0, TAU), carCols[(rr(rnd) * 5) | 0], rnd);
+    },
+    function (ctx, x, y, rnd) { drawBarricade(ctx, x, y, rr(rnd, 0, TAU), rnd); }
+  ];
+  var PROP_DRAW_COUNT = _PROP_DRAW.length;
+
+  /* ---- world object ------------------------------------------------ */
+  function build(theme, seed) {
+    var rnd = rng(seed || 1);
+    var cfg = THEMES[theme] || THEMES.street;
+    var world = {
+      w: WORLD, h: WORLD,
+      theme: theme, _fn: theme,
+      cfg: cfg, _seed: seed || 1,
+      ambient: cfg.ambient, fog: cfg.fog, lamp: cfg.lamp,
+      props: [],
+      _chunks: {}, _keys: [], _cap: 48
+    };
+
+    world.draw = function (ctx, vx0, vy0, vx1, vy1) {
+      var x0 = Math.max(0, (vx0 / CHUNK) | 0), x1 = Math.min(CHUNK_GRID, ((vx1 + 1) / CHUNK) | 0);
+      var y0 = Math.max(0, (vy0 / CHUNK) | 0), y1 = Math.min(CHUNK_GRID, ((vy1 + 1) / CHUNK) | 0);
+      for (var cy = y0; cy < y1; cy++) {
+        for (var cx = x0; cx < x1; cx++) {
+          this.drawTile(ctx, cx, cy);
+        }
+      }
+    };
+
+    world.drawTile = function (ctx, cx, cy) {
+      var key = cx + ':' + cy;
+      var c = this._chunks[key];
+      if (!c) {
+        c = bake(this, cx, cy);
+      }
+      ctx.drawImage(c, cx * CHUNK, cy * CHUNK);
+    };
+
+    return world;
+  }
+
+  function _evict(world) {
+    if (world._keys.length > world._cap) {
+      var evict = world._keys.shift();
+      delete world._chunks[evict];
+    }
+  }
+
+  function drawBlockProps(ctx, ox, oy, world, bi, bj, i, j, rnd) {
+    var bx0 = bi * CELL + ROAD_HALF, by0 = bj * CELL + ROAD_HALF;
+    var bx1 = (bi + 1) * CELL - ROAD_HALF, by1 = (bj + 1) * CELL - ROAD_HALF;
+    if (bx1 <= ox || by1 <= oy || bx0 >= ox + CHUNK || by0 >= oy + CHUNK) return;
+    var bx0c = Math.max(ox, bx0), by0c = Math.max(oy, by0);
+    var bx1c = Math.min(ox + CHUNK, bx1), by1c = Math.min(oy + CHUNK, by1);
+    if (bx1c <= bx0c || by1c <= by0c) return;
+    var bw = bx1c - bx0c, bh = by1c - by0c;
+    var kind = hash(world._seed, bi * 7 + bj * 13 + i * 19 + j * 23) % 5;
+    var cellRnd = rng(hash(world._seed, bi * 7 + bj * 13));
+    ctx.fillStyle = 'rgba(120,115,100,0.42)'; ctx.fillRect(bx0c, by0c, bw, bh);
+    ctx.fillStyle = 'rgba(70,70,72,0.18)'; ctx.fillRect(bx0c + 6, by0c + 6, bw - 12, bh - 12);
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 2;
+    if (bw > 10) { ctx.strokeRect(bx0c, by0c, bw, bh); ctx.strokeRect(bx0c + 6, by0c + 6, bw - 12, bh - 12); }
+    var cx0 = bx0c + bw / 2, cy0 = by0c + bh / 2;
+    var hx = cx0 + (cellRnd() * (bw - 160)) - (bx0c + bw / 2) + cx0;
+    var hy = cy0 + (cellRnd() * (bh - 160)) - (by0c + bh / 2) + cy0;
+    var hw = Math.min(bw * 0.34, 160), hh = Math.min(bh * 0.30, 120);
+    ctx.save(); ctx.translate(hx, hy);
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(-hw / 2, -hh / 2 + 6, hw, hh + 10);
+    var grd = ctx.createLinearGradient(0, -hh / 2, 0, hh / 2);
+    grd.addColorStop(0, '#5a5f63'); grd.addColorStop(0.5, '#55575c'); grd.addColorStop(1, '#3c4145');
+    ctx.fillStyle = grd; ctx.fillRect(-hw / 2, -hh / 2, hw, hh);
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 3;
+    ctx.strokeRect(-hw / 2 + 2, -hh / 2 + 2, hw - 4, hh - 4);
+    if (bw > 60 && bh > 60) {
+      ctx.fillStyle = 'rgba(150,160,165,0.3)';
+      for (var wy = -hh / 2 + 10; wy < hh / 2 - 10; wy += hh / 7) {
+        for (var wx = -hw / 2 + 8; wx < hw / 2; wx += hw / 6) {
+          ctx.fillRect(wx, wy, 7, 9);
+        }
+      }
+    }
+    ctx.fillStyle = 'rgba(20,20,20,0.7)'; ctx.fillRect(-hw / 2, hh / 2 - 6, hw, 6);
+    ctx.restore();
+
+    var propCount = (kind < 2 ? 2 : 3) + (kind === 2 ? 2 : 0);
+    for (var p = 0; p < propCount; p++) {
+      var px = bx0c + 40 + cellRnd() * (bw - 80);
+      var py = by0c + 40 + cellRnd() * (bh - 80);
+      if (px + 40 > bx1c || py + 40 > by1c) continue;
+      _PROP_DRAW[(hash(world._seed, bi * 19 + bj * 23 + p * 11) % PROP_DRAW_COUNT)](
+        ctx, px, py, rng(hash(world._seed, bi * 19 + bj * 23 + p * 11 + 3)));
+    }
+    if (kind === 2) {
+      for (var p = 0; p < 2; p++) {
+        var pcx = bx0c + 40 + cellRnd() * (bw - 100);
+        var pcy = by0c + 40 + cellRnd() * (bh - 100);
+        if (pcx + 60 > bx1c || pcy + 50 > by1c) continue;
+        var carCols = ['#4c5d63', '#6a4a3c', '#3f4b32', '#5a5a63', '#6d3f3a'];
+        drawCar(ctx, pcx, pcy, cellRnd() * TAU, carCols[(cellRnd() * 5) | 0], rng(hash(world._seed, bi * 19 + bj * 23 + p * 11 + 7)));
+      }
+    }
+  }
+
+  function bake(world, cx, cy) {
+    var key = cx + ':' + cy;
+    if (world._chunks[key]) return world._chunks[key];
+    var canvas = document.createElement('canvas');
+    canvas.width = CHUNK; canvas.height = CHUNK;
+    var ctx = canvas.getContext('2d');
+    var ox = cx * CHUNK, oy = cy * CHUNK;
+    var rnd = rng(hash(world._seed, cx, cy));
+    if (world._fn === 'street') streetBase(ctx, CHUNK, CHUNK, ox, oy, rnd);
+    else if (world._fn === 'factory') concreteBase(ctx, CHUNK, CHUNK, ox, oy, rnd);
+    else if (world._fn === 'hospital') hospitalBase(ctx, CHUNK, CHUNK, ox, oy, rnd);
+    else roofBase(ctx, CHUNK, CHUNK, ox, oy, rnd);
+
+    if (world._fn === 'street') {
+      streetRoads(ctx, ox, oy, CHUNK, CHUNK, cx, cy);
+      var pcx0 = Math.max(0, (ox / CELL) | 0), pcx1 = Math.min(CELL_GRID, ((ox + CHUNK) / CELL) | 0) + 1;
+      var pcy0 = Math.max(0, (oy / CELL) | 0), pcy1 = Math.min(CELL_GRID, ((oy + CHUNK) / CELL) | 0) + 1;
+      for (var j = pcy0; j < pcy1; j++) {
+        for (var i = pcx0; i < pcx1; i++) {
+          if (i < 0 || i >= CELL_GRID || j < 0 || j >= CELL_GRID) continue;
+          drawBlockProps(ctx, ox, oy, world, i, j, i, j, rnd);
+        }
+      }
+    } else {
+      var pcx0 = Math.max(0, (ox / CELL) | 0), pcx1 = Math.min(CELL_GRID, ((ox + CHUNK) / CELL) | 0) + 1;
+      var pcy0 = Math.max(0, (oy / CELL) | 0), pcy1 = Math.min(CELL_GRID, ((oy + CHUNK) / CELL) | 0) + 1;
+      for (var j = pcy0; j < pcy1; j++) {
+        for (var i = pcx0; i < pcx1; i++) {
+          if (i < 0 || i >= CELL_GRID || j < 0 || j >= CELL_GRID) continue;
+          var bx0 = i * CELL + ROAD_HALF * 0, by0 = j * CELL + ROAD_HALF * 0;
+          var bx1 = (i + 1) * CELL, by1 = (j + 1) * CELL;
+          var lRnd = rng(hash(world._seed, i * 7 + j * 13));
+          var kinds = world._fn === 'factory' ? [0, 1, 0, 2] :
+                      world._fn === 'hospital' ? [1, 0, 3, 0] :
+                      [2, 3, 0, 1];
+          var k = kinds[(i + j) % kinds.length];
+          var cellRnd = rng(hash(world._seed, i * 7 + j * 13));
+          if (world._fn === 'factory') {
+            ctx.fillStyle = 'rgba(20,20,22,0.22)'; ctx.fillRect(bx0, by0, bx1 - bx0, by1 - by0);
+            ctx.fillStyle = 'rgba(94,92,88,0.12)'; ctx.fillRect(bx0 + 2, by0 + 2, (bx1 - bx0) - 4, (by1 - by0) - 4);
+            for (var s = 0; s < 3; s++) {
+              var sbx = bx0 + cellRnd() * (bx1 - bx0 - 40), sby = by0 + cellRnd() * (by1 - by0 - 40);
+              var sw = 80 + cellRnd() * 60, sh = 40 + cellRnd() * 40;
+              ctx.fillStyle = 'rgba(0,0,0,0.38)'; ctx.fillRect(sbx, sby, sw, sh);
+              var sg = ctx.createLinearGradient(sbx, sby, sbx, sby + sh);
+              sg.addColorStop(0, '#6b6a62'); sg.addColorStop(1, '#3a3a35');
+              ctx.fillStyle = sg; ctx.fillRect(sbx, sby, sw, sh);
+              ctx.strokeStyle = 'rgba(22,20,16,0.75)'; ctx.lineWidth = 2;
+              ctx.strokeRect(sbx + 2, sby + 2, sw - 4, sh - 4);
+              ctx.fillStyle = 'rgba(190,60,30,0.5)'; ctx.fillRect(sbx + 8, sby + 8, 10, 6);
+            }
+            for (var p = 0; p < 3; p++) {
+              var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
+              _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](
+                ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
+            }
+          } else if (world._fn === 'hospital') {
+            for (var s = 0; s < 2; s++) {
+              var sbx = bx0 + 20 + cellRnd() * (bx1 - bx0 - 80), sby = by0 + cellRnd() * (by1 - by0 - 80);
+              var sw = 60 + cellRnd() * 50, sh = 46;
+              ctx.fillStyle = 'rgba(0,0,0,0.38)'; ctx.fillRect(sbx, sby, sw, sh);
+              var sg = ctx.createLinearGradient(sbx, sby, sbx, sby + sh);
+              sg.addColorStop(0, '#7d8a8b'); sg.addColorStop(1, '#4d5658');
+              ctx.fillStyle = sg; ctx.fillRect(sbx, sby, sw, sh);
+              ctx.fillStyle = 'rgba(200,235,235,0.16)'; ctx.fillRect(sbx + 6, sby + 6, sw - 12, 6);
+            }
+            for (var p = 0; p < 3; p++) {
+              var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
+              _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](
+                ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
+            }
+          } else {
+            for (var s = 0; s < 3; s++) {
+              var sbx = bx0 + cellRnd() * (bx1 - bx0 - 80), sby = by0 + cellRnd() * (by1 - by0 - 80);
+              var sw = 80 + cellRnd() * 50, sh = 40 + cellRnd() * 40;
+              if (sw > 0 && sh > 0) {
+                ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(sbx, sby, sw, sh);
+                var sg = ctx.createLinearGradient(sbx, sby, sbx, sby + sh);
+                sg.addColorStop(0, '#7c8288'); sg.addColorStop(1, '#454b50');
+                ctx.fillStyle = sg; ctx.fillRect(sbx, sby, sw, sh);
+                ctx.strokeStyle = 'rgba(20,24,28,0.7)'; ctx.lineWidth = 2;
+                ctx.strokeRect(sbx + 2, sby + 2, sw - 4, sh - 4);
+                ctx.strokeStyle = 'rgba(18,22,26,0.8)'; ctx.lineWidth = 2.5;
+                ctx.beginPath(); ctx.arc(sbx + sw / 2, sby + sh / 2, Math.min(sw, sh) * 0.3, 0, TAU); ctx.stroke();
+              }
+            }
+            for (var p = 0; p < 3; p++) {
+              var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
+              _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](
+                ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
+            }
+          }
+        }
+      }
+    }
+
+    /* perimeter wall on the city edge */
+    if (cx === 0 || cy === 0 || cx === CHUNK_GRID - 1 || cy === CHUNK_GRID - 1) {
+      var wx0 = Math.max(0, cx * CHUNK), wy0 = Math.max(0, cy * CHUNK);
+      var wx1 = Math.min(WORLD, (cx + 1) * CHUNK), wy1 = Math.min(WORLD, (cy + 1) * CHUNK);
+      var outerX0 = cx === 0 ? 0 : wx0;
+      var innerX0 = cx === 0 ? 0 : wx0 - WALL;
+      var outerX1 = cx === CHUNK_GRID - 1 ? WORLD : wx1;
+      var innerX1 = cx === CHUNK_GRID - 1 ? WORLD : wx1 + WALL;
+      var outerY0 = cy === 0 ? 0 : wy0;
+      var innerY0 = cy === 0 ? 0 : wy0 - WALL;
+      var outerY1 = cy === CHUNK_GRID - 1 ? WORLD : wy1;
+      var innerY1 = cy === CHUNK_GRID - 1 ? WORLD : wy1 + WALL;
+      ctx.fillStyle = 'rgba(8,10,12,0.82)';
+      if (cx === 0) ctx.fillRect(outerX0, oy, WALL, CHUNK);
+      if (cx === CHUNK_GRID - 1) ctx.fillRect(outerX1 - WALL, oy, WALL, CHUNK);
+      if (cy === 0) ctx.fillRect(ox, outerY0, CHUNK, WALL);
+      if (cy === CHUNK_GRID - 1) ctx.fillRect(ox, outerY1 - WALL, CHUNK, WALL);
+      ctx.strokeStyle = 'rgba(180,170,140,0.18)'; ctx.lineWidth = 3;
+      if (cx === 0) ctx.beginPath(); ctx.moveTo(WALL, oy); ctx.lineTo(WALL, oy + CHUNK); ctx.stroke();
+    }
+
+    world._chunks[key] = canvas;
+    world._keys.push(key);
+    _evict(world);
+    return canvas;
+  }
+
+  var cache = {};
+
+  function get(theme, seed) {
+    var key = theme + ':' + (seed || 1);
+    if (!cache[key]) cache[key] = build(theme, seed || 1);
+    return cache[key];
+  }
+
+  ZH.Arena = {
+    get: get,
+    build: build,
+    THEMES: THEMES
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = ZH.Arena;
+})(typeof window !== 'undefined' ? window.ZH || (window.ZH = {}) : {});
+
