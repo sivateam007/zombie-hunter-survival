@@ -132,14 +132,36 @@ window.ZH = window.ZH || {};
   }
 
   /* ----------------------------- weapon art ----------------------------- */
+  /* one entry per gun in the original 14-weapon catalogue + evolutions;
+     unknown ids fall back to the rifle silhouette. */
   var GUNS = {
-    pistol:  { len: 15, grip: 7, h: 3.4, rail: 0.6, scope: 0, stock: 0, mag: 3 },
-    smg:     { len: 21, grip: 8, h: 4.0, rail: 0.8, scope: 0, stock: 4, mag: 5 },
-    shotgun: { len: 26, grip: 8, h: 4.4, rail: 0.6, scope: 0, stock: 6, mag: 0 },
-    rifle:   { len: 29, grip: 8, h: 4.0, rail: 1.0, scope: 5, stock: 7, mag: 6 },
-    sniper:  { len: 34, grip: 9, h: 3.4, rail: 0.8, scope: 9, stock: 8, mag: 4 },
-    flamer:  { len: 22, grip: 8, h: 5.2, rail: 0.4, scope: 0, stock: 3, mag: 0 }
+    gun:        { len: 17, grip: 7, h: 3.6, rail: 0.6, scope: 0, stock: 0, mag: 3 },
+    uzi:        { len: 20, grip: 8, h: 4.0, rail: 0.8, scope: 0, stock: 3, mag: 6 },
+    crossbow:   { len: 26, grip: 7, h: 4.2, rail: 0.4, scope: 3, stock: 2, mag: 0 },
+    shotgun:    { len: 26, grip: 8, h: 4.4, rail: 0.6, scope: 0, stock: 6, mag: 0 },
+    drill:      { len: 24, grip: 8, h: 4.6, rail: 0.7, scope: 2, stock: 4, mag: 4 },
+    lasergun:   { len: 30, grip: 8, h: 4.2, rail: 0.9, scope: 6, stock: 5, mag: 4 },
+    bazooka:    { len: 32, grip: 9, h: 6.4, rail: 0.4, scope: 4, stock: 2, mag: 0 },
+    nuke:       { len: 36, grip: 9, h: 7.4, rail: 0.4, scope: 5, stock: 2, mag: 0 },
+    launcher:   { len: 30, grip: 9, h: 6.8, rail: 0.4, scope: 3, stock: 2, mag: 2 },
+    airstrike:  { len: 34, grip: 9, h: 7.0, rail: 0.4, scope: 4, stock: 2, mag: 2 },
+    flamer:     { len: 22, grip: 8, h: 5.2, rail: 0.4, scope: 0, stock: 3, mag: 0 },
+    plasmagun:  { len: 26, grip: 8, h: 5.6, rail: 0.5, scope: 0, stock: 3, mag: 0 },
+    molotov:    { len: 14, grip: 7, h: 4.4, rail: 0.3, scope: 0, stock: 0, mag: 0 },
+    canister:   { len: 18, grip: 8, h: 5.2, rail: 0.3, scope: 0, stock: 0, mag: 0 },
+    tesla:      { len: 25, grip: 8, h: 4.6, rail: 0.9, scope: 4, stock: 4, mag: 3 },
+    thunderorb: { len: 28, grip: 8, h: 5.0, rail: 0.9, scope: 5, stock: 4, mag: 3 },
+    spikedball: { len: 13, grip: 7, h: 3.6, rail: 0.4, scope: 0, stock: 0, mag: 0 },
+    biliard:    { len: 13, grip: 7, h: 3.6, rail: 0.4, scope: 0, stock: 0, mag: 0 },
+    forcefield: { len: 12, grip: 7, h: 3.2, rail: 0.3, scope: 0, stock: 0, mag: 0 },
+    domain:     { len: 12, grip: 7, h: 3.2, rail: 0.3, scope: 0, stock: 0, mag: 0 },
+    boomerang:  { len: 12, grip: 6, h: 3.0, rail: 0.2, scope: 0, stock: 0, mag: 0 },
+    neckbreaker:{ len: 12, grip: 6, h: 3.0, rail: 0.2, scope: 0, stock: 0, mag: 0 },
+    rifle:      { len: 29, grip: 8, h: 4.0, rail: 1.0, scope: 5, stock: 7, mag: 6 }
   };
+
+  /* melee / throwing weapons are drawn as blades, not guns */
+  var BLADES = { axe: 1, battleaxe: 1, sword: 1, scimitars: 1, circular: 1, ripper: 1 };
 
   /** Hand-space weapon: +x is the barrel, origin is the grip. */
   function drawWeapon(ctx, id, pal, s, flash, reloadDip) {
@@ -148,7 +170,37 @@ window.ZH = window.ZH || {};
     var dark = pal.metalDark || '#525c66';
     ctx.save();
     ctx.translate(0, reloadDip || 0);
-    if (id === 'flamer') {
+    if (BLADES[id]) {
+      /* handle + blade, swung in the aim direction */
+      roundRect(ctx, -3, -1.8, 12, 3.6, 1.2);
+      ctx.fillStyle = '#3b2a1c'; ctx.fill();
+      ctx.beginPath();
+      if (id === 'axe' || id === 'battleaxe') {
+        ctx.moveTo(9, -2);
+        ctx.lineTo(9 + 9, -11);
+        ctx.lineTo(9 + 13, -2);
+        ctx.lineTo(9 + 12, 9);
+        ctx.lineTo(9 + 4, 3);
+        ctx.closePath();
+        ctx.fillStyle = '#c9d6df';
+      } else if (id === 'circular' || id === 'ripper') {
+        ctx.arc(15, 0, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#b9c6cf';
+      } else {
+        ctx.moveTo(8, -2.2);
+        ctx.lineTo(30, -1.4);
+        ctx.lineTo(34, 0);
+        ctx.lineTo(30, 1.4);
+        ctx.lineTo(8, 2.2);
+        ctx.closePath();
+        ctx.fillStyle = '#d7e2ea';
+      }
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(20,26,30,0.6)'; ctx.lineWidth = 0.8; ctx.stroke();
+      ctx.restore();
+      return;
+    }
+    if (id === 'flamer' || id === 'plasmagun') {
       roundRect(ctx, -2, -g.h / 2, g.len * 0.62, g.h, 1.6);
       ctx.fillStyle = shade(dark, -0.25); ctx.fill();
       roundRect(ctx, g.len * 0.5, -2.1, g.len * 0.5, 4.2, 1.4);
@@ -607,7 +659,7 @@ window.ZH = window.ZH || {};
       ctx.rotate(localAim);
       var gscale = 0.84;
       ctx.scale(gscale, gscale * (facing > 0 ? 1 : 1));
-      drawWeapon(ctx, o.weapon || 'pistol', meta, 1, o.muzzle || 0,
+      drawWeapon(ctx, o.weapon || 'gun', meta, 1, o.muzzle || 0,
         reload > 0 ? Math.sin(reload * Math.PI) * 4 : 0);
       ctx.restore();
     } else {

@@ -1084,8 +1084,11 @@ body.in-game .mobile-controls { display: flex; }
   .btn { padding: 8px 14px; font-size: 14px; }
 }
 
-/* ---- level-up chooser ---- */
-#levelup-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 200; background: rgba(7,10,11,0.74); backdrop-filter: blur(3px); }
+/* ---- level-up chooser ----
+   NOTE: the base rule must be a CLASS rule, not an #id rule. An id selector
+   out-ranks `.levelup-overlay.is-active`, which used to leave the chooser
+   permanently display:none while Game.state sat on 'levelup' -> black screen. */
+.levelup-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 200; background: rgba(7,10,11,0.74); backdrop-filter: blur(3px); }
 .levelup-overlay.is-active { display: flex; }
 .levelup-panel { width: min(94vw, 420px); background: #0e1415; border: 1px solid #20303a; border-radius: 14px; padding: 22px 20px 20px; box-shadow: 0 24px 56px rgba(0,0,0,0.7), 0 0 0 1px rgba(167,184,128,0.18) inset; position: relative; overflow: hidden; }
 .levelup-panel::before { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% -10%, #2a3a2a 0%, transparent 62%); pointer-events: none; }
@@ -1117,6 +1120,22 @@ body.in-game .mobile-controls { display: flex; }
 .levelup-foot { margin-top: 14px; display: flex; gap: 10px; justify-content: flex-end; }
 .levelup-foot .btn { font-size: 12px; padding: 7px 14px; }
 .levelup-owned-all { color: #e9ff72; font-size: 12px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; text-align: center; padding: 10px 0; background: #14201a; border: 1px solid #2a3d2a; border-radius: 10px; margin-top: 12px; }
+
+/* card markup emitted by ui.js showLevelUpCard() */
+.levelup-card .lc-name { font-size: 13px; font-weight: 700; line-height: 1.25; color: #eaf3e0; margin-bottom: 4px; }
+.levelup-card .lc-desc { font-size: 11px; color: #8fa287; line-height: 1.4; min-height: 30px; }
+.levelup-card .lc-foot { margin-top: 8px; display: flex; gap: 6px; }
+.levelup-card .lc-foot .btn { font-size: 11px; padding: 6px 10px; flex: 1 1 auto; }
+.levelup-card.is-supply { border-color: #3a5a6a; }
+.levelup-card.is-supply .lc-name { color: #a9e2ff; }
+.levelup-card.is-evo { border-color: #6a5a2a; }
+.levelup-card.is-evo .lc-name { color: #ffd166; }
+
+/* narrow screens: stack the three offers */
+@media (max-width: 560px) {
+  .levelup-cards { grid-template-columns: 1fr; }
+  .levelup-panel { width: min(94vw, 420px); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }

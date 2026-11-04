@@ -1,83 +1,117 @@
 'use strict';
+/* The campaign must be the real GameSnacks content: 6 stages, the extracted
+   wave tables, the real boss zones and the 14-weapon catalogue. */
 const assert = require('assert');
 const { ZH } = require('./_setup');
 
 const themes = Object.keys(ZH.Arena.THEMES);
+const MULTIPLIERS = [1, 1.5, 2.25, 3.5, 4.75, 7.61];
 
-assert.strictEqual(ZH.LEVELS.length, 15, 'campaign has 15 missions');
-assert.strictEqual(ZH.CHAPTERS.length, 4, 'four chapters');
+assert.strictEqual(ZH.STAGES.length, 6, 'the original campaign has six stages');
+assert.strictEqual(ZH.LEVELS, ZH.STAGES, 'ZH.LEVELS aliases the stage table');
+assert.strictEqual(ZH.TIME_LEVEL_COMPLETED, 1200, 'a stage is won at 20 minutes');
 
-const names = new Set();
-ZH.LEVELS.forEach((level, index) => {
-  assert.strictEqual(level.id, index + 1, 'level ids are sequential');
-  assert.ok(level.name && level.name.length > 2, 'level ' + level.id + ' has a name');
-  assert.ok(!names.has(level.name), 'level names are unique');
-  names.add(level.name);
-  assert.ok(themes.includes(level.theme), 'level ' + level.id + ' uses a known theme');
-  assert.ok(level.chapter >= 1 && level.chapter <= 4, 'level ' + level.id + ' chapter');
-  assert.ok(Array.isArray(level.waves) && level.waves.length >= 3, 'level ' + level.id + ' has waves');
-  assert.ok(level.reward > 0, 'level ' + level.id + ' pays out');
-  if (level.unlockWeapon) {
-    assert.ok(ZH.WEAPONS[level.unlockWeapon], 'unlock weapon exists');
-  }
+ZH.STAGES.forEach((stage, i) => {
+  assert.strictEqual(stage.id, i, 'stage ids are 0-based and sequential');
+  assert.strictEqual(stage.name, 'Stage ' + (i + 1), 'stage name matches the build');
+  assert.strictEqual(stage.bg, 'bg' + (i + 1), 'stage uses the original map tile');
+  assert.strictEqual(stage.map, 'map_lv' + (i + 1) + '.png', 'original map image');
+  assert.strictEqual(stage.multiplier, MULTIPLIERS[i], 'stage multiplier');
+  assert.strictEqual(stage.timeToTreasure, 15, 'treasure chest at 15 s');
+  assert.ok(themes.includes(stage.tile), 'stage ' + stage.id + ' uses a known theme');
+  assert.strictEqual(stage.rewards.length, 3, 'three reward tiers');
+  assert.ok(stage.rewards[0] < stage.rewards[2], 'rewards escalate');
+  assert.ok(stage.waves.length >= 30, 'stage ' + stage.id + ' has the full wave list');
+});
 
-  level.waves.forEach((wave, wi) => {
-    if (wave.boss) {
-      assert.ok(ZH.BOSSES[wave.boss], 'boss ' + wave.boss + ' is defined');
+/* exact reward tables, straight from the extracted level data */
+assert.deepStrictEqual(ZH.STAGES.map((s) => s.rewards), [
+  [1000, 1500, 2500],
+  [2000, 3000, 5000],
+  [3000, 4500, 7500],
+  [4000, 6000, 10000],
+  [5000, 7500, 12500],
+  [6000, 9000, 15000]
+], 'rewards match the originals');
+
+/* every wave reference resolves, and the timings are seconds, not ms */
+ZH.STAGES.forEach((stage) => {
+  stage.waves.forEach((wave, wi) => {
+    const where = stage.name + ' wave ' + wi;
+    if (wave.enemy) assert.ok(ZH.ENEMY_TYPES[wave.enemy], where + ': ' + wave.enemy + ' exists');
+    if (wave.bosses) {
+      assert.ok(wave.bossZone && wave.bossZone.type === 'rect', where + ' has a rect boss zone');
+      wave.bosses.forEach((b) => assert.ok(ZH.BOSS_TYPES[b.type], where + ': boss ' + b.type));
     }
-    (wave.z || []).forEach(([type, count]) => {
-      assert.ok(ZH.TYPES[type], 'level ' + level.id + ' wave ' + wi + ' type ' + type);
-      assert.ok(count > 0 && count < 40, 'wave sizes stay sane');
-    });
-    assert.ok(typeof wave.delay === 'number' && wave.delay >= 0, 'wave delay');
+    assert.ok(wave.startTime >= 0 && wave.startTime <= 630, where + ' start time in seconds');
+    assert.ok(wave.duration > 0 && wave.duration <= 240, where + ' duration in seconds');
+    if (wave.freq) assert.ok(['LOW', 'MID', 'HI'].includes(wave.freq), where + ' frequency');
   });
 });
 
-/* chapter bosses */
-[4, 8, 12, 15].forEach((id) => {
-  const level = ZH.LEVEL_BY_ID[id];
-  assert.ok(level.boss, 'mission ' + id + ' is a boss mission');
-  assert.ok(ZH.BOSSES[level.boss], 'mission ' + id + ' boss exists');
+/* stage one: the two bosses and the minibosses the original schedules */
+const s1 = ZH.STAGES[0];
+const bosses = s1.waves.filter((w) => w.bosses).map((w) => w.bosses[0].type);
+assert.deepStrictEqual(bosses.sort(), ['boss_soldier', 'boss_tower'], 'stage 1 bosses');
+assert.deepStrictEqual(s1.waves.filter((w) => w.bossZone).map((w) => w.bossZone.width),
+  [1200, 1200], 'stage 1 boss zones are 1200x1200');
+
+/* bosses shrink later in the campaign, exactly as extracted */
+assert.strictEqual(ZH.STAGES[5].waves.filter((w) => w.bossZone)[0].bossZone.width, 1024);
+
+/* the full enemy roster the waves need is present */
+['zombieA', 'zombieB', 'zombieC', 'zombieD', 'builder', 'reptile', 'bat', 'cop', 'manager',
+  'spider1', 'spider2', 'toxic1', 'toxic2', 'slime1', 'slime2', 'slug', 'tower1', 'tower2',
+  'assault1', 'assault2', 'miniboss_builder', 'miniboss_reptile', 'miniboss_fighter',
+  'miniboss_spider', 'miniboss_toxic1', 'miniboss_toxic2', 'miniboss_soldier',
+  'miniboss_tower'].forEach((t) => {
+  assert.ok(ZH.ENEMY_TYPES[t], 'enemy ' + t + ' defined');
+  assert.ok(ZH.ENEMY_TYPES[t].hp > 0 && ZH.ENEMY_TYPES[t].name, t + ' has hp and a name');
 });
 
-/* every boss has the stats the AI reads */
-Object.keys(ZH.BOSSES).forEach((id) => {
-  const b = ZH.BOSSES[id];
-  ['hp', 'speed', 'dmg', 'atkRange', 'atkCd', 'coins', 'variant'].forEach((k) => {
-    assert.ok(b[k] != null, 'boss ' + id + ' has ' + k);
-  });
-});
+/* ---------------- weapons: 14 base + 14 evolutions ---------------- */
+assert.strictEqual(ZH.WEAPON_ORDER.length, 14, 'the original catalogue has 14 weapons');
+assert.deepStrictEqual(ZH.WEAPON_ORDER, ['axe', 'crossbow', 'flamer', 'gun', 'sword', 'drill',
+  'bazooka', 'boomerang', 'circular', 'tesla', 'spikedball', 'forcefield', 'launcher', 'molotov'],
+'the 14 weapons, in the original order');
 
-/* warden scales above the first boss */
-assert.ok(ZH.BOSSES.warden.hp > ZH.BOSSES.rott.hp * 3, 'final boss is far tougher');
-
-/* endless curve */
-for (let n = 1; n <= 24; n++) {
-  const wave = ZH.endlessWave(n);
-  assert.strictEqual(wave.wave, n);
-  assert.ok(wave.z.length > 0, 'endless wave ' + n + ' spawns something');
-  const total = wave.z.reduce((sum, p) => sum + p[1], 0);
-  assert.ok(total >= 4 && total <= 46, 'endless wave ' + n + ' population is bounded');
-  assert.ok(wave.hpScale >= 1, 'endless hp scales up');
-  if (n % 5 === 0) assert.ok(wave.boss, 'every fifth wave is a boss');
-  else assert.ok(!wave.boss, 'no boss on wave ' + n);
-}
-
-/* weapons */
-assert.ok(ZH.WEAPON_ORDER.length >= 5, 'arsenal has depth');
+const evolutions = [];
 ZH.WEAPON_ORDER.forEach((id) => {
   const w = ZH.WEAPONS[id];
-  assert.ok(w.dmg > 0 && w.rate > 0 && w.mag > 0 && w.reload > 0, id + ' has usable stats');
-  const st = ZH.statsFor(id, { damage: 3, mag: 2, reload: 2 });
-  assert.ok(st.dmg > w.dmg, id + ' damage upgrade applies');
-  assert.ok(st.mag > w.mag, id + ' magazine upgrade applies');
-  assert.ok(st.reload < w.reload, id + ' reload upgrade applies');
+  assert.ok(w.dmg > 0 && w.cooldown > 0, id + ' has usable stats');
+  assert.ok(ZH.WEAPONS[w.evo], id + ' evolves into a real weapon (' + w.evo + ')');
+  assert.ok(ZH.SUPPLIES[w.supply], id + ' evolves via a real supply (' + w.supply + ')');
+  assert.ok(ZH.supplyEvolves(w.supply, id), id + ' is evolved by ' + w.supply);
+  // level 5 without the supply keeps the base gun
+  assert.strictEqual(ZH.effectiveWeapon(id, { level: 6 }, {}), id, id + ' needs the supply');
+  assert.strictEqual(ZH.effectiveWeapon(id, { level: 6 }, { [w.supply]: 1 }), w.evo,
+    id + ' evolves at level 6 with the supply');
+  evolutions.push(w.evo);
 });
+assert.strictEqual(new Set(evolutions).size, 14, 'every base weapon has its own evolution');
 
-ZH.UPGRADES.forEach((u) => {
-  assert.ok(u.max > 0 && u.price > 0, 'upgrade ' + u.id + ' is purchasable');
-  assert.ok(ZH.priceFor(u, 0) >= u.price, 'first level costs the base price');
-  assert.ok(ZH.priceFor(u, 2) > ZH.priceFor(u, 1), 'upgrade prices escalate');
+/* ---------------- supplies ---------------- */
+assert.strictEqual(ZH.SUPPLY_IDS.length, 14, '14 supplies incl. the two pickups');
+const passive = ZH.SUPPLY_IDS.filter((id) => !ZH.SUPPLIES[id].consumable);
+assert.strictEqual(passive.length, 12, '12 passive supplies evolve weapons');
+passive.forEach((id) => {
+  const s = ZH.SUPPLIES[id];
+  assert.strictEqual(s.bonus.length, 6, id + ' has five levels of bonus');
+  assert.ok(!ZH.supplyDesc(id, 1).includes('[x]'), id + ' description is filled in');
 });
+assert.strictEqual(ZH.attribsFrom({ kevlar: 1 }).defense, 10, 'kevlar level 1 gives 10 defense');
+assert.strictEqual(ZH.attribsFrom({ supplements: 5 }).attack_bonus, 1, 'supplements lvl 5 = +100%');
 
-console.log('levels.test.js ✓ campaign, bosses, endless curve and arsenal');
+/* ---------------- coin skills ---------------- */
+assert.strictEqual(ZH.SKILLS.length, 6, 'six permanent skills');
+assert.deepStrictEqual(ZH.SKILLS.map((s) => s.name),
+  ['POWER', 'HEALTH', 'ARMOR', 'AID', 'FORTUNE', 'LEARNING'], 'skill names');
+assert.strictEqual(ZH.MAX_PLAYER_SKILL, 30, '30 levels each');
+assert.strictEqual(ZH.skillValue('power', 1), 10, 'base attack');
+assert.strictEqual(ZH.skillValue('health', 1), 100, 'base health');
+assert.strictEqual(ZH.skillValue('power', 30), 880, 'top attack');
+assert.strictEqual(ZH.priceForSkill(1), 0, 'the first level is free');
+assert.strictEqual(ZH.priceForSkill(2), 1000, 'then 1,000');
+assert.strictEqual(ZH.priceForSkill(30), 435000, 'top price 435,000');
+
+console.log('levels.test.js ✓ six real stages, 14 weapons, 14 supplies, six coin skills');

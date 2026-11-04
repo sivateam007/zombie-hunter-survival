@@ -12,11 +12,13 @@ window.ZH = window.ZH || {};
     version: 1,
     name: 'Hunter',
     coins: 0,
-    bestLevel: 1,
-    maxLevel: 15,
-    weapons: ['pistol'],
-    currentWeapon: 'pistol',
-    upgrades: { damage: 0, mag: 0, reload: 0, health: 0, speed: 0, armor: 0, dash: 0, luck: 0 },
+    bestLevel: 0,
+    maxLevel: 6,
+    weapons: ['gun'],
+    currentWeapon: 'gun',
+    // the original's six coin skills, each starting at level 1
+    skills: { power: 1, health: 1, defense: 1, firstaid: 1, fortune: 1, learning: 1 },
+    upgrades: {},
     stats: { kills: 0, shots: 0, deaths: 0, bestEndless: 0, endlessKills: 0, playTime: 0, levelsCleared: 0 },
     settings: { muted: false, shake: true, quality: 'high' },
     seenIntro: false
@@ -29,7 +31,10 @@ window.ZH = window.ZH || {};
       var raw = window.localStorage.getItem(KEY);
       if (!raw) return clone(DEFAULTS);
       var data = JSON.parse(raw);
-      return merge(clone(DEFAULTS), data);
+      var out = merge(clone(DEFAULTS), data);
+      // the campaign size lives in levels.js; an old save cannot outvote it
+      if (ZH.STAGES && ZH.STAGES.length) out.maxLevel = ZH.STAGES.length;
+      return out;
     } catch (e) {
       return clone(DEFAULTS);
     }
@@ -91,31 +96,26 @@ window.ZH = window.ZH || {};
     persist();
   }
 
-  function upgradeLevel(id) { return save.upgrades[id] || 0; }
+  /* ---- coin skills (the original's only shop: six skills, 30 levels) ---- */
+  function skillLevel(id) { return (save.skills && save.skills[id]) || 1; }
 
-  function buyUpgrade(id) {
-    var up = ZH.UP_BY_ID[id];
-    if (!up) return { ok: false, reason: 'unknown' };
-    var lvl = upgradeLevel(id);
-    if (lvl >= up.max) return { ok: false, reason: 'max' };
-    var price = ZH.priceFor(up, lvl);
+  function buySkill(id) {
+    var def = ZH.SKILL_BY_ID && ZH.SKILL_BY_ID[id];
+    if (!def) return { ok: false, reason: 'unknown' };
+    var lvl = skillLevel(id);
+    var max = ZH.MAX_PLAYER_SKILL || 30;
+    if (lvl >= max) return { ok: false, reason: 'max' };
+    var price = ZH.priceForSkill(lvl);
     if (save.coins < price) return { ok: false, reason: 'coins', price: price };
     save.coins -= price;
-    save.upgrades[id] = lvl + 1;
+    save.skills[id] = lvl + 1;
     persist();
     return { ok: true, level: lvl + 1, price: price };
   }
 
-  function buyWeapon(id) {
-    var w = ZH.WEAPONS[id];
-    if (!w) return { ok: false, reason: 'unknown' };
-    if (hasWeapon(id)) return { ok: false, reason: 'owned' };
-    if (save.coins < w.price) return { ok: false, reason: 'coins' };
-    save.coins -= w.price;
-    save.weapons.push(id);
-    persist();
-    return { ok: true };
-  }
+  /* weapons are not sold anywhere: the original hands them out as level-up
+     cards. Kept so old call sites fail gracefully instead of throwing. */
+  function buyWeapon() { return { ok: false, reason: 'shop' }; }
 
   function recordRun(result) {
     var s = save.stats;
@@ -156,8 +156,8 @@ window.ZH = window.ZH || {};
     unlockWeapon: unlockWeapon,
     hasWeapon: hasWeapon,
     clearLevel: clearLevel,
-    upgradeLevel: upgradeLevel,
-    buyUpgrade: buyUpgrade,
+    skillLevel: skillLevel,
+    buySkill: buySkill,
     buyWeapon: buyWeapon,
     recordRun: recordRun,
     setName: setName,

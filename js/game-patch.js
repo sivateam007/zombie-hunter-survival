@@ -25,7 +25,7 @@
   //
   // This is a small additive contract. Existing saves without
   // currentWeapon still work: we fall back to the first unlocked
-  // weapon we can find, and then to 'pistol'.
+  // weapon we can find, and then to 'gun'.
   function defaultPrimary(save) {
     if (save && save.currentWeapon && ZH.WEAPONS && ZH.WEAPONS[save.currentWeapon]) {
       return save.currentWeapon;
@@ -36,7 +36,7 @@
         if (ZH.WEAPONS[owned[i]]) return owned[i];
       }
     }
-    return 'pistol';
+    return 'gun';
   }
 
   // ---- 2. Keep Game.primaryWeaponId in sync with the save ----
@@ -48,7 +48,7 @@
       var p = this.player;
       if (p && p.weapon) return p.weapon;
       var save = firstExistingSave();
-      return save ? defaultPrimary(save) : 'pistol';
+      return save ? defaultPrimary(save) : 'gun';
     },
     set: function (id) {
       var save = firstExistingSave();

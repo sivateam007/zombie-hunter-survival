@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0b0f10">
-<meta name="description" content="Zombie Hunter: Survival — a top-down survival shooter. Four chapters, fifteen missions, endless night, and a lot of things that used to be people.">
+<meta name="description" content="Zombie Hunter: Survival — a top-down survival shooter. Six stages of twenty minutes each, endless night, and a lot of things that used to be people.">
 <title>Zombie Hunter: Survival</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e1415'/%3E%3Ccircle cx='32' cy='30' r='15' fill='%2387975f'/%3E%3Ccircle cx='26' cy='27' r='3.4' fill='%23e9ff72'/%3E%3Ccircle cx='39' cy='27' r='3.4' fill='%23e9ff72'/%3E%3Cpath d='M24 44h16l-2 9H26z' fill='%23cfc7ae'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/style.css?v=1">
+<link rel="stylesheet" href="css/style.css?v=2">
 </head>
 <body>
 <div id="app">
@@ -89,10 +89,10 @@
           <div class="logo-kicker">SURVIVAL</div>
           <h1 class="logo">ZOMBIE<br><span>HUNTER</span></h1>
           <div class="logo-rule"></div>
-          <p class="logo-sub">Four chapters. Fifteen missions. One night that never ends.</p>
+          <p class="logo-sub">Six stages. Twenty minutes each. One night that never ends.</p>
         </div>
         <div class="menu-actions" data-anim>
-          <button class="btn primary" id="btn-campaign"><span>CAMPAIGN</span><em>15 missions · 4 bosses</em></button>
+          <button class="btn primary" id="btn-campaign"><span>CAMPAIGN</span><em>6 stages · 20 minutes each</em></button>
           <button class="btn" id="btn-endless"><span>ENDLESS NIGHT</span><em>How long can you last?</em></button>
           <div class="menu-row">
             <button class="btn ghost" id="btn-shop">ARSENAL</button>
@@ -146,7 +146,7 @@
       <header class="panel-head">
         <div>
           <span class="kicker">SAFEHOUSE</span>
-          <h2>ARSENAL</h2>
+          <h2>SURVIVOR SKILLS</h2>
         </div>
         <div class="head-right">
           <div class="coin-chip"><span class="pip coin"></span><span id="shop-coins">0</span></div>
@@ -154,9 +154,8 @@
         </div>
       </header>
       <div class="shop-scroll">
-        <h3 class="section-title">WEAPONS</h3>
-        <div id="weapon-grid" class="weapon-grid"></div>
-        <h3 class="section-title">PERMANENT UPGRADES</h3>
+        <h3 class="section-title">PERMANENT SKILLS</h3>
+        <p class="shop-note">Weapons come from the level-up cards mid-run. Scrap buys the six permanent skills — 30 levels each.</p>
         <div id="upgrade-grid" class="upgrade-grid"></div>
       </div>
     </div>
@@ -279,12 +278,12 @@
         <div class="help-col">
           <h3>SURVIVAL RULES</h3>
           <ul class="rules">
-            <li><b>Clear every wave</b> to finish a mission. The last wave of a chapter is a boss.</li>
-            <li><b>Scrap</b> is dropped by the dead. Spend it in the Arsenal between missions.</li>
+            <li><b>Survive 20 minutes</b> to clear a stage. Boss zones freeze the clock until the bosses die.</li>
+            <li><b>Level up</b> for a 3-card offer: a new weapon, a weapon level, or a supply.</li>
+            <li><b>Supplies</b> stack five levels and let a level-6 weapon evolve into its real form.</li>
+            <li><b>Scrap</b> is dropped by the dead. Spend it on the six permanent skills in the safehouse.</li>
             <li><b>Rolling</b> makes you briefly untouchable — use it to slip out of a bite.</li>
-            <li><b>Ammo</b> is unlimited, magazines are not. Reload before the horde reaches you.</li>
-            <li><b>Spitters</b> keep their distance and lob acid. Close the gap or shoot them first.</li>
-            <li><b>Brutes</b> soak damage. Shotguns and the sniper are your friends.</li>
+            <li><b>Ranged</b> enemies (cops, turrets, assaults) shoot back. Break line or close in fast.</li>
           </ul>
         </div>
       </div>
@@ -294,18 +293,18 @@
 </div>
 
 <script src="js/vendor/anime.min.js?v=1"></script>
-<script src="js/rig.js?v=1"></script>
+<script src="js/rig.js?v=2"></script>
 <script src="js/arena.js?v=3"></script>
-<script src="js/weapons.js?v=1"></script>
-<script src="js/levels.js?v=1"></script>
-<script src="js/entities.js?v=1"></script>
+<script src="js/weapons.js?v=3"></script>
+<script src="js/levels.js?v=2"></script>
+<script src="js/entities.js?v=3"></script>
 <script src="js/audio.js?v=1"></script>
-<script src="js/storage.js?v=1"></script>
+<script src="js/storage.js?v=4"></script>
 <script src="js/anim.js?v=1"></script>
 <script src="js/net.js?v=1"></script>
-<script src="js/game.js?v=3"></script>
-<script src="js/game-patch.js?v=1"></script>
-<script src="js/ui.js?v=1"></script>
-<script src="js/main.js?v=1"></script>
+<script src="js/game.js?v=7"></script>
+<script src="js/game-patch.js?v=2"></script>
+<script src="js/ui.js?v=4"></script>
+<script src="js/main.js?v=2"></script>
 </body>
 </html>

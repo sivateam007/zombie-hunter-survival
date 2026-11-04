@@ -19,7 +19,7 @@
     // Survivor primary-weapon picker on the menu: pick once, every run
     // starts with that weapon (original GameSnacks model).
     var unblockedWeaponIds = (ZH.Save && ZH.Save.get && ZH.Save.get().weapons) ||
-      ['pistol'];
+      ['gun'];
     ZH.UI.showMenu({ unblockedWeaponIds: unblockedWeaponIds });
 
     // After the player finishes picking a weapon, start the first stage.

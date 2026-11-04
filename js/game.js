@@ -81,25 +81,15 @@ window.ZH = window.ZH || {};
     this.arena = ZH.Arena.get(stage.tile || 'street', (stageId || 0) * 123);
     this.resetSimulation();
     var save = ZH.Save.get();
+    var wanted = primaryWeapon || save.currentWeapon || 'gun';
+    if (!ZH.WEAPONS || !ZH.WEAPONS[wanted]) wanted = 'gun';
     this.player = ZH.createSurvivor({
       x: this.arena.w / 2, y: this.arena.h / 2,
-      weapon: primaryWeapon || save.currentWeapon || 'Gun'
+      weapon: wanted
     });
     this.player.primaryWeapon = this.player.weapon;
-    var owner = save.weapons || [];
-    if (owner.indexOf(this.player.primaryWeapon) === -1) {
-      // fall back to the first weapon the survivor actually owns
-      var fallback = 'pistol';
-      for (var oi = 0; oi < owner.length; oi++) {
-        if (ZH.WEAPONS && ZH.WEAPONS[owner[oi]]) { fallback = owner[oi]; break; }
-      }
-      this.player.primaryWeapon = fallback;
-      this.player.weapon = fallback;
-      if (!this.player.weapons[fallback]) {
-        this.player.weapons[fallback] = { level: 1, class: fallback, timer: 0 };
-      }
-    }
     this.player.supplies = {};
+    this.applySkills();
     this.camera.x = this.player.x;
     this.camera.y = this.player.y;
     this.state = 'playing';
@@ -111,8 +101,35 @@ window.ZH = window.ZH || {};
     this.waveCycle = 0;
     this.elapsed = 0;
     this.coins = 0; this.score = 0; this.exp = 0;
+    this.treasureSpawned = false;
+    this.expToNext = 1000;
     if (window.ZH && ZH.Anim) ZH.Anim.banner(stage.name, 'SURVIVE 20 MINUTES');
     this.lastTs = performance.now();
+  };
+
+  /* the six coin skills set the survivor's base stats for the run */
+  Game.applySkills = function () {
+    var p = this.player;
+    if (!p || !ZH.skillValue) return;
+    var save = ZH.Save.get();
+    var skills = save.skills || {};
+    p.attack = ZH.skillValue('power', skills.power) || 10;
+    p.maxHp = ZH.skillValue('health', skills.health) || 100;
+    p.hp = p.maxHp;
+    p.firstaid = ZH.skillValue('firstaid', skills.firstaid) || 25;
+    p.fortune = ZH.skillValue('fortune', skills.fortune) || 0;
+    p.learning = ZH.skillValue('learning', skills.learning) || 0;
+    this.skillDefense = ZH.skillValue('defense', skills.defense) || 0;
+    this.recomputeAttribs();
+  };
+
+  /* supplies collected in the run stack on top of the coin skills */
+  Game.recomputeAttribs = function () {
+    var p = this.player;
+    if (!p) return;
+    var a = ZH.attribsFrom ? ZH.attribsFrom(p.supplies) : {};
+    a.defense = (a.defense || 0) + (this.skillDefense || 0);
+    p.attribs = a;
   };
 
   Game.startCampaign = function (id) {
@@ -177,7 +194,8 @@ window.ZH = window.ZH || {};
           // `max` is a CONCURRENT cap (as in the original: the wave keeps
           // feeding the horde for its whole window while the count stays
           // under max), not a one-shot lifetime total.
-          if (this.waveAlive(wave.enemy) < (wave.max || 20)) {
+          var capped = wave.total != null && wave.spawned >= wave.total;
+          if (!capped && this.waveAlive(wave.enemy) < (wave.max || 20)) {
             wave.spawned = (wave.spawned || 0) + 1;
             this.spawnWaveEnemies(wave);
           }
@@ -188,6 +206,9 @@ window.ZH = window.ZH || {};
       } else if (t >= wave.startTime && !wave.used) {
         wave.used = true;
         if (wave.bossZone) {
+          // never open a boss zone during the last 30 s of the run: the
+          // clock is frozen inside one, and the stage has to be winnable
+          if (t >= (ZH.TIME_LEVEL_COMPLETED || 1200) - 30) continue;
           // boss zones fire once per cycle, on a longer cadence later on
           if (wave.fired && wave.fired > 0 && this.waveCycle > 0 &&
               this.waveCycle % 4 !== 0) {
@@ -260,9 +281,11 @@ window.ZH = window.ZH || {};
   };
 
   Game.spawnWaveEnemies = function (wave) {
-    if (this.zombies.length > 150) return;
+    if (this.zombies.length > 320) return;
     var pos = this.findSpawnPoint(600);
-    var z = ZH.createEnemy(wave.enemy, pos.x, pos.y, this.elapsed / 1200);
+    // enemy HP scales with the stage multiplier, exactly like the original
+    var mult = (this.stage && this.stage.multiplier) || 1;
+    var z = ZH.createEnemy(wave.enemy, pos.x, pos.y, mult);
     if (z) this.zombies.push(z);
   };
 
@@ -394,6 +417,7 @@ window.ZH = window.ZH || {};
       var w = p.weapons[name];
       var def = ZH.WEAPONS && ZH.WEAPONS[name];
       if (!def) continue;
+      if (def.ammo === false) continue;          /* melee / orbit guns never reload */
       if (w.mag == null) { w.mag = def.mag; w.reloading = 0; }
       if (w.reloading > 0 || w.mag >= def.mag) continue;
       w.reloading = def.reload || 1.5;
@@ -418,9 +442,14 @@ window.ZH = window.ZH || {};
 
   /* ------------------------------ update ------------------------------ */
   Game.update = function (dt) {
+    /* self-heal: a 'levelup' state with no chooser on screen is a dead end. */
+    if (this.state === 'levelup' && !document.getElementById('levelup-overlay')) {
+      this.state = 'playing';
+    }
     if (this.state !== 'playing') return;
     this.t += dt;
-    this.elapsed += dt;
+    /* a live boss zone freezes the level clock (original behaviour) */
+    if (!this.bossZoneActive) this.elapsed += dt;
 
     var p = this.player;
     this.applyInput();
@@ -486,11 +515,23 @@ window.ZH = window.ZH || {};
     }
 
     this.updateWaves(dt);
+
+    // treasure chest on timeToTreasure: grabbing it opens the skill slots
+    if (this.stage && !this.treasureSpawned &&
+        this.elapsed >= (this.stage.timeToTreasure || 15)) {
+      this.treasureSpawned = true;
+      this.pickups.push({
+        type: 'treasure',
+        x: p.x + rand(-90, 90), y: p.y + rand(-90, 90), life: 90
+      });
+      if (ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('TREASURE', 'Grab it to pick a skill');
+    }
+
     this.updateCamera(dt);
     this.pushHud();
 
-    // check win (20 minutes)
-    if (this.elapsed >= 1200 && !this.bossZoneActive) {
+    // check win (TIME_LEVEL_COMPLETED = 1,200,000 ms)
+    if (this.elapsed >= (ZH.TIME_LEVEL_COMPLETED || 1200) && !this.bossZoneActive) {
       this.finishStage(true);
       return;
     }
@@ -501,26 +542,39 @@ window.ZH = window.ZH || {};
       return;
     }
 
-    // level-up XP gate (survivor-style, every weapon is free)
-    if (p.expToNext && p.exp != null && p.exp >= p.expToNext) {
-      var n = p.expToNext || 100;
-      p.exp = Math.max(0, p.exp - n);
-      p.expToNext = Math.round(n * 1.35);
+    // level-up XP gate: expsToLevel = floor(1000 * 1.25^(level-1))
+    var guard = 0;
+    while (p.exp != null && p.exp >= this.expNeeded(p.level || 1) && guard++ < 5) {
+      var need = this.expNeeded(p.level || 1);
+      p.exp -= need;
       p.level = (p.level || 1) + 1;
       p.invuln = 1.2;
       if (this.ui) this.ui.showLevelUp();
+      if (this.state === 'levelup') break;
     }
+    if (p.exp < 0) p.exp = 0;
+  };
+
+  /* XP the next level costs (original: floor(1000 * 1.25^(level-1))) */
+  Game.expNeeded = function (level) {
+    var lvl = Math.max(1, level || 1);
+    var need = Math.floor(1000 * Math.pow(1.25, lvl - 1));
+    var learn = (this.player && this.player.learning) || 0;
+    return Math.max(50, Math.round(need / (1 + learn / 100)));
   };
 
   /* push survivor state into the DOM HUD (hp, weapon, coins, wave…) */
   Game.pushHud = function () {
     if (!this.ui || !this.ui.updateHud || !this.player) return;
     var p = this.player;
-    var wid = p.primaryWeapon || 'pistol';
-    var w = (ZH.WEAPONS && ZH.WEAPONS[wid]) || { id: wid, name: wid, short: wid.toUpperCase(), mag: 1, reload: 1.5 };
+    var wid = p.primaryWeapon || 'gun';
     var live = (p.weapons && p.weapons[wid]) || {};
+    // an evolved gun runs on its own stats (name, magazine, ammo)
+    var eid = ZH.effectiveWeapon ? ZH.effectiveWeapon(wid, live, p.supplies) : wid;
+    var w = (ZH.WEAPONS && ZH.WEAPONS[eid]) || { id: wid, name: wid, short: wid.toUpperCase(), mag: 1, reload: 1.5 };
     var magMax = w.mag || 1;
     var magNow = live.mag == null ? magMax : Math.max(0, Math.round(live.mag));
+    if (w.ammo === false) { magNow = '∞'; magMax = '∞'; }
     var relTotal = w.reload || 1.5;
     var relLeft = live.reloading || 0;
     // find the active boss for the boss bar
@@ -562,7 +616,10 @@ window.ZH = window.ZH || {};
   };
 
   Game.render = function () {
-    if (!this.player || this.state === 'levelup') return;
+    /* keep drawing during 'levelup' — the chooser is a DOM overlay on top of
+       the frozen world. Bailing here used to leave the canvas black if the
+       overlay failed to appear. */
+    if (!this.player) return;
     var ctx = this.ctx;
     if (!ctx) return;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
@@ -628,6 +685,14 @@ window.ZH = window.ZH || {};
       ctx.restore();
     }
 
+    // a full horde would blow the frame budget with the detailed rig, so
+    // past 45 live enemies the non-bosses get a cheap silhouette
+    var horde = this.zombies.length > 45;
+    var viewX0 = this.camera.x - this.W / 2 / z - 90;
+    var viewX1 = this.camera.x + this.W / 2 / z + 90;
+    var viewY0 = this.camera.y - this.H / 2 / z - 140;
+    var viewY1 = this.camera.y + this.H / 2 / z + 90;
+
     // characters sorted by y
     var order = this.zombies.slice();
     order.push(this.player);
@@ -635,6 +700,7 @@ window.ZH = window.ZH || {};
 
     for (var oi = 0; oi < order.length; oi++) {
       var e = order[oi];
+      if (e !== this.player && (e.x < viewX0 || e.x > viewX1 || e.y < viewY0 || e.y > viewY1)) continue;
       if (e === this.player) {
         ZH.Rig.draw(ctx, {
           x: e.x, y: e.y, s: 1.0, kind: 'hunter', variant: 'hunter',
@@ -642,6 +708,8 @@ window.ZH = window.ZH || {};
           dead: e.dead ? clamp(e.deadT, 0, 1) : 0,
           pose: { t: this.t, moving: Math.hypot(e.moveX, e.moveY), walkPhase: e.walkPhase || 0 }
         });
+      } else if (horde && !e.boss) {
+        drawCheapZombie(ctx, e);
       } else {
         ZH.Rig.draw(ctx, {
           x: e.x, y: e.y, s: e.scale || 1, kind: 'zombie', variant: e.variant,
@@ -690,6 +758,24 @@ window.ZH = window.ZH || {};
     // HUD lives in the DOM (ui.updateHud); no canvas duplicate
   };
 
+  /* cheap zombie silhouette used when the screen is packed */
+  function drawCheapZombie(ctx, e) {
+    var s = e.scale || 1;
+    var bob = Math.sin((e.walkPhase || 0)) * 1.6;
+    ctx.save();
+    ctx.translate(e.x, e.y + bob);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.ellipse(0, 14, 12 * s, 5 * s, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = e.hurtFlash > 0.05 ? '#f3e2cf' : '#6f7a52';
+    ctx.beginPath(); ctx.ellipse(0, -2, 9 * s, 15 * s, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = e.hurtFlash > 0.05 ? '#fff3e6' : '#87975f';
+    ctx.beginPath(); ctx.arc(0, -18 * s, 7.5 * s, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#e9ff72';
+    ctx.fillRect(-4 * s, -20 * s, 2.6 * s, 2.6 * s);
+    ctx.fillRect(1.6 * s, -20 * s, 2.6 * s, 2.6 * s);
+    ctx.restore();
+  }
+
   Game.renderHUD = function (ctx) {
     if (!this.player) return;
     var p = this.player;
@@ -728,34 +814,44 @@ window.ZH = window.ZH || {};
     var world = this;
     dt = dt || 0.016;
     for (var name in p.weapons) {
-      var w = p.weapons[name];
-      var def = ZH.WEAPONS && ZH.WEAPONS[name];
-      if (!def) continue;
-      if (w.mag == null) { w.mag = def.mag; w.reloading = 0; }
+      var st = p.weapons[name];
+      var base = ZH.WEAPONS && ZH.WEAPONS[name];
+      if (!base) continue;
 
-      /* reload in progress — hold fire until it finishes */
-      if (w.reloading > 0) {
-        w.reloading -= dt;
-        if (w.reloading <= 0) {
-          w.reloading = 0;
-          w.mag = def.mag;
-          if (ZH.Audio) ZH.Audio.play('reloadDone');
+      /* level 6 + the paired supply swaps in the evolved gun */
+      var eff = ZH.effectiveWeapon ? ZH.effectiveWeapon(name, st, p.supplies) : name;
+      var def = ZH.WEAPONS[eff] || base;
+      var usesAmmo = def.ammo !== false;
+
+      if (!usesAmmo) {
+        st.mag = def.mag;
+        st.reloading = 0;
+      } else {
+        if (st.mag == null) { st.mag = base.mag; st.reloading = 0; }
+        /* reload in progress — hold fire until it finishes */
+        if (st.reloading > 0) {
+          st.reloading -= dt;
+          if (st.reloading <= 0) {
+            st.reloading = 0;
+            st.mag = base.mag;
+            if (ZH.Audio) ZH.Audio.play('reloadDone');
+          }
+          continue;
         }
-        continue;
       }
 
-      w.timer = (w.timer || 0) - dt;
-      if (w.timer > 0) continue;
+      st.timer = (st.timer || 0) - dt;
+      if (st.timer > 0) continue;
 
       /* magazine dry: auto-reload (the button just starts it early) */
-      if (w.mag <= 0) {
-        w.reloading = def.reload || 1.5;
+      if (usesAmmo && st.mag <= 0) {
+        st.reloading = base.reload || 1.5;
         if (ZH.Audio) ZH.Audio.play('reload');
         continue;
       }
 
-      w.timer = ZH.fireWeapon(name, w.level || 1, p, world);
-      w.mag -= 1;
+      st.timer = ZH.fireWeapon(eff, st.level || 1, p, world);
+      if (usesAmmo) st.mag -= 1;
     }
   };
 

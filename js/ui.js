@@ -18,6 +18,11 @@ window.ZH = window.ZH || {};
     var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
     return m + ':' + (s < 10 ? '0' : '') + s;
   }
+  /* skill values are small decimals (0.1) or big numbers (435000) */
+  function fmtNum(v) {
+    if (v == null) return '—';
+    return (Math.round(v * 100) / 100).toLocaleString();
+  }
 
   var UI = {
     init: function (game) {
@@ -104,25 +109,27 @@ window.ZH = window.ZH || {};
     showHelp: function () { this.showOnly('screen-help'); },
 
     showBriefing: function (level, mode) {
-      var brief = $('brief-text');
+      var chapter = ZH.chapterOf ? ZH.chapterOf(level) : { name: 'CAMPAIGN' };
       $('brief-name').textContent = mode === 'endless' ? 'ENDLESS NIGHT' : level.name.toUpperCase();
-      $('brief-chapter').textContent = mode === 'endless' ? 'SURVIVAL' : 'CHAPTER ' + level.chapter +
-        ' · ' + ZH.CHAPTERS[level.chapter - 1].name.toUpperCase();
-      brief.textContent = level.brief || '';
+      $('brief-chapter').textContent = mode === 'endless'
+        ? 'SURVIVAL'
+        : 'STAGE ' + ((level.id || 0) + 1) + ' OF ' + (ZH.STAGES ? ZH.STAGES.length : 6) +
+          ' · ' + chapter.name;
+      $('brief-text').textContent = mode === 'endless'
+        ? 'The waves never stop. Survive as long as you can.'
+        : 'Survive ' + Math.round((ZH.TIME_LEVEL_COMPLETED || 1200) / 60) +
+          ' minutes. The horde runs on the original wave schedule and the boss zone freezes the clock.';
       $('brief-objective').textContent = mode === 'endless'
-        ? 'Survive as long as you can. Every stage has a boss zone.'
-        : 'Survive ' + (level.timeToTreasure ? Math.round(level.timeToTreasure/1000) + 's' : '') + ' and the boss zone.';
-      var set = {};
-      (level.waves || []).forEach(function (w) {
-        set[w.enemy] = true;
-      });
-      var names = Object.keys(set).map(function (k) { return k.charAt(0).toUpperCase() + k.slice(1) + 's'; });
-      $('brief-horde').textContent = mode === 'endless' ? 'Everything, eventually' : (names.join(', ') || 'Walkers');
+        ? 'Survive as long as you can.'
+        : 'Survive ' + Math.round((ZH.TIME_LEVEL_COMPLETED || 1200) / 60) + ' minutes and clear every boss zone.';
+      var roster = ZH.stageRoster ? ZH.stageRoster(level) : [];
+      $('brief-horde').textContent = mode === 'endless' ? 'Everything, eventually'
+        : (roster.map(function (k) { return ZH.enemyName ? ZH.enemyName(k) : k; }).join(', ') || 'Zombies');
       $('brief-reward').textContent = mode === 'endless' ? 'Scrap per wave' : ((level.rewards && level.rewards[0]) + ' scrap');
       var start = $('btn-start');
       start.querySelector('span').textContent = mode === 'endless' ? 'BEGIN THE NIGHT' : 'DEPLOY';
       start.querySelector('em').textContent = mode === 'endless'
-        ? 'No extraction' : 'Stage ' + (level.id || 1) + ' · ' + level.name;
+        ? 'No extraction' : 'Stage ' + ((level.id || 0) + 1) + ' · ' + level.name;
       this.renderLoadout();
       this.showOnly('screen-briefing');
     },
@@ -135,6 +142,7 @@ window.ZH = window.ZH || {};
       ZH.WEAPON_ORDER.forEach(function (id) {
         if (save.weapons.indexOf(id) === -1) return;
         var w = ZH.WEAPONS[id];
+        if (!w) return;
         var b = document.createElement('button');
         b.className = 'loadout-chip' + (save.currentWeapon === id ? ' is-active' : '');
         b.innerHTML = '<span>' + w.short + '</span><span>' + w.mag + '</span>';
@@ -143,12 +151,6 @@ window.ZH = window.ZH || {};
           ZH.Audio.play('click');
           save.currentWeapon = id;
           ZH.Save.persist();
-          if (G.player) {
-            G.player.weaponId = id;
-            var st = ZH.statsFor(id, G.upgrades);
-            G.player.mag = st.mag;
-            G.player.reloading = 0;
-          }
           UI.renderLoadout();
           UI.refreshWeapons();
         });
@@ -161,41 +163,77 @@ window.ZH = window.ZH || {};
       this.el.hud.classList.remove('is-active');
     },
 
-    showLevelUp: function () {
-      if (!G || !G.player) return;
-      var p = G.player;
-      var owned = (ZH.Save.get().weapons || []).slice();
-      // include anything picked up earlier in this run
-      for (var k in (p.weapons || {})) {
-        if (owned.indexOf(k) === -1) owned.push(k);
-      }
+    /* Build the 3-card offer pool, same shape as the original's
+       ShowSkillSlots(3): a new weapon, a weapon level, or a supply.
+       Everything comes out of the real catalogue in weapons.js. */
+    pickOffers: function () {
+      var p = (G && G.player) || {};
+      var runWeapons = p.weapons || {};
+      var runSupplies = p.supplies || {};
       var pool = [];
-      var keys = Object.keys(ZH.WEAPONS);
-      for (var i = 0; i < keys.length; i++) {
-        var id = keys[i];
-        var w = ZH.WEAPONS[id];
-        if (owned.indexOf(id) !== -1) continue;
-        pool.push({ type: 'weapon', id: id, name: w.name, desc: w.desc });
-      }
-      // weapon level-ups fill in when the new-weapon pool is thin
-      for (var j = 0; j < owned.length; j++) {
-        var oid = owned[j];
-        var ow = ZH.WEAPONS[oid];
-        if (!ow) continue;
-        var cur = p.weapons && p.weapons[oid];
+
+      // 1. a weapon the survivor is not carrying yet
+      (ZH.WEAPON_ORDER || []).forEach(function (id) {
+        var w = ZH.WEAPONS && ZH.WEAPONS[id];
+        if (!w || w.evoOnly) return;
+        if (runWeapons[id]) return;
+        pool.push({ type: 'weapon', id: id, name: w.name, desc: w.desc || '' });
+      });
+
+      // 2. level up a weapon already in hand (level 6 evolves it)
+      Object.keys(runWeapons).forEach(function (id) {
+        var w = ZH.WEAPONS && ZH.WEAPONS[id];
+        var st = runWeapons[id] || {};
+        if (!w || w.evoOnly) return;
+        var lvl = st.level || 1;
+        if (lvl >= 8) return;
+        var evoHint = '';
+        if (lvl === 5 && w.evo && ZH.WEAPONS[w.evo]) {
+          var sup = ZH.SUPPLIES[w.supply];
+          evoHint = sup
+            ? ' · at 6 it becomes ' + ZH.WEAPONS[w.evo].name + ' if you hold ' + sup.name
+            : '';
+        }
         pool.push({
-          type: 'upgrade', id: oid,
-          name: ow.name + ' LV ' + (((cur && cur.level) || 1) + 1),
-          desc: 'More damage and reach for your ' + ow.name + '.'
+          type: 'upgrade', id: id,
+          name: w.name + ' LV ' + (lvl + 1),
+          desc: 'More damage for your ' + w.name + '.' + evoHint
         });
-      }
+      });
+
+      // 3. a supply: new or one level higher, exactly as in the original
+      (ZH.SUPPLY_IDS || []).forEach(function (id) {
+        var s = ZH.SUPPLIES && ZH.SUPPLIES[id];
+        if (!s) return;
+        var owned = runSupplies[id] || 0;
+        if (s.consumable) {
+          pool.push({ type: 'supply', id: id, name: s.name, desc: ZH.supplyDesc(id, 1) });
+          return;
+        }
+        if (owned >= (s.maxLevel || 5)) return;
+        var lvl = owned + 1;
+        pool.push({
+          type: 'supply', id: id, level: lvl,
+          name: s.name + (owned ? ' LV ' + lvl : ''),
+          desc: ZH.supplyDesc(id, lvl)
+        });
+      });
+
       var picked = [];
       for (var n = 0; n < 3 && pool.length > 0; n++) {
         var idx = Math.floor(Math.random() * pool.length);
         picked.push(pool.splice(idx, 1)[0]);
       }
-      if (picked.length === 0) {
-        if (G) { G.state = 'playing'; G.lastTs = performance.now(); }
+      return picked;
+    },
+
+    showLevelUp: function () {
+      if (!G || !G.player) return;
+      var picked = UI.pickOffers();
+      if (!picked || picked.length === 0) {
+        // nothing left to offer — never trap the player in 'levelup'
+        G.state = 'playing';
+        G.lastTs = performance.now();
         return;
       }
       G.levelUpChoices = picked;
@@ -210,26 +248,48 @@ window.ZH = window.ZH || {};
         panel = document.createElement('div');
         panel.id = 'levelup-overlay';
         panel.className = 'levelup-overlay';
-        panel.innerHTML =
-          '<div class="levelup-head"><span>LEVEL ' + p.level + '</span><h2>GET STRONGER</h2></div>' +
-          '<div class="levelup-cards" id="levelup-cards"></div>' +
-          '<div class="levelup-foot">' +
-            '<button class="btn ghost" id="lu-skip">KEEP PLAYING</button>' +
-          '</div>';
         document.body.appendChild(panel);
       }
+      panel.innerHTML =
+        '<div class="levelup-panel">' +
+          '<div class="levelup-head">' +
+            '<h3>LEVEL ' + (p.level || 1) + ' · GET STRONGER</h3>' +
+            '<button class="levelup-x" id="lu-x" aria-label="Close">×</button>' +
+          '</div>' +
+          '<div class="levelup-desc">Pick one: a new weapon, a weapon upgrade, or a supply.</div>' +
+          '<div class="levelup-cards" id="levelup-cards"></div>' +
+          '<div class="levelup-foot">' +
+            '<button class="btn small" id="lu-reroll">REROLL</button>' +
+            '<button class="btn ghost small" id="lu-skip">KEEP PLAYING</button>' +
+          '</div>' +
+        '</div>';
+      panel.classList.add('is-active');
+      // the panel markup is rebuilt on every call, so the listeners below
+      // are always attached to fresh nodes and never stack
       var cards = panel.querySelector('#levelup-cards');
-      // replace the node so repeated level-ups never stack click listeners
-      var fresh = cards.cloneNode(false);
-      cards.parentNode.replaceChild(fresh, cards);
-      cards = fresh;
       cards.innerHTML = '';
       choices.forEach(function (c) {
         var b = document.createElement('button');
-        b.className = 'levelup-card';
+        b.className = 'levelup-card' + (c.type === 'supply' ? ' is-supply' : '') +
+          (c.type === 'evolution' ? ' is-evo' : '');
         b.dataset.id = c.id;
         b.dataset.type = c.type || 'weapon';
-        b.innerHTML = '<div class="lc-name">' + c.name + '</div>' +
+        var tag = c.type === 'supply' ? 'SUPPLY'
+          : c.type === 'upgrade' ? 'WEAPON UPGRADE' : 'NEW WEAPON';
+        var w = ZH.WEAPONS && ZH.WEAPONS[c.id];
+        var sup = ZH.SUPPLIES && ZH.SUPPLIES[c.id];
+        if (sup && sup.evoWeapon) {
+          var evo = Object.prototype.toString.call(sup.evoWeapon) === '[object Array]'
+            ? sup.evoWeapon.slice() : [sup.evoWeapon];
+          var names = evo.map(function (k) {
+            var base = ZH.WEAPONS[k];
+            var grown = base && base.evo ? ZH.WEAPONS[base.evo] : null;
+            return base && grown ? base.name + ' → ' + grown.name : '';
+          }).filter(Boolean);
+          if (names.length) tag += ' · EVOLVES ' + names.join(', ');
+        }
+        b.innerHTML = '<div class="lc-tag">' + tag + '</div>' +
+          '<div class="lc-name">' + c.name + '</div>' +
           '<div class="lc-desc">' + (c.desc || '') + '</div>' +
           '<div class="lc-foot">' +
             '<button class="btn small primary" data-act="take">TAKE</button>' +
@@ -250,11 +310,27 @@ window.ZH = window.ZH || {};
             // level up the weapon already in the run
             if (G && G.player) {
               if (!G.player.weapons) G.player.weapons = {};
-              var wv = G.player.weapons[id] || { level: 0, class: id };
+              var wv = G.player.weapons[id] || { level: 1, class: id };
               wv.level = (wv.level || 1) + 1;
               G.player.weapons[id] = wv;
               if (save.weapons.indexOf(id) === -1) save.weapons.push(id);
               ZH.Save.persist();
+            }
+          } else if (ctype === 'supply') {
+            var s = ZH.SUPPLIES[id];
+            if (G && G.player) {
+              if (s && s.consumable) {
+                // Medikit / Coins are instant pickups
+                if (id === 'medikit') {
+                  G.player.hp = Math.min(G.player.maxHp, G.player.hp + 50);
+                } else {
+                  G.coins = (G.coins || 0) + 1000;
+                }
+              } else {
+                if (!G.player.supplies) G.player.supplies = {};
+                G.player.supplies[id] = (G.player.supplies[id] || 0) + 1;
+                if (G.recomputeAttribs) G.recomputeAttribs();
+              }
             }
           } else {
             if (save.weapons.indexOf(id) === -1) save.weapons.push(id);
@@ -262,8 +338,13 @@ window.ZH = window.ZH || {};
             // equip it in the live run so it starts firing right away
             if (G && G.player) {
               if (!G.player.weapons) G.player.weapons = {};
-              var prev = G.player.weapons[id];
-              G.player.weapons[id] = { level: ((prev && prev.level) || 1) + 1, class: id };
+              if (!G.player.weapons[id]) {
+                var wd = ZH.WEAPONS[id] || {};
+                G.player.weapons[id] = {
+                  level: 1, class: id, timer: 0,
+                  mag: wd.mag, reloading: 0
+                };
+              }
             }
           }
           ZH.Audio.play && ZH.Audio.play('click');
@@ -281,25 +362,62 @@ window.ZH = window.ZH || {};
       };
       cards.addEventListener('click', binding);
       var skip = panel.querySelector('#lu-skip');
-      var skipFresh = skip.cloneNode(false);
-      skip.parentNode.replaceChild(skipFresh, skip);
-      skip = skipFresh;
-      skip.addEventListener('click', function () {
+      if (skip) skip.addEventListener('click', function () {
         ZH.Audio.play && ZH.Audio.play('click');
         UI.hideLevelUp();
       });
+
+      /* close button: same as KEEP PLAYING, but the overlay is never a dead end */
+      var xBtn = panel.querySelector('#lu-x');
+      if (xBtn) {
+        xBtn.addEventListener('click', function () {
+          ZH.Audio.play && ZH.Audio.play('click');
+          UI.hideLevelUp();
+        });
+      }
+
+      /* reroll the three offers, paid from run scrap (500 x n, max 5) */
+      var rerollBtn = panel.querySelector('#lu-reroll');
+      if (rerollBtn) {
+        if (!G.luReroll) G.luReroll = 0;
+        var rerolls = G.luReroll;
+        if (rerolls >= 5) {
+          rerollBtn.disabled = true;
+          rerollBtn.textContent = 'MAX REROLLS';
+        } else {
+          var cost = 500 * (rerolls + 1);
+          rerollBtn.textContent = 'REROLL · ' + cost;
+          rerollBtn.addEventListener('click', function () {
+            if ((G.coins || 0) < cost) {
+              ZH.Anim.toast && ZH.Anim.toast('Not enough scrap to reroll', 'error');
+              ZH.Audio.play && ZH.Audio.play('error');
+              return;
+            }
+            G.coins -= cost;
+            G.luReroll = rerolls + 1;
+            ZH.Audio.play && ZH.Audio.play('click');
+            UI.showLevelUpCard(UI.pickOffers());
+          });
+        }
+      }
+
       ZH.Anim && ZH.Anim.staggerIn && ZH.Anim.staggerIn(panel, '.levelup-card');
     },
 
     hideLevelUp: function () {
       var old = document.getElementById('levelup-overlay');
       if (old) {
+        old.classList.remove('is-active');
         ZH.Anim.hide && ZH.Anim.hide(old, { duration: 120 });
         setTimeout(function () {
           if (old.parentNode) old.parentNode.removeChild(old);
         }, 140);
       }
-      if (G) { G.state = 'playing'; G.lastTs = performance.now(); }
+      if (G) {
+        G.luReroll = 0;
+        G.state = 'playing';
+        G.lastTs = performance.now();
+      }
     },
 
     showResults: function (res) {
@@ -402,17 +520,19 @@ window.ZH = window.ZH || {};
     renderLevels: function () {
       var wrap = $('levels-list');
       if (!wrap) return;
-      var save = ZH.Save ? (ZH.Save.get ? ZH.Save.get() : {coins:0, bestLevel:1, weapons:['Gun'], currentWeapon:'Gun'}) : {coins:0, bestLevel:1, weapons:['Gun'], currentWeapon:'Gun'};
+      var save = ZH.Save ? (ZH.Save.get ? ZH.Save.get() : {coins:0, bestLevel:1, weapons:['gun'], currentWeapon:'gun'}) : {coins:0, bestLevel:1, weapons:['gun'], currentWeapon:'gun'};
       wrap.innerHTML = '';
       if (ZH.STAGES) {
         ZH.STAGES.forEach(function (st, i) {
           var card = document.createElement('button');
-          card.className = 'level-card';
           var unlocked = (i === 0) || (i <= save.bestLevel);
           var already = i < save.bestLevel;
-          card.innerHTML = '<span class="num">STAGE ' + (i+1) + '</span>' +
+          var chapter = ZH.chapterOf ? ZH.chapterOf(st) : { name: '' };
+          card.className = 'level-card' + (unlocked ? '' : ' is-locked') + (already ? ' is-cleared' : '');
+          card.innerHTML = '<span class="num">MAP ' + String(st.bg || '').toUpperCase() + '</span>' +
             '<span class="name">' + st.name + '</span>' +
-            (already ? '<span class="check">CLEARED</span>' : '');
+            '<span class="meta">' + chapter.name + ' · x' + st.multiplier + ' · ' +
+              (st.rewards ? st.rewards[0] + ' scrap' : '') + '</span>';
           if (unlocked) {
             card.addEventListener('click', function () {
               if (window.ZH && ZH.Game) {
@@ -422,7 +542,6 @@ window.ZH = window.ZH || {};
               }
             });
           } else {
-            card.style.opacity = '0.4';
             card.title = 'Unlock by clearing all previous stages';
           }
           wrap.appendChild(card);
@@ -431,81 +550,40 @@ window.ZH = window.ZH || {};
       if ($('levels-coins')) $('levels-coins').textContent = (save.coins||0).toLocaleString();
     },
 
-    /* -------------------------------- shop ------------------------------- */
+    /* -------------------------------- shop -------------------------------
+       The original store is not a weapon shop: weapons come from level-up
+       cards. Scrap buys the six permanent coin skills (30 levels each). */
     renderShop: function () {
-      var save = ZH.Save.get ? ZH.Save.get() : {coins:0, weapons:['pistol'], currentWeapon:'pistol', upgrades:{}};
+      var save = ZH.Save.get ? ZH.Save.get() : { coins: 0, skills: {} };
       var coins = save.coins || 0;
       if ($('shop-coins')) $('shop-coins').textContent = coins.toLocaleString();
-      var wg = $('weapon-grid');
       var ug = $('upgrade-grid');
-      if (!wg || !ug) return;
-
-      wg.innerHTML = '';
-      ZH.WEAPON_ORDER.forEach(function (id) {
-        var w = ZH.WEAPONS[id];
-        if (!w) return;
-        var owned = save.weapons && save.weapons.indexOf(id) !== -1;
-        var equipped = save.currentWeapon === id;
-        var evo = ZH.EVO && ZH.EVO[id];
-        var price = w.price || 2000;
-        var tile = document.createElement('div');
-        tile.className = 'weapon-tile' + (owned ? ' is-owned' : '') + (equipped ? ' is-equipped' : '');
-        var btnLabel = equipped ? 'EQUIPPED' : (owned ? 'EQUIP' : price.toLocaleString() + ' SCRAP');
-        tile.innerHTML =
-          '<div class="wt-name">' + w.name + '</div>' +
-          '<div class="wt-desc">' + esc(w.desc || '') + '</div>' +
-          (evo ? '<div class="wt-evo">evolves to ' + (ZH.WEAPONS[evo] ? ZH.WEAPONS[evo].name : evo) + '</div>' : '') +
-          '<div class="wt-stats"><span>' + w.damage + ' DMG</span><span>' + w.fireRate + 's</span></div>' +
-          '<div class="wt-foot"><button class="btn buy' + (equipped ? ' primary' : '') + '">' + btnLabel + '</button></div>';
-        var btn = tile.querySelector('button');
-        btn.addEventListener('click', function () {
-          ZH.Audio.play && ZH.Audio.play('click');
-          var s = ZH.Save.get();
-          if (s.weapons.indexOf(id) === -1) {
-            // purchase
-            if (!ZH.Save.spend(price)) {
-              ZH.Anim.toast && ZH.Anim.toast('Not enough scrap', 'error');
-              ZH.Audio.play && ZH.Audio.play('error');
-              return;
-            }
-            s.weapons.push(id);
-            ZH.Save.persist();
-            ZH.Anim.toast && ZH.Anim.toast(w.name + ' unlocked', 'good');
-          } else if (s.currentWeapon !== id) {
-            s.currentWeapon = id;
-            ZH.Save.persist();
-            if (G && G.player) {
-              G.player.weapon = id;
-              G.player.primaryWeapon = id;
-            }
-          }
-          UI.renderShop();
-          UI.refreshWeapons();
-          UI.renderMenuWeaponPick && UI.renderMenuWeaponPick({});
-        });
-        wg.appendChild(tile);
-      });
+      if (!ug) return;
 
       ug.innerHTML = '';
-      (ZH.UPGRADES || []).forEach(function (up) {
-        var lvl = (save.upgrades && save.upgrades[up.id]) || 0;
-        var max = lvl >= (up.max || 5);
-        var price = ZH.priceFor(up, lvl);
+      (ZH.SKILLS || []).forEach(function (sk) {
+        var lvl = (save.skills && save.skills[sk.id]) || 1;
+        var maxLevel = ZH.MAX_PLAYER_SKILL || 30;
+        var max = lvl >= maxLevel;
+        var price = ZH.priceForSkill(lvl);
+        var now = ZH.skillValue(sk.id, lvl);
+        var next = ZH.skillValue(sk.id, Math.min(maxLevel, lvl + 1));
         var div = document.createElement('div');
         div.className = 'upgrade' + (max ? ' is-max' : '');
-        div.innerHTML = '<div class="u-name">' + up.name + ' LV ' + lvl + '</div>' +
+        div.innerHTML = '<div class="u-name">' + sk.name + ' LV ' + lvl + '</div>' +
+          '<div class="u-val">' + fmtNum(now) + (next !== now ? ' → ' + fmtNum(next) : '') + '</div>' +
           '<button class="btn small' + (max ? ' ghost' : '') + '">' + (max ? 'MAX' : price.toLocaleString()) + '</button>';
         var ubtn = div.querySelector('button');
         if (!max) {
           ubtn.addEventListener('click', function () {
             ZH.Audio.play && ZH.Audio.play('click');
-            var r = ZH.Save.buyUpgrade(up.id);
+            var r = ZH.Save.buySkill(sk.id);
             if (!r.ok) {
               ZH.Anim.toast && ZH.Anim.toast(r.reason === 'coins' ? 'Not enough scrap' : 'Maxed out', 'error');
               ZH.Audio.play && ZH.Audio.play('error');
               return;
             }
-            ZH.Anim.toast && ZH.Anim.toast(up.name + ' → LV ' + r.level, 'good');
+            ZH.Anim.toast && ZH.Anim.toast(sk.name + ' → LV ' + r.level, 'good');
             UI.renderShop();
           });
         }
@@ -516,17 +594,25 @@ window.ZH = window.ZH || {};
     refreshWeapons: function () {
       var slots = this.el && this.el.slots;
       if (!slots) return;
-      var save = ZH.Save && ZH.Save.get ? ZH.Save.get() : {weapons:['Gun'], currentWeapon:'Gun'};
-      slots.innerHTML = '';
-      if (save.weapons) {
-        save.weapons.forEach(function (id, i) {
-          var w = ZH.WEAPONS && ZH.WEAPONS[id] ? ZH.WEAPONS[id] : {name:id, short:id};
-          var b = document.createElement('button');
-          b.className = 'slot' + (G && G.player && G.player.weaponId === id ? ' is-active' : '');
-          b.innerHTML = '<b>' + (i + 1) + '</b>' + (w.short || id);
-          slots.appendChild(b);
-        });
+      var p = G && G.player;
+      var ids = [];
+      if (p && p.weapons) {
+        ids = Object.keys(p.weapons);
+      } else {
+        var save = ZH.Save && ZH.Save.get ? ZH.Save.get() : { weapons: ['gun'] };
+        ids = (save.weapons || []).slice();
       }
+      var primary = (p && p.primaryWeapon) || (ZH.Save && ZH.Save.get().currentWeapon) || 'gun';
+      slots.innerHTML = '';
+      ids.forEach(function (id, i) {
+        var st = p && p.weapons ? p.weapons[id] : null;
+        var eff = ZH.effectiveWeapon && st ? ZH.effectiveWeapon(id, st, p.supplies) : id;
+        var w = ZH.WEAPONS && ZH.WEAPONS[eff] ? ZH.WEAPONS[eff] : { short: id };
+        var b = document.createElement('button');
+        b.className = 'slot' + (primary === id ? ' is-active' : '');
+        b.innerHTML = '<b>' + (i + 1) + '</b>' + (w.short || id);
+        slots.appendChild(b);
+      });
     },
 
     /* -------------------------------- HUD -------------------------------- */
@@ -674,7 +760,7 @@ window.ZH = window.ZH || {};
         ctx.translate(w / 2, h - 40 + bob);
         ZH.Rig.draw(ctx, {
           x: 0, y: 0, s: 3.4, kind: 'hunter', variant: 'hunter',
-          facing: 1, aim: aim, weapon: ZH.Save.get().currentWeapon || 'pistol',
+          facing: 1, aim: aim, weapon: ZH.Save.get().currentWeapon || 'gun',
           pose: { t: menuT, moving: 0, walkPhase: 0, reload: 0 }
         });
         ctx.restore();
@@ -696,7 +782,7 @@ window.ZH = window.ZH || {};
       if (!wrap) return;
       wrap.innerHTML = '';
       var save = ZH.Save.get();
-      var current = save.currentWeapon || 'pistol';
+      var current = save.currentWeapon || 'gun';
       var unblocked = opts.unblockedWeaponIds || [];
       var owned = save.weapons || [];
       ZH.WEAPON_ORDER.forEach(function (id) {
