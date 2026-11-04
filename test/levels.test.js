@@ -73,7 +73,7 @@ assert.strictEqual(ZH.STAGES[5].waves.filter((w) => w.bossZone)[0].bossZone.widt
 
 /* ---------------- weapons: 14 base + 14 evolutions ---------------- */
 assert.strictEqual(ZH.WEAPON_ORDER.length, 14, 'the original catalogue has 14 weapons');
-assert.deepStrictEqual(ZH.WEAPON_ORDER, ['axe', 'crossbow', 'flamer', 'gun', 'sword', 'drill',
+assert.deepStrictEqual(ZH.WEAPON_ORDER, ['axe', 'crossbow', 'flamethrower', 'gun', 'sword', 'drill',
   'bazooka', 'boomerang', 'circular', 'tesla', 'spikedball', 'forcefield', 'launcher', 'molotov'],
 'the 14 weapons, in the original order');
 

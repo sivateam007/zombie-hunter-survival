@@ -47,7 +47,7 @@
       desc: 'Fans bolts out the way you walk. Bolts punch through two bodies.'
     }),
     weapon({
-      id: 'flamer', name: 'Flamethrower', short: 'FLAME', behaviour: 'stream',
+      id: 'flamethrower', name: 'Flamethrower', short: 'FLAME', behaviour: 'stream',
       cooldown: 2.0, dmg: 2, tick: 0.1, count: 1, speed: 420,
       mag: 200, reload: 2.4, ammo: true, range: 150, splash: 46,
       evo: 'plasmagun', supply: 'handbook',
@@ -228,8 +228,8 @@
   // the 14 base weapons, in the order the original lists them
   var ORDER = BASE_WEAPONS.map(function (w) { return w.id; });
 
-  /* ------------------------------ supplies ------------------------------ */
-  /* bonus[] is indexed by supply level 1..5; `attrib` is the original
+  /* ------------------------------ supplies ------------------------------
+     bonus[] is indexed by supply level 1..5; `attrib` is the original
      Player.attribs key the supply writes to. */
   var SUPPLIES = {
     kevlar: {
@@ -244,7 +244,7 @@
     },
     handbook: {
       id: 'handbook', name: 'Handbook', attrib: 'exp_bonus', pct: false,
-      evoWeapon: 'flamer', bonus: [0, 8, 16, 24, 32, 40],
+      evoWeapon: 'flamethrower', bonus: [0, 8, 16, 24, 32, 40],
       desc: 'Earn [x]% more experience.'
     },
     scope: {
@@ -355,8 +355,8 @@
     return id;
   };
 
-  /* ------------------------------ coin skills ------------------------------ */
-  /* exact tables from the original: six skills, 30 levels, prices 0..435000 */
+  /* ------------------------------ coin skills ------------------------------
+     exact tables from the original: six skills, 30 levels, prices 0..435000 */
   var SKILL_PRICES = [0, 0, 1000, 3000, 6000, 10000, 15000, 21000, 28000, 36000,
     45000, 55000, 66000, 78000, 91000, 105000, 120000, 136000, 153000, 171000,
     190000, 210000, 231000, 253000, 276000, 300000, 325000, 351000, 378000,
