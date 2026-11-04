@@ -251,6 +251,35 @@ p { margin: 0; line-height: 1.5; }
   flex-direction: column;
   gap: 4px;
 }
+
+/* collected supplies (axe, sneakers, kevlar…) shown as a small shelf */
+.hud-items {
+  position: absolute;
+  left: 20px;
+  bottom: 44px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-width: 46vw;
+  pointer-events: none;
+}
+.hud-items:empty { display: none; }
+.item-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 5px;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 7px;
+  background: rgba(10, 14, 15, 0.72);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  pointer-events: auto;
+}
+.item-chip i { font-style: normal; font-weight: 800; font-size: 11px; }
+.item-chip span { color: var(--dim); }
 .slot {
   display: flex;
   align-items: center;

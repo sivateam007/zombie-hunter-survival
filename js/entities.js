@@ -194,6 +194,23 @@
       if (z.coins || z.boss) {
         world.pickups.push({ type: 'coin', x: z.x + rand(-8, 8), y: z.y + rand(-8, 8), life: 12, value: z.coins || 5 });
       }
+      /* supplies drop into the world as real items, so the catalogue (kevlar,
+         sneakers, supplements, axe upgrades…) shows up on the ground and not
+         only on cards. Bosses always drop one, everyone else rarely. */
+      if (ZH.SUPPLY_IDS && (z.boss || Math.random() < 0.025)) {
+        var pool = [];
+        for (var si = 0; si < ZH.SUPPLY_IDS.length; si++) {
+          var sid = ZH.SUPPLY_IDS[si];
+          if (!ZH.SUPPLIES[sid].consumable) pool.push(sid);
+        }
+        if (pool.length) {
+          world.pickups.push({
+            type: 'item', item: 'supply',
+            itemId: pool[(Math.random() * pool.length) | 0],
+            x: z.x + rand(-6, 6), y: z.y - 8, life: 30, value: 1
+          });
+        }
+      }
       if (world.shake != null) world.shake = Math.max(world.shake, z.boss ? 9 : 2);
     }
   }
@@ -558,6 +575,16 @@
       var dist = Math.hypot(dx, dy) || 1;
       var stopAt = z.ranged ? (z.range || 50) * 0.85 : (z.range || 30) * 0.7;
 
+      /* leash: a hunter who outruns the horde would otherwise leave the whole
+         wave behind on the far side of the city. Far stragglers re-enter at
+         the edge of the fight instead of jogging across 6 km of map. */
+      if (!z.boss && dist > 950 && Math.random() < 0.06) {
+        var la = rand(0, TAU), lr = rand(520, 760);
+        z.x = clamp(p.x + Math.cos(la) * lr, 60, (world.arena ? world.arena.w : 6000) - 60);
+        z.y = clamp(p.y + Math.sin(la) * lr, 60, (world.arena ? world.arena.h : 6000) - 60);
+        continue;
+      }
+
       if (!z.stationary && dist > stopAt) {
         z.x += (dx / dist) * z.speed * dt;
         z.y += (dy / dist) * z.speed * dt;
@@ -771,11 +798,32 @@
           if (world.ui && world.ui.showLevelUp) world.ui.showLevelUp();
         } else if (pk.type === 'medikit') {
           p.hp = Math.min(p.maxHp, p.hp + (pk.value || 50));
+        } else if (pk.type === 'item') {
+          if (pk.item === 'supply' && ZH.SUPPLIES[pk.itemId]) {
+            if (!p.supplies) p.supplies = {};
+            var cur = p.supplies[pk.itemId] || 0;
+            var max = ZH.SUPPLIES[pk.itemId].maxLevel || 5;
+            p.supplies[pk.itemId] = Math.min(max, cur + 1);
+            if (world.recomputeAttribs) world.recomputeAttribs();
+            if (world.ui && world.ui.toastItem) world.ui.toastItem(pk.itemId, p.supplies[pk.itemId]);
+          }
         }
         list.splice(i, 1);
       }
     }
   }
+
+  /** display glyph + colour for a ground item (used by the renderer) */
+  ZH.itemLook = function (id) {
+    var LOOK = {
+      kevlar: ['K', '#7fb2ff'], ammobooster: ['A', '#ffc46b'], handbook: ['H', '#d8b45c'],
+      scope: ['S', '#9fe6ff'], propane: ['P', '#ff9a5c'], magnet: ['M', '#ff7fb0'],
+      chronometer: ['C', '#c9a6ff'], actiongloves: ['G', '#ffd166'], energydrink: ['E', '#7dffb0'],
+      sneakers: ['N', '#8fe36b'], detector: ['D', '#ffe066'], supplements: ['X', '#ff6b6b'],
+      medikit: ['+', '#ff7b7b'], coins: ['$', '#ffd166']
+    };
+    return LOOK[id] || ['?', '#cccccc'];
+  };
 
   ZH.createSurvivor = createSurvivor;
   ZH.createEnemy = createEnemy;

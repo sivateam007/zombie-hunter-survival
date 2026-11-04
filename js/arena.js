@@ -69,7 +69,7 @@ window.ZH = window.ZH || {};
 
   /* ------- base surfaces (world-aligned, no global stripe) ---------- */
   function streetBase(ctx, w, h, ox, oy, rnd) {
-    ctx.fillStyle = '#2c2d30'; ctx.fillRect(ox, oy, w, h);
+    ctx.fillStyle = '#3b3f45'; ctx.fillRect(ox, oy, w, h);
     for (var i = 0; i < 42; i++) {
       var x = ox + rr(rnd, 0, w), y = oy + rr(rnd, 0, h);
       var rw = rr(rnd, 60, 300), rh = rr(rnd, 40, 170);
@@ -358,8 +358,15 @@ window.ZH = window.ZH || {};
         ctx.fillStyle = 'rgba(207,201,174,0.5)';
         for (var s = yx0; s < yx1; s += 16) ctx.fillRect(s, yy0, 13, yy1 - yy0);
         ctx.fillStyle = 'rgba(0,0,0,0.42)'; ctx.fillRect(rx - 3, ry + 7, 6, 20);
-        ctx.fillStyle = 'rgba(255,228,178,0.9)'; ctx.beginPath();
-        ctx.arc(rx, ry + 10, 3.2, 0, TAU); ctx.fill();
+        /* warm pool of light under the street lamp */
+        var glow = ctx.createRadialGradient(rx, ry + 10, 2, rx, ry + 10, 96);
+        glow.addColorStop(0, 'rgba(255,214,150,0.30)');
+        glow.addColorStop(0.45, 'rgba(255,190,110,0.12)');
+        glow.addColorStop(1, 'rgba(255,170,80,0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(rx, ry + 10, 96, 0, TAU); ctx.fill();
+        ctx.fillStyle = 'rgba(255,236,196,1)'; ctx.beginPath();
+        ctx.arc(rx, ry + 10, 3.6, 0, TAU); ctx.fill();
       }
     }
   }
@@ -452,10 +459,14 @@ window.ZH = window.ZH || {};
     };
 
     world.draw = function (ctx, vx0, vy0, vx1, vy1) {
-      var x0 = Math.max(0, (vx0 / CHUNK) | 0), x1 = Math.min(CHUNK_GRID, ((vx1 + 1) / CHUNK) | 0);
-      var y0 = Math.max(0, (vy0 / CHUNK) | 0), y1 = Math.min(CHUNK_GRID, ((vy1 + 1) / CHUNK) | 0);
-      for (var cy = y0; cy < y1; cy++) {
-        for (var cx = x0; cx < x1; cx++) {
+      /* inclusive range: the chunk holding vx1/vy1 must be painted too,
+         otherwise the right/bottom edge of the view stays black */
+      var x0 = Math.max(0, Math.floor(vx0 / CHUNK));
+      var x1 = Math.min(CHUNK_GRID - 1, Math.floor(vx1 / CHUNK));
+      var y0 = Math.max(0, Math.floor(vy0 / CHUNK));
+      var y1 = Math.min(CHUNK_GRID - 1, Math.floor(vy1 / CHUNK));
+      for (var cy = y0; cy <= y1; cy++) {
+        for (var cx = x0; cx <= x1; cx++) {
           this.drawTile(ctx, cx, cy);
         }
       }
@@ -490,33 +501,92 @@ window.ZH = window.ZH || {};
     var bw = bx1c - bx0c, bh = by1c - by0c;
     var kind = hash(world._seed, bi * 7 + bj * 13 + i * 19 + j * 23) % 5;
     var cellRnd = rng(hash(world._seed, bi * 7 + bj * 13));
-    ctx.fillStyle = 'rgba(120,115,100,0.42)'; ctx.fillRect(bx0c, by0c, bw, bh);
-    ctx.fillStyle = 'rgba(70,70,72,0.18)'; ctx.fillRect(bx0c + 6, by0c + 6, bw - 12, bh - 12);
-    ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 2;
-    if (bw > 10) { ctx.strokeRect(bx0c, by0c, bw, bh); ctx.strokeRect(bx0c + 6, by0c + 6, bw - 12, bh - 12); }
+    /* sidewalk: pale concrete slab with a kerb line, so blocks read against
+       the darker asphalt instead of blending into it */
+    var pave = ctx.createLinearGradient(bx0c, by0c, bx0c + bw, by0c + bh);
+    pave.addColorStop(0, '#6c6a63');
+    pave.addColorStop(0.5, '#5d5b55');
+    pave.addColorStop(1, '#4b4a45');
+    ctx.fillStyle = pave; ctx.fillRect(bx0c, by0c, bw, bh);
+    ctx.strokeStyle = 'rgba(24,25,26,0.5)'; ctx.lineWidth = 2;
+    if (bw > 10) ctx.strokeRect(bx0c + 1, by0c + 1, bw - 2, bh - 2);
+    /* kerb strip */
+    ctx.fillStyle = 'rgba(196,192,178,0.35)';
+    ctx.fillRect(bx0c, by0c, bw, 5);
+    ctx.fillRect(bx0c, by0c, 5, bh);
+    /* paving joints */
+    ctx.strokeStyle = 'rgba(28,28,28,0.18)'; ctx.lineWidth = 1;
+    for (var pj = by0c + 34; pj < by1c; pj += 48) {
+      ctx.beginPath(); ctx.moveTo(bx0c, pj); ctx.lineTo(bx1c, pj); ctx.stroke();
+    }
+    for (var pi2 = bx0c + 34; pi2 < bx1c; pi2 += 48) {
+      ctx.beginPath(); ctx.moveTo(pi2, by0c); ctx.lineTo(pi2, by1c); ctx.stroke();
+    }
     var cx0 = bx0c + bw / 2, cy0 = by0c + bh / 2;
     var hx = cx0 + (cellRnd() * (bw - 160)) - (bx0c + bw / 2) + cx0;
     var hy = cy0 + (cellRnd() * (bh - 160)) - (by0c + bh / 2) + cy0;
-    var hw = Math.min(bw * 0.34, 160), hh = Math.min(bh * 0.30, 120);
+    var hw = Math.min(bw * 0.36, 172), hh = Math.min(bh * 0.32, 128);
     ctx.save(); ctx.translate(hx, hy);
-    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(-hw / 2, -hh / 2 + 6, hw, hh + 10);
+    /* cast shadow */
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(-hw / 2 + 6, -hh / 2 + 10, hw, hh);
+    /* facade: a few palettes so the city is not one flat grey */
+    var FACADES = [
+      ['#9b9081', '#7d7365', '#514b43'],   /* concrete */
+      ['#a08065', '#7d6049', '#4a3729'],   /* brick */
+      ['#7d8b96', '#5f6d78', '#3d4750'],   /* glass tower */
+      ['#948f74', '#736f59', '#47442f'],   /* sand */
+      ['#8b7d8f', '#6b5f70', '#413744']    /* faded paint */
+    ];
+    var facade = FACADES[hash(world._seed, bi * 53 + bj * 29) % FACADES.length];
     var grd = ctx.createLinearGradient(0, -hh / 2, 0, hh / 2);
-    grd.addColorStop(0, '#5a5f63'); grd.addColorStop(0.5, '#55575c'); grd.addColorStop(1, '#3c4145');
+    grd.addColorStop(0, facade[0]); grd.addColorStop(0.45, facade[1]); grd.addColorStop(1, facade[2]);
     ctx.fillStyle = grd; ctx.fillRect(-hw / 2, -hh / 2, hw, hh);
-    ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 3;
-    ctx.strokeRect(-hw / 2 + 2, -hh / 2 + 2, hw - 4, hh - 4);
+    ctx.strokeStyle = 'rgba(18,18,18,0.6)'; ctx.lineWidth = 2.5;
+    ctx.strokeRect(-hw / 2 + 1, -hh / 2 + 1, hw - 2, hh - 2);
+    /* rooftop lip */
+    ctx.fillStyle = 'rgba(214,206,188,0.5)';
+    ctx.fillRect(-hw / 2, -hh / 2, hw, 5);
+    /* windows: a few are lit, most are dark glass */
     if (bw > 60 && bh > 60) {
-      ctx.fillStyle = 'rgba(150,160,165,0.3)';
-      for (var wy = -hh / 2 + 10; wy < hh / 2 - 10; wy += hh / 7) {
-        for (var wx = -hw / 2 + 8; wx < hw / 2; wx += hw / 6) {
-          ctx.fillRect(wx, wy, 7, 9);
+      var cols = Math.max(2, Math.floor(hw / 22));
+      var rows = Math.max(2, Math.floor(hh / 26));
+      var wW = Math.min(12, hw / cols - 6), wH = Math.min(10, hh / rows - 8);
+      for (var wr = 0; wr < rows; wr++) {
+        for (var wc = 0; wc < cols; wc++) {
+          var wx = -hw / 2 + 10 + wc * ((hw - 20) / cols);
+          var wy = -hh / 2 + 12 + wr * ((hh - 20) / rows);
+          var lit = hash(world._seed, bi * 31 + bj * 17 + wr * 7 + wc * 13) % 7 === 0;
+          ctx.fillStyle = lit ? 'rgba(255,206,120,0.92)' : 'rgba(28,34,40,0.75)';
+          ctx.fillRect(wx, wy, wW, wH);
+          if (lit) {
+            ctx.fillStyle = 'rgba(255,196,90,0.16)';
+            ctx.fillRect(wx - 3, wy - 3, wW + 6, wH + 6);
+          }
         }
       }
     }
-    ctx.fillStyle = 'rgba(20,20,20,0.7)'; ctx.fillRect(-hw / 2, hh / 2 - 6, hw, 6);
+    /* doorway */
+    ctx.fillStyle = 'rgba(22,24,26,0.9)';
+    ctx.fillRect(-7, hh / 2 - 20, 14, 20);
+    ctx.fillStyle = 'rgba(120,120,120,0.3)';
+    ctx.fillRect(-8, hh / 2 - 21, 16, 2);
+    /* ground-level grime */
+    ctx.fillStyle = 'rgba(12,12,12,0.28)';
+    ctx.fillRect(-hw / 2, hh / 2 - 8, hw, 8);
     ctx.restore();
 
-    var propCount = (kind < 2 ? 2 : 3) + (kind === 2 ? 2 : 0);
+    /* a few blocks grow trees along the kerb */
+    if (kind === 1 || kind === 4) {
+      var trees = 1 + (hash(world._seed, bi * 11 + bj * 41) % 3);
+      for (var tr = 0; tr < trees; tr++) {
+        var tx = bx0c + 50 + cellRnd() * Math.max(10, bw - 100);
+        var ty = by0c + 50 + cellRnd() * Math.max(10, bh - 100);
+        if (tx + 24 > bx1c || ty + 24 > by1c) continue;
+        drawTree(ctx, tx, ty, 0.9 + cellRnd() * 0.4, rng(hash(world._seed, tr * 17 + bi)));
+      }
+    }
+
+    var propCount = (kind < 2 ? 1 : 2) + (kind === 2 ? 1 : 0);
     for (var p = 0; p < propCount; p++) {
       var px = bx0c + 40 + cellRnd() * (bw - 80);
       var py = by0c + 40 + cellRnd() * (bh - 80);
@@ -542,6 +612,10 @@ window.ZH = window.ZH || {};
     canvas.width = CHUNK; canvas.height = CHUNK;
     var ctx = canvas.getContext('2d');
     var ox = cx * CHUNK, oy = cy * CHUNK;
+    /* every painter below works in WORLD coordinates, so shift the chunk
+       canvas into place — without this everything past chunk 0 is clipped
+       and bakes out completely black. */
+    ctx.translate(-ox, -oy);
     var rnd = rng(hash(world._seed, cx, cy));
     if (world._fn === 'street') streetBase(ctx, CHUNK, CHUNK, ox, oy, rnd);
     else if (world._fn === 'factory') concreteBase(ctx, CHUNK, CHUNK, ox, oy, rnd);

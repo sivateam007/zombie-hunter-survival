@@ -51,7 +51,7 @@ window.ZH = window.ZH || {};
 
   Game.resize = function () {
     var c = this.canvas;
-    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), 2);
     this.W = c.clientWidth || window.innerWidth;
     this.H = c.clientHeight || window.innerHeight;
     c.width = Math.round(this.W * this.dpr);
@@ -92,6 +92,7 @@ window.ZH = window.ZH || {};
     this.applySkills();
     this.camera.x = this.player.x;
     this.camera.y = this.player.y;
+    this.camera.zoom = 0.8;
     this.state = 'playing';
     if (document.body) document.body.classList.add('in-game');
     ZH.Audio.unlock();
@@ -195,7 +196,10 @@ window.ZH = window.ZH || {};
           // feeding the horde for its whole window while the count stays
           // under max), not a one-shot lifetime total.
           var capped = wave.total != null && wave.spawned >= wave.total;
-          if (!capped && this.waveAlive(wave.enemy) < (wave.max || 20)) {
+          /* count only the ones near the hunter: in a 6144 px open city a
+             fast survivor leaves the wave behind, and the screen would empty
+             out even though `max` zombies are alive somewhere else */
+          if (!capped && this.waveAliveNear(wave.enemy, 900) < (wave.max || 20)) {
             wave.spawned = (wave.spawned || 0) + 1;
             this.spawnWaveEnemies(wave);
           }
@@ -270,6 +274,20 @@ window.ZH = window.ZH || {};
     }
   };
 
+  /* how many live enemies of this type are close enough to matter */
+  Game.waveAliveNear = function (type, radius) {
+    var p = this.player;
+    var n = 0, r2 = (radius || 900) * (radius || 900);
+    for (var i = 0; i < this.zombies.length; i++) {
+      var z = this.zombies[i];
+      if (z.dead || z.type !== type) continue;
+      if (!p) { n++; continue; }
+      var dx = z.x - p.x, dy = z.y - p.y;
+      if (dx * dx + dy * dy <= r2) n++;
+    }
+    return n;
+  };
+
   /* how many live enemies of this wave's type are on the field */
   Game.waveAlive = function (type) {
     var n = 0;
@@ -282,7 +300,13 @@ window.ZH = window.ZH || {};
 
   Game.spawnWaveEnemies = function (wave) {
     if (this.zombies.length > 320) return;
-    var pos = this.findSpawnPoint(600);
+    /* spawn just past the edge of the view, like the original — spawning at a
+       fixed 600 px left the screen empty whenever the hunter moved */
+    var half = Math.max(this.W, this.H) / (2 * (this.camera.zoom || 1));
+    var p = this.player;
+    var bias = null;
+    if (p && Math.hypot(p.moveX || 0, p.moveY || 0) > 0.2) bias = Math.atan2(p.moveY, p.moveX);
+    var pos = this.findSpawnPoint(Math.max(320, half * 0.85), bias);
     // enemy HP scales with the stage multiplier, exactly like the original
     var mult = (this.stage && this.stage.multiplier) || 1;
     var z = ZH.createEnemy(wave.enemy, pos.x, pos.y, mult);
@@ -301,16 +325,18 @@ window.ZH = window.ZH || {};
     }
   };
 
-  Game.findSpawnPoint = function (dist) {
+  Game.findSpawnPoint = function (dist, biasAngle) {
     var p = this.player;
     for (var i = 0; i < 20; i++) {
-      var ang = rand(0, TAU);
+      var ang = biasAngle != null
+        ? biasAngle + rand(-1.15, 1.15)      /* mostly ahead of the hunter */
+        : rand(0, TAU);
       var d = dist + rand(-50, 100);
       var x = p.x + Math.cos(ang) * d;
       var y = p.y + Math.sin(ang) * d;
       x = clamp(x, 150, this.arena.w - 150);
       y = clamp(y, 150, this.arena.h - 150);
-      if (Math.hypot(x - p.x, y - p.y) > 400) return { x: x, y: y };
+      if (Math.hypot(x - p.x, y - p.y) > 240) return { x: x, y: y };
     }
     return { x: p.x + rand(-600, 600), y: p.y + rand(-600, 600) };
   };
@@ -319,22 +345,50 @@ window.ZH = window.ZH || {};
      Touch-only scheme: a visible thumbstick on the left, action buttons on
      the right. There is no keyboard path left — pointer events cover fingers
      and mouse alike, so the same widget is drivable on a desktop too. */
+  /* Touch-only steering. The stick is a floating base: press anywhere in the
+     lower-left part of the screen and the base jumps under your thumb, so you
+     never have to look down or chase a fixed pad. Releasing parks it home. */
   Game.bindInput = function () {
     var self = this;
     var joy = document.getElementById('joystick');
     var knob = document.getElementById('joy-knob');
     if (!joy) return;
 
-    var R = 46;        /* knob travel before it clamps */
-    var DEAD = 9;      /* below this the stick reads as neutral */
+    var DEAD = 8;          /* neutral zone around the base, in px */
     var pid = null;
 
-    function setStick(dx, dy) {
+    function radius() {
+      return Math.max(34, (joy.offsetWidth || 132) * 0.36);
+    }
+
+    function center() {
+      var r = joy.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+
+    function send(dx, dy) {
+      var R = radius();
       var d = Math.hypot(dx, dy);
-      if (d > R) { dx = dx / d * R; dy = dy / d * R; d = R; }
-      if (knob) knob.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px)';
+      var cx = dx, cy = dy;
+      if (d > R) { cx = dx / d * R; cy = dy / d * R; d = R; }
+      if (knob) knob.style.transform = 'translate(' + cx.toFixed(1) + 'px,' + cy.toFixed(1) + 'px)';
       if (d < DEAD) { self.input.joyX = 0; self.input.joyY = 0; }
-      else { self.input.joyX = dx / R; self.input.joyY = dy / R; }
+      else { self.input.joyX = cx / R; self.input.joyY = cy / R; }
+    }
+
+    function place(x, y) {
+      var w = joy.offsetWidth || 132, h = joy.offsetHeight || 132;
+      joy.style.left = (x - w / 2) + 'px';
+      joy.style.top = (y - h / 2) + 'px';
+      joy.style.bottom = 'auto';
+      joy.style.right = 'auto';
+    }
+
+    function home() {
+      joy.style.left = '';
+      joy.style.top = '';
+      joy.style.bottom = '';
+      joy.style.right = '';
     }
 
     function release() {
@@ -343,28 +397,53 @@ window.ZH = window.ZH || {};
       self.input.joyY = 0;
       if (knob) knob.style.transform = 'translate(0px,0px)';
       joy.classList.remove('is-active');
+      home();
+    }
+
+    function track(e) {
+      var c = center();
+      send(e.clientX - c.x, e.clientY - c.y);
+    }
+
+    function steerable(e) {
+      if (self.state !== 'playing') return false;
+      var t = e.target;
+      if (!t || !t.closest) return false;
+      /* buttons, panels and the skill chooser keep their own taps */
+      if (t.closest('button, .levelup-overlay, .screen, .mobile-controls, .hud-top, .hud-bottom')) return false;
+      return true;
     }
 
     joy.addEventListener('pointerdown', function (e) {
-      if (self.state !== 'playing') return;
+      if (!steerable(e)) return;
       pid = e.pointerId;
       joy.classList.add('is-active');
-      try { joy.setPointerCapture(e.pointerId); } catch (err) { /* capture is best-effort */ }
-      var r = joy.getBoundingClientRect();
-      setStick(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+      track(e);                         /* grab from where the pad already sits */
       e.preventDefault();
     });
 
-    joy.addEventListener('pointermove', function (e) {
-      if (pid === null || e.pointerId !== pid) return;
-      var r = joy.getBoundingClientRect();
-      setStick(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+    /* pressing anywhere else on the left half plants the base under the thumb */
+    var layer = document.getElementById('app') || document.body;
+    layer.addEventListener('pointerdown', function (e) {
+      if (pid !== null) return;
+      if (!steerable(e)) return;
+      if (e.clientX > self.W * 0.6) return;
+      pid = e.pointerId;
+      place(e.clientX, e.clientY);
+      joy.classList.add('is-active');
+      send(0, 0);
       e.preventDefault();
     });
+
+    window.addEventListener('pointermove', function (e) {
+      if (pid === null || e.pointerId !== pid) return;
+      track(e);
+      e.preventDefault();
+    }, { passive: false });
 
     function end(e) { if (pid !== null && e.pointerId === pid) release(); }
-    joy.addEventListener('pointerup', end);
-    joy.addEventListener('pointercancel', end);
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
     joy.addEventListener('lostpointercapture', end);
   };
 
@@ -593,7 +672,8 @@ window.ZH = window.ZH || {};
       left: this.zombies.length,
       mode: this.mode || 'campaign',
       levelName: this.stage ? this.stage.name : '',
-      boss: boss ? { name: (boss.type || 'BOSS').toUpperCase(), hp: boss.hp, max: boss.maxHp } : null
+      supplies: p.supplies || {},
+      boss: boss ? { name: (boss.name || boss.type || 'BOSS'), hp: boss.hp, max: boss.maxHp } : null
     });
   };
 
@@ -601,8 +681,17 @@ window.ZH = window.ZH || {};
     var p = this.player;
     if (!p) return;
     var k = 1 - Math.exp(-8 * dt);
+    this.camera.zoom = lerp(this.camera.zoom, 0.8, k);
     this.camera.x = lerp(this.camera.x, p.x, k);
-    this.camera.y = lerp(this.camera.y, p.y, k);    this.camera.zoom = lerp(this.camera.zoom, 0.9, k);
+    this.camera.y = lerp(this.camera.y, p.y, k);
+
+    /* never show past the edge of the city — it used to be a black band */
+    var W = this.arena ? this.arena.w : 6144;
+    var H = this.arena ? this.arena.h : 6144;
+    var hw = this.W / (2 * this.camera.zoom);
+    var hh = this.H / (2 * this.camera.zoom);
+    this.camera.x = W > hw * 2 ? clamp(this.camera.x, hw, W - hw) : W / 2;
+    this.camera.y = H > hh * 2 ? clamp(this.camera.y, hh, H - hh) : H / 2;
   };
 
   /* ------------------------------ render ------------------------------ */
@@ -676,18 +765,66 @@ window.ZH = window.ZH || {};
       ctx.save();
       ctx.translate(pk.x, pk.y + bob);
       if (pk.type === 'exp') {
+        ctx.fillStyle = 'rgba(79,195,247,0.25)';
+        ctx.beginPath(); ctx.arc(0, 0, 11, 0, TAU); ctx.fill();
         ctx.fillStyle = '#4fc3f7';
         ctx.beginPath(); ctx.arc(0, 0, 6, 0, TAU); ctx.fill();
       } else if (pk.type === 'coin') {
+        ctx.fillStyle = 'rgba(255,209,102,0.28)';
+        ctx.beginPath(); ctx.arc(0, 0, 10, 0, TAU); ctx.fill();
         ctx.fillStyle = '#ffd166';
-        ctx.beginPath(); ctx.arc(0, 0, 5, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 0, 5.5, 0, TAU); ctx.fill();
+        ctx.strokeStyle = 'rgba(120,80,10,0.7)'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(0, 0, 3, 0, TAU); ctx.stroke();
+      } else if (pk.type === 'treasure') {
+        /* gold chest: grab it to open the skill cards */
+        var gl = ctx.createRadialGradient(0, 0, 4, 0, 0, 46);
+        gl.addColorStop(0, 'rgba(255,214,120,0.55)');
+        gl.addColorStop(1, 'rgba(255,190,80,0)');
+        ctx.fillStyle = gl;
+        ctx.beginPath(); ctx.arc(0, 0, 46, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#8a5a24';
+        ctx.fillRect(-16, -8, 32, 20);
+        ctx.fillStyle = '#c98c32';
+        ctx.fillRect(-16, -14, 32, 8);
+        ctx.strokeStyle = '#3a2610'; ctx.lineWidth = 2;
+        ctx.strokeRect(-16, -14, 32, 26);
+        ctx.fillStyle = '#ffd166';
+        ctx.fillRect(-3, -8, 6, 8);
+      } else if (pk.type === 'item') {
+        var look = ZH.itemLook ? ZH.itemLook(pk.itemId) : ['?', '#ccc'];
+        var ig = ctx.createRadialGradient(0, 0, 3, 0, 0, 34);
+        ig.addColorStop(0, 'rgba(255,255,255,0.28)');
+        ig.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = ig;
+        ctx.beginPath(); ctx.arc(0, 0, 34, 0, TAU); ctx.fill();
+        ctx.fillStyle = 'rgba(16,20,22,0.9)';
+        ctx.fillRect(-13, -13, 26, 26);
+        ctx.strokeStyle = look[1]; ctx.lineWidth = 2.5;
+        ctx.strokeRect(-13, -13, 26, 26);
+        ctx.fillStyle = look[1];
+        ctx.font = 'bold 15px Rajdhani, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(look[0], 0, 5);
+        ctx.textAlign = 'left';
       }
       ctx.restore();
     }
 
-    // a full horde would blow the frame budget with the detailed rig, so
-    // past 45 live enemies the non-bosses get a cheap silhouette
+    var px = this.player.x, py = this.player.y;
+    // a full horde would blow the frame budget with the detailed rig, so the
+    // closest 26 stay fully rigged and the rest get a cheap silhouette
     var horde = this.zombies.length > 45;
+    var cheap = null;
+    if (horde) {
+      cheap = {};
+      var sorted = this.zombies.slice().sort(function (a, b) {
+        var da = (a.x - px) * (a.x - px) + (a.y - py) * (a.y - py);
+        var db = (b.x - px) * (b.x - px) + (b.y - py) * (b.y - py);
+        return da - db;
+      });
+      for (var si = 26; si < sorted.length; si++) cheap[sorted[si].seed] = 1;
+    }
     var viewX0 = this.camera.x - this.W / 2 / z - 90;
     var viewX1 = this.camera.x + this.W / 2 / z + 90;
     var viewY0 = this.camera.y - this.H / 2 / z - 140;
@@ -702,13 +839,22 @@ window.ZH = window.ZH || {};
       var e = order[oi];
       if (e !== this.player && (e.x < viewX0 || e.x > viewX1 || e.y < viewY0 || e.y > viewY1)) continue;
       if (e === this.player) {
+        /* keep the hunter readable inside a packed horde */
+        var ring = ctx.createRadialGradient(e.x, e.y, 2, e.x, e.y, 30);
+        ring.addColorStop(0, 'rgba(255,196,110,0.42)');
+        ring.addColorStop(1, 'rgba(255,179,71,0)');
+        ctx.fillStyle = ring;
+        ctx.beginPath(); ctx.arc(e.x, e.y, 34, 0, TAU); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,206,130,0.75)';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse(e.x, e.y + 11, 18, 7, 0, 0, TAU); ctx.stroke();
         ZH.Rig.draw(ctx, {
-          x: e.x, y: e.y, s: 1.0, kind: 'hunter', variant: 'hunter',
+          x: e.x, y: e.y, s: 1.15, kind: 'hunter', variant: 'hunter',
           facing: e.facing, aim: e.aimDir || 0, weapon: e.primaryWeapon,
           dead: e.dead ? clamp(e.deadT, 0, 1) : 0,
           pose: { t: this.t, moving: Math.hypot(e.moveX, e.moveY), walkPhase: e.walkPhase || 0 }
         });
-      } else if (horde && !e.boss) {
+      } else if (cheap && cheap[e.seed] && !e.boss) {
         drawCheapZombie(ctx, e);
       } else {
         ZH.Rig.draw(ctx, {
@@ -758,21 +904,51 @@ window.ZH = window.ZH || {};
     // HUD lives in the DOM (ui.updateHud); no canvas duplicate
   };
 
-  /* cheap zombie silhouette used when the screen is packed */
+  /* Lightweight zombie: still a readable body (head, shoulders, reaching
+     arms, dragging legs) at a few draw calls, for the packed-horde case. */
   function drawCheapZombie(ctx, e) {
-    var s = e.scale || 1;
-    var bob = Math.sin((e.walkPhase || 0)) * 1.6;
+    var s = (e.scale || 1) * 0.95;
+    var walk = Math.sin((e.walkPhase || 0) * 1.6);
+    var bob = Math.sin((e.walkPhase || 0)) * 1.4;
+    var hit = e.hurtFlash > 0.05;
+    var v = e.variant || 'walker';
+    var skin = { spitter: '#9bb24e', brute: '#8a7a4a', crawler: '#6f8452', runner: '#94a164' }[v] || '#87975f';
+    var shirt = { spitter: '#4a5a30', brute: '#4a3a30', crawler: '#3c3f33', runner: '#5a4a3c' }[v] || '#4b4038';
+    if (hit) { skin = '#f6e8d6'; shirt = '#e6d8c8'; }
     ctx.save();
     ctx.translate(e.x, e.y + bob);
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    ctx.beginPath(); ctx.ellipse(0, 14, 12 * s, 5 * s, 0, 0, TAU); ctx.fill();
-    ctx.fillStyle = e.hurtFlash > 0.05 ? '#f3e2cf' : '#6f7a52';
-    ctx.beginPath(); ctx.ellipse(0, -2, 9 * s, 15 * s, 0, 0, TAU); ctx.fill();
-    ctx.fillStyle = e.hurtFlash > 0.05 ? '#fff3e6' : '#87975f';
-    ctx.beginPath(); ctx.arc(0, -18 * s, 7.5 * s, 0, TAU); ctx.fill();
+    /* shadow */
+    ctx.fillStyle = 'rgba(0,0,0,0.32)';
+    ctx.beginPath(); ctx.ellipse(0, 13 * s, 13 * s, 5 * s, 0, 0, TAU); ctx.fill();
+    /* legs */
+    ctx.strokeStyle = '#3a3a33'; ctx.lineWidth = 4.6 * s; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-2.6 * s, 1 * s); ctx.lineTo(-4.4 * s + walk * 2 * s, 13 * s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(2.6 * s, 1 * s); ctx.lineTo(4.4 * s - walk * 2 * s, 13 * s); ctx.stroke();
+    /* torso */
+    ctx.fillStyle = shirt;
+    ctx.beginPath(); ctx.ellipse(0, -4 * s, 8 * s, 12 * s, 0, 0, TAU); ctx.fill();
+    /* reaching arms */
+    ctx.strokeStyle = skin; ctx.lineWidth = 4 * s;
+    ctx.beginPath();
+    ctx.moveTo(-5 * s, -9 * s);
+    ctx.lineTo(-11 * s, -6 * s + walk * 1.5 * s);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(5 * s, -9 * s);
+    ctx.lineTo(11 * s, -6 * s - walk * 1.5 * s);
+    ctx.stroke();
+    /* head */
+    ctx.fillStyle = skin;
+    ctx.beginPath(); ctx.arc(0, -18 * s, 7 * s, 0, TAU); ctx.fill();
+    /* jaw + eyes */
+    ctx.fillStyle = 'rgba(24,26,18,0.55)';
+    ctx.fillRect(-3.4 * s, -14.6 * s, 6.8 * s, 2 * s);
     ctx.fillStyle = '#e9ff72';
-    ctx.fillRect(-4 * s, -20 * s, 2.6 * s, 2.6 * s);
-    ctx.fillRect(1.6 * s, -20 * s, 2.6 * s, 2.6 * s);
+    ctx.beginPath(); ctx.arc(-2.4 * s, -19.4 * s, 1.3 * s, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(2.4 * s, -19.4 * s, 1.3 * s, 0, TAU); ctx.fill();
+    /* blood */
+    ctx.fillStyle = 'rgba(120,24,18,0.55)';
+    ctx.beginPath(); ctx.ellipse(-1.5 * s, -8 * s, 3.2 * s, 2.2 * s, 0.4, 0, TAU); ctx.fill();
     ctx.restore();
   }
 

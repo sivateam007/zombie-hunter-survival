@@ -50,6 +50,7 @@ window.ZH = window.ZH || {};
         bossFill: $('boss-fill'),
         bossName: $('boss-name'),
         slots: $('weapon-slots'),
+        items: $('hud-items'),
         banner: $('banner'),
         toast: $('toast')
       };
@@ -677,6 +678,28 @@ window.ZH = window.ZH || {};
         e.level.textContent = (d.levelName || '').toUpperCase();
         last.levelName = d.levelName;
       }
+      /* the supplies you are carrying, with their level */
+      if (e.items) {
+        var sig = '';
+        for (var sk in (d.supplies || {})) sig += sk + (d.supplies[sk] || 0);
+        if (sig !== last.itemsSig) {
+          last.itemsSig = sig;
+          e.items.innerHTML = '';
+          for (var sid in (d.supplies || {})) {
+            var lvl = d.supplies[sid] || 1;
+            if (!ZH.SUPPLIES || !ZH.SUPPLIES[sid]) continue;
+            var look = ZH.itemLook ? ZH.itemLook(sid) : ['?', '#ccc'];
+            var chip = document.createElement('button');
+            chip.className = 'item-chip';
+            chip.style.borderColor = look[1];
+            chip.title = ZH.SUPPLIES[sid].name + ' LV ' + lvl + ' — ' +
+              ZH.supplyDesc(sid, lvl);
+            chip.innerHTML = '<i style="color:' + look[1] + '">' + look[0] + '</i>' +
+              '<span>' + lvl + '</span>';
+            e.items.appendChild(chip);
+          }
+        }
+      }
       if (d.boss) {
         e.bossBar.classList.add('is-active');
         e.bossName.textContent = d.boss.name;
@@ -686,6 +709,14 @@ window.ZH = window.ZH || {};
         e.bossBar.classList.remove('is-active');
         last.boss = false;
       }
+    },
+
+    /* short banner when a ground item is collected */
+    toastItem: function (id, level) {
+      var s = ZH.SUPPLIES && ZH.SUPPLIES[id];
+      if (!s || !ZH.Anim || !ZH.Anim.toast) return;
+      ZH.Anim.toast(s.name + ' LV ' + level + ' — ' + ZH.supplyDesc(id, level), 'good');
+      ZH.Audio.play && ZH.Audio.play('pickup');
     },
 
     resetHud: function () {
