@@ -60,6 +60,19 @@ window.ZH = window.ZH || {};
   };
 
   /* -------------------------------- stage -------------------------------- */
+  /* the original's three difficulties (GameSnacks difficulty screen) */
+  ZH.DIFFICULTIES = [
+    { id: 'normal', name: 'NORMAL', hp: 1,   dmg: 1,   speed: 1,    reward: 1,   mul: 1,    note: 'The stage as authored.' },
+    { id: 'hard',   name: 'HARD',   hp: 2,   dmg: 2,   speed: 1.15, reward: 1.5, mul: 1.15, note: 'x2 HP, x2 damage, faster horde.' },
+    { id: 'insane', name: 'INSANE', hp: 4,   dmg: 4,   speed: 1.5,  reward: 2.5, mul: 1.35, note: 'x4 HP, x4 damage, they hunt you.' }
+  ];
+  ZH.difficulty = function (id) {
+    for (var i = 0; i < ZH.DIFFICULTIES.length; i++) {
+      if (ZH.DIFFICULTIES[i].id === id) return ZH.DIFFICULTIES[i];
+    }
+    return ZH.DIFFICULTIES[0];
+  };
+
   Game.startStage = function (stageId, primaryWeapon) {
     var stage = ZH.STAGES[stageId] || ZH.STAGES[0];
     if (!stage) return;
@@ -81,6 +94,8 @@ window.ZH = window.ZH || {};
     this.arena = ZH.Arena.get(stage.tile || 'street', (stageId || 0) * 123);
     this.resetSimulation();
     var save = ZH.Save.get();
+    this.diff = ZH.difficulty(save.difficulty);
+    this.difficultyMul = this.diff.mul;
     var wanted = primaryWeapon || save.currentWeapon || 'gun';
     if (!ZH.WEAPONS || !ZH.WEAPONS[wanted]) wanted = 'gun';
     this.player = ZH.createSurvivor({
@@ -311,7 +326,7 @@ window.ZH = window.ZH || {};
     var pos = this.findSpawnPoint(Math.max(320, half * 0.85), bias);
     // enemy HP scales with the stage multiplier, exactly like the original
     var mult = (this.stage && this.stage.multiplier) || 1;
-    var z = ZH.createEnemy(wave.enemy, pos.x, pos.y, mult);
+    var z = ZH.createEnemy(wave.enemy, pos.x, pos.y, mult, this.diff);
     if (z) this.zombies.push(z);
   };
 
@@ -322,7 +337,7 @@ window.ZH = window.ZH || {};
     var bosses = wave.bosses || [];
     for (var i = 0; i < bosses.length; i++) {
       var pos = this.findSpawnPoint(800);
-      var b = ZH.createBoss(bosses[i].type, pos.x, pos.y);
+      var b = ZH.createBoss(bosses[i].type, pos.x, pos.y, this.diff);
       if (b) this.zombies.push(b);
     }
   };
@@ -1221,7 +1236,7 @@ window.ZH = window.ZH || {};
     if (win && this.stage && this.stage.rewards) {
       var rewards = this.stage.rewards;
       var idx = p.level < 3 ? 0 : (p.level < 6 ? 1 : 2);
-      coinsEarned = rewards[idx] || rewards[0] || 0;
+      coinsEarned = Math.round((rewards[idx] || rewards[0] || 0) * ((this.diff && this.diff.reward) || 1));
     }
     // collected scrap is always banked (like the original)
     coinsEarned += this.coins || 0;

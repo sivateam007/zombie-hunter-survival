@@ -111,15 +111,16 @@
     return s;
   }
 
-  function createEnemy(type, x, y, levelMultiplier) {
+  function createEnemy(type, x, y, levelMultiplier, diff) {
     var def = ENEMY_TYPES[type] || ENEMY_TYPES.zombieA;
     var mult = levelMultiplier || 1;
-    var hp = def.hp * mult;
+    var dh = (diff && diff.hp) || 1;
+    var hp = def.hp * mult * dh;
     var e = {
       x: x, y: y, r: 13 * (def.scale || 1),
       hp: hp, maxHp: hp,
-      speed: def.speed,
-      dmg: def.dmg,
+      speed: def.speed * ((diff && diff.speed) || 1),
+      dmg: def.dmg * ((diff && diff.dmg) || 1),
       range: def.range,
       cd: def.cd,
       cdT: Math.random() * def.cd,
@@ -148,13 +149,14 @@
     return e;
   }
 
-  function createBoss(type, x, y) {
+  function createBoss(type, x, y, diff) {
     var def = BOSS_TYPES[type] || BOSS_TYPES.boss_soldier;
+    var bh = (diff && diff.hp) || 1;
     return {
       x: x, y: y, r: 30,
-      hp: def.hp, maxHp: def.hp,
-      speed: def.speed,
-      dmg: def.dmg,
+      hp: def.hp * bh, maxHp: def.hp * bh,
+      speed: def.speed * ((diff && diff.speed) || 1),
+      dmg: def.dmg * ((diff && diff.dmg) || 1),
       range: def.range,
       cd: def.cd, cdT: Math.random() * def.cd,
       type: type,

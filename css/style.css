@@ -773,14 +773,14 @@ p { margin: 0; line-height: 1.5; }
   border-left: 2px solid rgba(255, 179, 71, 0.45);
 }
 .brief-cell p { font-size: 13px; margin-top: 4px; color: #d6d8cf; }
-.loadout { margin-bottom: 6px; }
-.loadout-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.loadout { margin-bottom: 4px; }
+.loadout-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
 .loadout-chip {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  font-size: 12px;
+  gap: 5px;
+  padding: 4px 8px;
+  font-size: 11px;
   letter-spacing: 0.06em;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--line);

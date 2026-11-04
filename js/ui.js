@@ -65,6 +65,14 @@ window.ZH = window.ZH || {};
 
     /* ------------------------------ screens ------------------------------ */
     showOnly: function (id) {
+      /* menu-ish screens freeze a live run instead of leaving the horde
+         moving and a level-up card stack sitting over the briefing */
+      if (/^screen-(menu|levels|briefing|shop|board)$/.test(id) && G &&
+          (G.state === 'playing' || G.state === 'levelup')) {
+        G.state = 'menu';
+        var ov = document.getElementById('levelup-overlay');
+        if (ov) ov.style.display = 'none';
+      }
       document.querySelectorAll('.screen').forEach(function (s) {
         if (s.id !== id && s.classList.contains('is-open')) ZH.Anim.hide(s);
       });
@@ -132,7 +140,29 @@ window.ZH = window.ZH || {};
       start.querySelector('em').textContent = mode === 'endless'
         ? 'No extraction' : 'Stage ' + ((level.id || 0) + 1) + ' · ' + level.name;
       this.renderLoadout();
+      this.renderDifficulty();
       this.showOnly('screen-briefing');
+    },
+
+    /* normal / hard / insane — the original's three difficulty steps */
+    renderDifficulty: function () {
+      var list = $('diff-list');
+      if (!list || !ZH.DIFFICULTIES) return;
+      var save = ZH.Save.get();
+      var cur = save.difficulty || 'normal';
+      list.innerHTML = '';
+      ZH.DIFFICULTIES.forEach(function (d) {
+        var b = document.createElement('button');
+        b.className = 'loadout-chip' + (cur === d.id ? ' is-active' : '');
+        b.innerHTML = '<span>' + d.name + '</span><span>x' + d.reward + '</span>';
+        b.title = d.note;
+        b.addEventListener('click', function () {
+          ZH.Audio.play('click');
+          ZH.Save.setDifficulty(d.id);
+          UI.renderDifficulty();
+        });
+        list.appendChild(b);
+      });
     },
 
     renderLoadout: function () {

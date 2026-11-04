@@ -16,6 +16,7 @@ window.ZH = window.ZH || {};
     maxLevel: 6,
     weapons: ['gun'],
     currentWeapon: 'gun',
+    difficulty: 'normal',
     // the original's six coin skills, each starting at level 1
     skills: { power: 1, health: 1, defense: 1, firstaid: 1, fortune: 1, learning: 1 },
     upgrades: {},
@@ -132,6 +133,13 @@ window.ZH = window.ZH || {};
     persist();
   }
 
+  /* difficulty chosen on the deploy screen (normal / hard / insane) */
+  function setDifficulty(id) {
+    save.difficulty = id || 'normal';
+    persist();
+    return save.difficulty;
+  }
+
   function setName(name) {
     save.name = String(name || 'Hunter').slice(0, 14).trim() || 'Hunter';
     persist();
@@ -160,6 +168,7 @@ window.ZH = window.ZH || {};
     buySkill: buySkill,
     buyWeapon: buyWeapon,
     recordRun: recordRun,
+    setDifficulty: setDifficulty,
     setName: setName,
     setSetting: setSetting,
     reset: reset,
