@@ -152,6 +152,8 @@ window.ZH = window.ZH || {};
 
   function reset() {
     save = clone(DEFAULTS);
+    /* the campaign size always comes from levels.js, never from a stale default */
+    if (ZH.STAGES && ZH.STAGES.length) save.maxLevel = ZH.STAGES.length;
     persist();
   }
 

@@ -51,11 +51,14 @@ window.ZH = window.ZH || {};
 
   Game.resize = function () {
     var c = this.canvas;
+    if (!c) return;
     this.dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), 2);
-    this.W = c.clientWidth || window.innerWidth;
-    this.H = c.clientHeight || window.innerHeight;
-    c.width = Math.round(this.W * this.dpr);
-    c.height = Math.round(this.H * this.dpr);
+    /* a zero-sized canvas draws nothing at all (a black screen on browsers
+       that report 0 while their chrome collapses) — never accept 0 */
+    this.W = Math.max(1, Math.round(c.clientWidth || window.innerWidth || 1));
+    this.H = Math.max(1, Math.round(c.clientHeight || window.innerHeight || 1));
+    c.width = Math.max(1, Math.round(this.W * this.dpr));
+    c.height = Math.max(1, Math.round(this.H * this.dpr));
     this.quality = this.W * this.H > 1400 * 900 ? 1 : 0.9;
   };
 
@@ -120,6 +123,8 @@ window.ZH = window.ZH || {};
     this.elapsed = 0;
     this.coins = 0; this.score = 0; this.exp = 0;
     this.treasureSpawned = false;
+    this.continueCount = 0;
+    this.continueOffers = 0;
     this.expToNext = 1000;
     if (window.ZH && ZH.Anim) ZH.Anim.banner(stage.name, 'SURVIVE 20 MINUTES');
     this.lastTs = performance.now();
@@ -536,9 +541,18 @@ window.ZH = window.ZH || {};
 
   /* ------------------------------ update ------------------------------ */
   Game.update = function (dt) {
-    /* self-heal: a 'levelup' state with no chooser on screen is a dead end. */
-    if (this.state === 'levelup' && !document.getElementById('levelup-overlay')) {
-      this.state = 'playing';
+    /* self-heal: a 'levelup' state with no usable chooser on screen is a dead
+       end (this is what looked like a black screen with the game standing
+       still). The chooser must exist, be active, and carry an escape button. */
+    if (this.state === 'levelup') {
+      var chooser = document.getElementById('levelup-overlay');
+      var escapable = chooser && chooser.classList.contains('is-active') &&
+        chooser.querySelector('#lu-skip');
+      if (!escapable) {
+        if (chooser && chooser.parentNode) chooser.parentNode.removeChild(chooser);
+        this.state = 'playing';
+        this.lastTs = performance.now();
+      }
     }
     if (this.state !== 'playing') return;
     this.t += dt;
@@ -632,7 +646,7 @@ window.ZH = window.ZH || {};
 
     if (p.hp <= 0 && p.dead) {
       p.deadT += dt;
-      if (p.deadT > 2) this.finishStage(false);
+      if (p.deadT > 2) this.offerContinue();
       return;
     }
 
@@ -1228,6 +1242,54 @@ window.ZH = window.ZH || {};
     }
   };
 
+  /* ---- AskToContinue: 2,500 x n scrap, at most two per run ---- */
+  Game.CONTINUE_MAX = 2;
+  Game.continueCost = function () {
+    return 2500 * ((this.continueCount || 0) + 1);
+  };
+  Game.offerContinue = function () {
+    if (this.continueOffers >= this.CONTINUE_MAX) { this.finishStage(false); return; }
+    this.continueOffers = (this.continueOffers || 0) + 1;
+    this.state = 'dead';
+    var cost = this.continueCost();
+    var coins = (ZH.Save.get().coins || 0) + (this.coins || 0);
+    var self = this;
+    if (this.ui && this.ui.showContinue) {
+      this.ui.showContinue(cost, coins >= cost, function () {
+        self.resumeFromContinue(cost);
+      }, function () {
+        self.finishStage(false);
+      });
+    } else {
+      this.finishStage(false);
+    }
+  };
+  Game.resumeFromContinue = function (cost) {
+    var save = ZH.Save.get();
+    /* run scrap pays first, then the bank — like the original's coin spend */
+    var fromRun = Math.min(this.coins || 0, cost);
+    this.coins = (this.coins || 0) - fromRun;
+    var rest = cost - fromRun;
+    if (rest > 0) ZH.Save.spend(rest);
+    this.continueCount = (this.continueCount || 0) + 1;
+    var p = this.player;
+    if (p) {
+      p.dead = false;
+      p.deadT = 0;
+      p.hp = p.maxHp;
+      p.invuln = 3;                 /* the original's 3 s of mercy */
+      p.dashCd = 0;
+    }
+    /* clear the ring so the survivor is not re-killed on the same frame */
+    for (var i = this.zombies.length - 1; i >= 0; i--) {
+      var z = this.zombies[i];
+      if (!z.boss && Math.hypot(z.x - p.x, z.y - p.y) < 260) this.zombies.splice(i, 1);
+    }
+    this.state = 'playing';
+    this.lastTs = performance.now();
+    if (ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('BACK ON YOUR FEET', 'One more chance');
+  };
+
   Game.finishStage = function (win) {
     this.state = 'results';
     if (document.body) document.body.classList.remove('in-game');
@@ -1271,14 +1333,40 @@ window.ZH = window.ZH || {};
     if (this.ui) this.ui.showResults(this.result);
   };
 
-  /* frame loop */
+  /* frame loop
+   * An exception thrown by update() or render() used to end this loop for
+   * good: the last frame stayed on screen and the game looked hung. Both
+   * phases are isolated now, so a bad frame costs one frame, and the first
+   * failure is reported once instead of silently freezing everything. */
   Game.frame = function (ts) {
     var dt = Math.min(0.05, (ts - this.lastTs) / 1000) || 0.016;
     this.lastTs = ts;
-    this.update(dt);
-    this.render();
+    try {
+      this.update(dt);
+    } catch (e) {
+      this.reportFrameError('update', e);
+    }
+    try {
+      this.render();
+    } catch (e) {
+      this.reportFrameError('render', e);
+    }
     var self = this;
     requestAnimationFrame(function (t2) { self.frame(t2); });
+  };
+
+  Game.reportFrameError = function (where, e) {
+    this.frameErrors = (this.frameErrors || 0) + 1;
+    if (this.frameErrors > 600) return;    /* a broken frame every second is enough log */
+    try { console.error('[frame ' + where + ']', e); } catch (_) {}
+    if (this.frameErrors === 1) {
+      if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast('Recovered from a frame error', 'error');
+      /* a level-up chooser that threw must not hold the run hostage */
+      if (this.state === 'levelup' && !(ZH.UI && ZH.UI.isLevelUpOpen && ZH.UI.isLevelUpOpen())) {
+        this.state = 'playing';
+        this.lastTs = performance.now();
+      }
+    }
   };
 
 })(typeof window !== 'undefined' ? window.ZH || (window.ZH = {}) : {});

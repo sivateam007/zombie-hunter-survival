@@ -307,6 +307,7 @@ window.ZH = window.ZH || {};
       var cards = panel.querySelector('#levelup-cards');
       cards.innerHTML = '';
       choices.forEach(function (c) {
+        try {
         var b = document.createElement('button');
         b.className = 'levelup-card' + (c.type === 'supply' ? ' is-supply' : '') +
           (c.type === 'evolution' ? ' is-evo' : '');
@@ -334,6 +335,11 @@ window.ZH = window.ZH || {};
             '<button class="btn small ghost" data-act="skip">SKIP</button>' +
           '</div>';
         cards.appendChild(b);
+        } catch (e) {
+          /* one malformed offer must not take the whole chooser down — a
+             panel with no cards and no way out is the "stuck black screen" */
+          console.error('[levelup card]', c, e);
+        }
       });
       var binding = function (ev) {
         var btn = ev.target.closest('button');
@@ -456,6 +462,59 @@ window.ZH = window.ZH || {};
         G.state = 'playing';
         G.lastTs = performance.now();
       }
+    },
+
+    /* true only when the chooser is really on screen and escapable */
+    isLevelUpOpen: function () {
+      var o = document.getElementById('levelup-overlay');
+      return !!(o && o.classList.contains('is-active') && o.querySelector('#lu-skip'));
+    },
+
+    /* the original's AskToContinue: 2,500 x n scrap, two offers per run */
+    showContinue: function (cost, canAfford, onContinue, onQuit) {
+      var panel = document.getElementById('continue-overlay');
+      if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
+      panel = document.createElement('div');
+      panel.id = 'continue-overlay';
+      panel.className = 'levelup-overlay is-active';
+      panel.innerHTML =
+        '<div class="levelup-panel">' +
+          '<div class="levelup-head"><h3>THEY GOT YOU</h3></div>' +
+          '<div class="levelup-desc">Get back on your feet for ' + cost +
+            ' scrap. Two continues per run.</div>' +
+          '<div class="levelup-cards">' +
+            '<button class="levelup-card is-supply" id="cont-yes">' +
+              '<div class="lc-tag">CONTINUE</div>' +
+              '<div class="lc-name">' + cost + ' SCRAP</div>' +
+              '<div class="lc-desc">' +
+                (canAfford ? 'You have enough scrap.' : 'Not enough scrap.') +
+              '</div>' +
+              '<div class="lc-foot"><span class="btn small primary">CONTINUE</span></div>' +
+            '</button>' +
+            '<button class="levelup-card" id="cont-no">' +
+              '<div class="lc-tag">GIVE UP</div>' +
+              '<div class="lc-name">END THE RUN</div>' +
+              '<div class="lc-desc">Bank what you collected and see the score.</div>' +
+              '<div class="lc-foot"><span class="btn small ghost">END RUN</span></div>' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(panel);
+      var yes = panel.querySelector('#cont-yes');
+      if (!canAfford) { yes.disabled = true; yes.style.opacity = '0.45'; }
+      yes.addEventListener('click', function () {
+        if (!canAfford) return;
+        ZH.Audio.play && ZH.Audio.play('click');
+        panel.parentNode && panel.parentNode.removeChild(panel);
+        onContinue && onContinue();
+      });
+      panel.querySelector('#cont-no').addEventListener('click', function () {
+        ZH.Audio.play && ZH.Audio.play('click');
+        panel.parentNode && panel.parentNode.removeChild(panel);
+        onQuit && onQuit();
+      });
+      ZH.Anim && ZH.Anim.staggerIn && ZH.Anim.staggerIn(panel, '.levelup-card');
+      return panel;
     },
 
     showResults: function (res) {
