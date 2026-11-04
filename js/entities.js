@@ -253,6 +253,13 @@
     o.r = o.r || 4;
     o.life = o.life || 1.6;
     o.hits = o.hits || null;
+    if (world._wid && !o.wid) o.wid = world._wid;
+    /* what the renderer should draw for this shot */
+    if (!o.kind) {
+      o.kind = o.flame ? 'flame' : o.rocket ? 'rocket' : o.firebomb ? 'bomb' :
+        o.chainTarget ? 'chain' : o.returnTrip ? 'boomerang' :
+        o.bounce ? 'ball' : o.orbit ? 'blade' : (o.pierce ? 'bolt' : 'bullet');
+    }
     world.bullets.push(o);
     return o;
   }
@@ -262,8 +269,8 @@
    * Fire one weapon. `id` is already the effective (possibly evolved) id.
    * Returns the seconds until it may fire again.
    */
-  function fireWeapon(id, level, p, world) {
-    var def = (ZH.WEAPONS && ZH.WEAPONS[id]) || (ZH.WEAPONS && ZH.WEAPONS.gun);
+  function fireWeaponCore(id, level, p, world, def) {
+    def = def || (ZH.WEAPONS && ZH.WEAPONS[id]) || (ZH.WEAPONS && ZH.WEAPONS.gun);
     if (!def) return 1;
     var a = attribsOf(p);
     var atk = p.attack || 10;
@@ -514,6 +521,42 @@
     return cd;
   }
 
+  /* behaviours that throw something out of the barrel */
+  var MUZZLE = { target: 1, fan: 1, burst: 1, rocket: 1, stream: 1 };
+
+  /* Fire one weapon and dress the shot: muzzle flash, warm light and a
+     brass casing kicked sideways, so every shot reads on screen. */
+  function fireWeapon(id, level, p, world) {
+    var def = (ZH.WEAPONS && ZH.WEAPONS[id]) || (ZH.WEAPONS && ZH.WEAPONS.gun);
+    if (!def) return 1;
+    world._wid = id;
+    var cd = fireWeaponCore(id, level, p, world, def);
+
+    if (MUZZLE[def.behaviour]) {
+      var aim = p.aimDir || 0;
+      var mx = p.x + Math.cos(aim) * 26, my = p.y + Math.sin(aim) * 26 - 4;
+      world.particles.push({
+        x: mx, y: my, vx: 0, vy: 0, life: 0.08, max: 0.08,
+        size: def.behaviour === 'rocket' ? 13 : def.behaviour === 'stream' ? 5 : 8,
+        color: 'rgba(255,232,170,0.92)'
+      });
+      world.particles.push({
+        x: mx, y: my, vx: 0, vy: 0, life: 0.16, max: 0.16,
+        size: def.behaviour === 'rocket' ? 26 : 17,
+        color: 'rgba(255,168,60,0.3)'
+      });
+      if (def.ammo !== false && def.behaviour !== 'stream' && Math.random() < 0.85) {
+        var ca = aim + Math.PI / 2 + rand(-0.35, 0.35);
+        world.particles.push({
+          x: mx, y: my,
+          vx: Math.cos(ca) * rand(70, 150), vy: Math.sin(ca) * rand(70, 150) - 40,
+          grav: 620, life: 0.45, max: 0.45, size: 1.9, color: '#d9b25c'
+        });
+      }
+    }
+    return cd;
+  }
+
   /* ------------------------------ simulation ------------------------------ */
   function updateSurvivor(p, dt, world) {
     if (p.dead) { p.deadT += dt; return; }
@@ -527,10 +570,7 @@
       p.y += my * speed * dt;
       p.walkPhase += dt * 8;
     }
-    if (world.arena) {
-      p.x = clamp(p.x, 80, world.arena.w - 80);
-      p.y = clamp(p.y, 80, world.arena.h - 80);
-    }
+    /* open world: no walls — the city keeps generating in every direction */
 
     p.invuln = Math.max(0, p.invuln - dt);
 
@@ -580,8 +620,8 @@
          the edge of the fight instead of jogging across 6 km of map. */
       if (!z.boss && dist > 950 && Math.random() < 0.06) {
         var la = rand(0, TAU), lr = rand(520, 760);
-        z.x = clamp(p.x + Math.cos(la) * lr, 60, (world.arena ? world.arena.w : 6000) - 60);
-        z.y = clamp(p.y + Math.sin(la) * lr, 60, (world.arena ? world.arena.h : 6000) - 60);
+        z.x = p.x + Math.cos(la) * lr;
+        z.y = p.y + Math.sin(la) * lr;
         continue;
       }
 
@@ -611,8 +651,7 @@
       }
 
       if (world.arena) {
-        z.x = clamp(z.x, 60, world.arena.w - 60);
-        z.y = clamp(z.y, 60, world.arena.h - 60);
+        /* open world: nothing to clamp to */
       }
     }
   }

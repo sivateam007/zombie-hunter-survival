@@ -789,6 +789,9 @@ p { margin: 0; line-height: 1.5; }
   font-family: var(--font);
 }
 .loadout-chip.is-active { border-color: var(--amber); color: var(--amber); background: rgba(255, 179, 71, 0.1); }
+.loadout-chip.is-locked { border-style: dashed; opacity: 0.6; }
+.loadout-chip.is-locked span:last-child { color: var(--amber); opacity: 0.8; }
+.loadout-chip:hover { border-color: var(--ink); color: var(--ink); }
 
 /* ---------------------------------------------------------
    Results

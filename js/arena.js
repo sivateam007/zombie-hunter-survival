@@ -58,14 +58,12 @@ window.ZH = window.ZH || {};
   };
 
   /* world dimensions + tile constants */
-  var WORLD = 6144;          /* big open city */
+  var OPEN = 1e9;            /* the city never ends: chunks generate on demand */
   var CHUNK = 512;           /* render tile */
-  var CELL = 1024;           /* block pitch (stops at world edges) */
-  var CELL_GRID = WORLD / CELL;     /* 6x6 blocks */
-  var CHUNK_GRID = Math.ceil(WORLD / CHUNK);   /* 12x12 chunks */
+  var CELL = 1024;           /* block pitch */
   var CELL_HALF = CELL / 2;
   var ROAD_HALF = 96;       /* street width / 2 */
-  var WALL = 54;            /* perimeter ring */
+  var DISTRICT = 4;         /* chunks per district (2048 px) */
 
   /* ------- base surfaces (world-aligned, no global stripe) ---------- */
   function streetBase(ctx, w, h, ox, oy, rnd) {
@@ -450,21 +448,40 @@ window.ZH = window.ZH || {};
     var rnd = rng(seed || 1);
     var cfg = THEMES[theme] || THEMES.street;
     var world = {
-      w: WORLD, h: WORLD,
+      w: OPEN, h: OPEN,
       theme: theme, _fn: theme,
       cfg: cfg, _seed: seed || 1,
       ambient: cfg.ambient, fog: cfg.fog, lamp: cfg.lamp,
       props: [],
-      _chunks: {}, _keys: [], _cap: 48
+      _chunks: {}, _keys: [], _cap: 56
+    };
+
+    /* Infinite city: every district is 4x4 chunks and mostly keeps the stage
+       theme, with the odd factory / hospital / rooftop block so wandering
+       actually changes what you see. */
+    world.themeAt = function (cx, cy) {
+      var dx = Math.floor(cx / DISTRICT), dy = Math.floor(cy / DISTRICT);
+      var h = Math.abs(hash(this._seed * 7919 + 13, dx, dy));
+      if (h % 100 < 62) return this._fn;
+      var others = ['street', 'factory', 'hospital', 'rooftop'];
+      var pick = [];
+      for (var i = 0; i < others.length; i++) if (others[i] !== this._fn) pick.push(others[i]);
+      return pick[(h >> 8) % pick.length];
+    };
+
+    world.districtName = function (cx, cy) {
+      var t = this.themeAt(cx, cy);
+      return (THEMES[t] || THEMES.street).name;
     };
 
     world.draw = function (ctx, vx0, vy0, vx1, vy1) {
       /* inclusive range: the chunk holding vx1/vy1 must be painted too,
-         otherwise the right/bottom edge of the view stays black */
-      var x0 = Math.max(0, Math.floor(vx0 / CHUNK));
-      var x1 = Math.min(CHUNK_GRID - 1, Math.floor(vx1 / CHUNK));
-      var y0 = Math.max(0, Math.floor(vy0 / CHUNK));
-      var y1 = Math.min(CHUNK_GRID - 1, Math.floor(vy1 / CHUNK));
+         otherwise the right/bottom edge of the view stays black.
+         No clamping: this city has no edge. */
+      var x0 = Math.floor(vx0 / CHUNK);
+      var x1 = Math.floor(vx1 / CHUNK);
+      var y0 = Math.floor(vy0 / CHUNK);
+      var y1 = Math.floor(vy1 / CHUNK);
       for (var cy = y0; cy <= y1; cy++) {
         for (var cx = x0; cx <= x1; cx++) {
           this.drawTile(ctx, cx, cy);
@@ -617,36 +634,35 @@ window.ZH = window.ZH || {};
        and bakes out completely black. */
     ctx.translate(-ox, -oy);
     var rnd = rng(hash(world._seed, cx, cy));
-    if (world._fn === 'street') streetBase(ctx, CHUNK, CHUNK, ox, oy, rnd);
-    else if (world._fn === 'factory') concreteBase(ctx, CHUNK, CHUNK, ox, oy, rnd);
-    else if (world._fn === 'hospital') hospitalBase(ctx, CHUNK, CHUNK, ox, oy, rnd);
+    var fn = world.themeAt ? world.themeAt(cx, cy) : world._fn;
+    if (fn === 'street') streetBase(ctx, CHUNK, CHUNK, ox, oy, rnd);
+    else if (fn === 'factory') concreteBase(ctx, CHUNK, CHUNK, ox, oy, rnd);
+    else if (fn === 'hospital') hospitalBase(ctx, CHUNK, CHUNK, ox, oy, rnd);
     else roofBase(ctx, CHUNK, CHUNK, ox, oy, rnd);
 
-    if (world._fn === 'street') {
+    if (fn === 'street') {
       streetRoads(ctx, ox, oy, CHUNK, CHUNK, cx, cy);
-      var pcx0 = Math.max(0, (ox / CELL) | 0), pcx1 = Math.min(CELL_GRID, ((ox + CHUNK) / CELL) | 0) + 1;
-      var pcy0 = Math.max(0, (oy / CELL) | 0), pcy1 = Math.min(CELL_GRID, ((oy + CHUNK) / CELL) | 0) + 1;
+      var pcx0 = Math.floor(ox / CELL), pcx1 = Math.floor((ox + CHUNK) / CELL) + 1;
+      var pcy0 = Math.floor(oy / CELL), pcy1 = Math.floor((oy + CHUNK) / CELL) + 1;
       for (var j = pcy0; j < pcy1; j++) {
         for (var i = pcx0; i < pcx1; i++) {
-          if (i < 0 || i >= CELL_GRID || j < 0 || j >= CELL_GRID) continue;
           drawBlockProps(ctx, ox, oy, world, i, j, i, j, rnd);
         }
       }
     } else {
-      var pcx0 = Math.max(0, (ox / CELL) | 0), pcx1 = Math.min(CELL_GRID, ((ox + CHUNK) / CELL) | 0) + 1;
-      var pcy0 = Math.max(0, (oy / CELL) | 0), pcy1 = Math.min(CELL_GRID, ((oy + CHUNK) / CELL) | 0) + 1;
+      var pcx0 = Math.floor(ox / CELL), pcx1 = Math.floor((ox + CHUNK) / CELL) + 1;
+      var pcy0 = Math.floor(oy / CELL), pcy1 = Math.floor((oy + CHUNK) / CELL) + 1;
       for (var j = pcy0; j < pcy1; j++) {
         for (var i = pcx0; i < pcx1; i++) {
-          if (i < 0 || i >= CELL_GRID || j < 0 || j >= CELL_GRID) continue;
           var bx0 = i * CELL + ROAD_HALF * 0, by0 = j * CELL + ROAD_HALF * 0;
           var bx1 = (i + 1) * CELL, by1 = (j + 1) * CELL;
           var lRnd = rng(hash(world._seed, i * 7 + j * 13));
-          var kinds = world._fn === 'factory' ? [0, 1, 0, 2] :
-                      world._fn === 'hospital' ? [1, 0, 3, 0] :
+          var kinds = fn === 'factory' ? [0, 1, 0, 2] :
+                      fn === 'hospital' ? [1, 0, 3, 0] :
                       [2, 3, 0, 1];
           var k = kinds[(i + j) % kinds.length];
           var cellRnd = rng(hash(world._seed, i * 7 + j * 13));
-          if (world._fn === 'factory') {
+          if (fn === 'factory') {
             ctx.fillStyle = 'rgba(20,20,22,0.22)'; ctx.fillRect(bx0, by0, bx1 - bx0, by1 - by0);
             ctx.fillStyle = 'rgba(94,92,88,0.12)'; ctx.fillRect(bx0 + 2, by0 + 2, (bx1 - bx0) - 4, (by1 - by0) - 4);
             for (var s = 0; s < 3; s++) {
@@ -665,7 +681,7 @@ window.ZH = window.ZH || {};
               _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](
                 ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
             }
-          } else if (world._fn === 'hospital') {
+          } else if (fn === 'hospital') {
             for (var s = 0; s < 2; s++) {
               var sbx = bx0 + 20 + cellRnd() * (bx1 - bx0 - 80), sby = by0 + cellRnd() * (by1 - by0 - 80);
               var sw = 60 + cellRnd() * 50, sh = 46;
@@ -703,27 +719,6 @@ window.ZH = window.ZH || {};
           }
         }
       }
-    }
-
-    /* perimeter wall on the city edge */
-    if (cx === 0 || cy === 0 || cx === CHUNK_GRID - 1 || cy === CHUNK_GRID - 1) {
-      var wx0 = Math.max(0, cx * CHUNK), wy0 = Math.max(0, cy * CHUNK);
-      var wx1 = Math.min(WORLD, (cx + 1) * CHUNK), wy1 = Math.min(WORLD, (cy + 1) * CHUNK);
-      var outerX0 = cx === 0 ? 0 : wx0;
-      var innerX0 = cx === 0 ? 0 : wx0 - WALL;
-      var outerX1 = cx === CHUNK_GRID - 1 ? WORLD : wx1;
-      var innerX1 = cx === CHUNK_GRID - 1 ? WORLD : wx1 + WALL;
-      var outerY0 = cy === 0 ? 0 : wy0;
-      var innerY0 = cy === 0 ? 0 : wy0 - WALL;
-      var outerY1 = cy === CHUNK_GRID - 1 ? WORLD : wy1;
-      var innerY1 = cy === CHUNK_GRID - 1 ? WORLD : wy1 + WALL;
-      ctx.fillStyle = 'rgba(8,10,12,0.82)';
-      if (cx === 0) ctx.fillRect(outerX0, oy, WALL, CHUNK);
-      if (cx === CHUNK_GRID - 1) ctx.fillRect(outerX1 - WALL, oy, WALL, CHUNK);
-      if (cy === 0) ctx.fillRect(ox, outerY0, CHUNK, WALL);
-      if (cy === CHUNK_GRID - 1) ctx.fillRect(ox, outerY1 - WALL, CHUNK, WALL);
-      ctx.strokeStyle = 'rgba(180,170,140,0.18)'; ctx.lineWidth = 3;
-      if (cx === 0) ctx.beginPath(); ctx.moveTo(WALL, oy); ctx.lineTo(WALL, oy + CHUNK); ctx.stroke();
     }
 
     world._chunks[key] = canvas;

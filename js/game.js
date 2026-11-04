@@ -84,9 +84,11 @@ window.ZH = window.ZH || {};
     var wanted = primaryWeapon || save.currentWeapon || 'gun';
     if (!ZH.WEAPONS || !ZH.WEAPONS[wanted]) wanted = 'gun';
     this.player = ZH.createSurvivor({
-      x: this.arena.w / 2, y: this.arena.h / 2,
+      x: 512, y: 512,
       weapon: wanted
     });
+    this._district = null;
+    this.distance = 0;
     this.player.primaryWeapon = this.player.weapon;
     this.player.supplies = {};
     this.applySkills();
@@ -334,8 +336,6 @@ window.ZH = window.ZH || {};
       var d = dist + rand(-50, 100);
       var x = p.x + Math.cos(ang) * d;
       var y = p.y + Math.sin(ang) * d;
-      x = clamp(x, 150, this.arena.w - 150);
-      y = clamp(y, 150, this.arena.h - 150);
       if (Math.hypot(x - p.x, y - p.y) > 240) return { x: x, y: y };
     }
     return { x: p.x + rand(-600, 600), y: p.y + rand(-600, 600) };
@@ -685,13 +685,22 @@ window.ZH = window.ZH || {};
     this.camera.x = lerp(this.camera.x, p.x, k);
     this.camera.y = lerp(this.camera.y, p.y, k);
 
-    /* never show past the edge of the city — it used to be a black band */
-    var W = this.arena ? this.arena.w : 6144;
-    var H = this.arena ? this.arena.h : 6144;
-    var hw = this.W / (2 * this.camera.zoom);
-    var hh = this.H / (2 * this.camera.zoom);
-    this.camera.x = W > hw * 2 ? clamp(this.camera.x, hw, W - hw) : W / 2;
-    this.camera.y = H > hh * 2 ? clamp(this.camera.y, hh, H - hh) : H / 2;
+    /* no camera clamp: the city is endless, and chunks bake on demand */
+    this.trackDistrict();
+  };
+
+  /* the endless city changes character every 2048 px; announce it once */
+  Game.trackDistrict = function () {
+    var a = this.arena;
+    if (!a || !a.themeAt) return;
+    var cx = Math.floor(this.player.x / 512), cy = Math.floor(this.player.y / 512);
+    var theme = a.themeAt(cx, cy);
+    if (this._district === theme) return;
+    var first = this._district == null;
+    this._district = theme;
+    if (first) return;
+    var name = (ZH.Arena.THEMES[theme] || {}).name || 'THE CITY';
+    if (ZH.Anim && ZH.Anim.banner) ZH.Anim.banner(name.toUpperCase(), 'NEW DISTRICT');
   };
 
   /* ------------------------------ render ------------------------------ */
@@ -878,16 +887,18 @@ window.ZH = window.ZH || {};
       }
     }
 
-    // bullets
-    for (var b = 0; b < this.bullets.length; b++) {
-      var bl = this.bullets[b];
-      ctx.fillStyle = '#ffd166';
-      ctx.beginPath(); ctx.arc(bl.x, bl.y, 3, 0, TAU); ctx.fill();
-    }
+    // bullets — every weapon gets its own projectile silhouette
+    drawShots(ctx, this);
+
     for (var eb = 0; eb < this.enemyBullets.length; eb++) {
       var ebl = this.enemyBullets[eb];
-      ctx.fillStyle = '#a9e83f';
-      ctx.beginPath(); ctx.arc(ebl.x, ebl.y, 4, 0, TAU); ctx.fill();
+      var eg = ctx.createRadialGradient(ebl.x, ebl.y, 1, ebl.x, ebl.y, 12);
+      eg.addColorStop(0, 'rgba(169,232,63,0.55)');
+      eg.addColorStop(1, 'rgba(120,200,40,0)');
+      ctx.fillStyle = eg;
+      ctx.beginPath(); ctx.arc(ebl.x, ebl.y, 12, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#b7ef55';
+      ctx.beginPath(); ctx.arc(ebl.x, ebl.y, 3.4, 0, TAU); ctx.fill();
     }
 
     // particles
@@ -903,6 +914,177 @@ window.ZH = window.ZH || {};
 
     // HUD lives in the DOM (ui.updateHud); no canvas duplicate
   };
+
+  /* tints per weapon family: a shotgun blast should not look like a laser */
+  var SHOT_TINT = {
+    gun: '#ffd166', uzi: '#ffdf8a',
+    crossbow: '#d8ecff', shotgun: '#eaf6ff',
+    drill: '#7fe1ff', lasergun: '#b9f0ff',
+    tesla: '#9ad4ff', thunderorb: '#c9b3ff',
+    bazooka: '#ff9a5c', nuke: '#ff7a3d',
+    launcher: '#ff8a5c', airstrike: '#ffc46b',
+    flamer: '#ffb066', plasmagun: '#8ef2d0',
+    boomerang: '#f6c45a', neckbreaker: '#ffe08a',
+    spikedball: '#cfd8e2', biliard: '#e6eef8',
+    molotov: '#ff8b3d', canister: '#ffb347',
+    sword: '#eaf4ff', scimitars: '#ffffff',
+    circular: '#c2ccd8', ripper: '#ff6b6b'
+  };
+
+  /* Draw every live projectile with the silhouette its weapon deserves. */
+  function drawShots(ctx, g) {
+    var list = g.bullets, t = g.t || 0;
+    for (var i = 0; i < list.length; i++) {
+      var b = list[i];
+      var tint = SHOT_TINT[b.wid] || '#ffd166';
+
+      /* ---- orbiting axe / saw ---- */
+      if (b.orbit) {
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate(t * (b.saw ? 17 : 10) + (b.orbitAngle || 0));
+        if (b.saw) {
+          var blades = 8, rr2 = (b.r || 9) + 5;
+          ctx.fillStyle = '#cfd8e2';
+          ctx.beginPath();
+          for (var s = 0; s < blades * 2; s++) {
+            var aa = (s / (blades * 2)) * TAU;
+            var r2 = s % 2 ? rr2 * 0.72 : rr2;
+            if (s === 0) ctx.moveTo(Math.cos(aa) * r2, Math.sin(aa) * r2);
+            else ctx.lineTo(Math.cos(aa) * r2, Math.sin(aa) * r2);
+          }
+          ctx.closePath(); ctx.fill();
+          ctx.fillStyle = '#7d8894';
+          ctx.beginPath(); ctx.arc(0, 0, rr2 * 0.32, 0, TAU); ctx.fill();
+        } else {
+          ctx.strokeStyle = '#7a5330'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(0, 14); ctx.lineTo(0, -12); ctx.stroke();
+          ctx.fillStyle = '#dde6f0';
+          ctx.beginPath();
+          ctx.moveTo(-13, -10); ctx.lineTo(11, -16); ctx.lineTo(14, -6);
+          ctx.lineTo(-10, 0); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = 'rgba(30,34,40,0.7)'; ctx.lineWidth = 1.4; ctx.stroke();
+        }
+        ctx.restore();
+        continue;
+      }
+
+      /* ---- tesla chain: a jagged bolt to the target ---- */
+      if (b.chainTarget) {
+        var ct = b.chainTarget;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(150,215,255,0.35)';
+        ctx.lineWidth = 6; ctx.beginPath();
+        ctx.moveTo(b.x, b.y);
+        for (var seg = 1; seg <= 4; seg++) {
+          var f = seg / 4;
+          var jx = b.x + (ct.x - b.x) * f + rand(-9, 9);
+          var jy = b.y + (ct.y - b.y) * f + rand(-9, 9);
+          ctx.lineTo(jx, jy);
+        }
+        ctx.stroke();
+        ctx.strokeStyle = '#dff2ff'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.restore();
+        continue;
+      }
+
+      /* ---- flamethrower stream ---- */
+      if (b.flame) {
+        var fr = (b.r || 12) * 1.4;
+        var fg = ctx.createRadialGradient(b.x, b.y, 1, b.x, b.y, fr);
+        fg.addColorStop(0, 'rgba(255,246,205,0.9)');
+        fg.addColorStop(0.45, 'rgba(255,168,50,0.55)');
+        fg.addColorStop(1, 'rgba(200,60,0,0)');
+        ctx.fillStyle = fg;
+        ctx.beginPath(); ctx.arc(b.x, b.y, fr, 0, TAU); ctx.fill();
+        continue;
+      }
+
+      /* ---- rockets ---- */
+      if (b.rocket) {
+        var ra = Math.atan2(b.vy || 0, b.vx || 0);
+        ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(ra);
+        var tail = ctx.createLinearGradient(-30, 0, 0, 0);
+        tail.addColorStop(0, 'rgba(255,120,30,0)');
+        tail.addColorStop(1, 'rgba(255,190,90,0.85)');
+        ctx.strokeStyle = tail; ctx.lineWidth = 7; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(-30, 0); ctx.lineTo(-8, 0); ctx.stroke();
+        ctx.fillStyle = '#8d949c';
+        ctx.beginPath(); ctx.ellipse(0, 0, 11, 4.6, 0, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#d0552f';
+        ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(2, -4); ctx.lineTo(2, 4); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = 'rgba(255,236,180,0.9)';
+        ctx.beginPath(); ctx.arc(-10, 0, 3, 0, TAU); ctx.fill();
+        ctx.restore();
+        continue;
+      }
+
+      /* ---- molotov in flight ---- */
+      if (b.firebomb) {
+        ctx.save(); ctx.translate(b.x, b.y);
+        ctx.rotate((t * 9) % TAU);
+        ctx.fillStyle = '#5b7a3a';
+        ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(4, 6); ctx.lineTo(-4, 6); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = 'rgba(255,180,70,0.85)';
+        ctx.beginPath(); ctx.arc(0, -10, 3.4, 0, TAU); ctx.fill();
+        ctx.restore();
+        continue;
+      }
+
+      /* ---- boomerang ---- */
+      if (b.returnTrip) {
+        ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(t * 22);
+        ctx.strokeStyle = tint; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(-7, -6); ctx.lineTo(0, 0); ctx.lineTo(7, -6); ctx.stroke();
+        ctx.restore();
+        continue;
+      }
+
+      /* ---- spiked ball ---- */
+      if (b.bounce) {
+        ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(t * 12);
+        ctx.strokeStyle = '#9aa6b2'; ctx.lineWidth = 2.2;
+        for (var k = 0; k < 6; k++) {
+          var ka = (k / 6) * TAU;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(ka) * 4, Math.sin(ka) * 4);
+          ctx.lineTo(Math.cos(ka) * 9, Math.sin(ka) * 9);
+          ctx.stroke();
+        }
+        ctx.fillStyle = tint;
+        ctx.beginPath(); ctx.arc(0, 0, 5.4, 0, TAU); ctx.fill();
+        ctx.restore();
+        continue;
+      }
+
+      /* ---- plain shots: a tracer with a bright head ---- */
+      var sp = Math.hypot(b.vx || 0, b.vy || 0);
+      var ang = Math.atan2(b.vy || 0, b.vx || 0);
+      var len = Math.min(30, 10 + sp * 0.02);
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(ang);
+      var tg = ctx.createLinearGradient(-len, 0, 0, 0);
+      tg.addColorStop(0, 'rgba(255,255,255,0)');
+      tg.addColorStop(1, tint);
+      ctx.strokeStyle = tg;
+      ctx.lineWidth = b.pierce ? 2.8 : 2.2;
+      ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-len, 0); ctx.lineTo(0, 0); ctx.stroke();
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = tint;
+      ctx.beginPath(); ctx.arc(0, 0, 8, 0, TAU); ctx.fill();
+      ctx.globalAlpha = 1;
+      if (b.pierce) {
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.moveTo(6, 0); ctx.lineTo(-1, -3.2); ctx.lineTo(-1, 3.2); ctx.closePath(); ctx.fill();
+      } else {
+        ctx.fillStyle = '#fff6dc';
+        ctx.beginPath(); ctx.arc(0, 0, 2.9, 0, TAU); ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
 
   /* Lightweight zombie: still a readable body (head, shoulders, reaching
      arms, dragging legs) at a few draw calls, for the packed-horde case. */
