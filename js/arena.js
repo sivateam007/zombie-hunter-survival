@@ -53,8 +53,17 @@ window.ZH = window.ZH || {};
   var THEMES = {
     street:  { name: 'Ashfall Streets',     base: '#2b2c2e', fog: 'rgba(38,44,50,0.55)', ambient: 'ash',   lamp: '#ffd9a0' },
     factory: { name: 'Rust Meat Plant',     base: '#33302b', fog: 'rgba(56,42,28,0.5)',  ambient: 'dust',  lamp: '#ffc978' },
-    hospital:{ name: 'Mercy Hospital',     base: '#33393a', fog: 'rgba(40,60,58,0.5)',  ambient: 'dust',  lamp: '#cfefff' },
-    rooftop: { name: 'Rooftop Last Stand',  base: '#22262e', fog: 'rgba(24,32,48,0.62)', ambient: 'rain',  lamp: '#9ec8ff' }
+    hospital:{ name: 'Mercy Hospital',      base: '#33393a', fog: 'rgba(40,60,58,0.5)',  ambient: 'dust',  lamp: '#cfefff' },
+    downtown:{ name: 'Neon Downtown',       base: '#242830', fog: 'rgba(28,38,54,0.55)', ambient: 'dust',  lamp: '#bfe3ff' },
+    docks:   { name: 'Harbour Docks',       base: '#2a2e30', fog: 'rgba(30,44,50,0.55)', ambient: 'ash',   lamp: '#ffd9a0' },
+    suburb:  { name: 'Palm Grove',          base: '#2f3a30', fog: 'rgba(34,48,40,0.45)', ambient: 'dust',  lamp: '#ffe0a8' },
+    airport: { name: 'Greyfield Airstrip',  base: '#2c2f33', fog: 'rgba(36,42,50,0.5)',  ambient: 'dust',  lamp: '#d7ecff' },
+    rooftop: { name: 'Rooftop Last Stand',  base: '#22262e', fog: 'rgba(24,32,48,0.62)', ambient: 'rain',  lamp: '#9ec8ff' },
+    mall:    { name: 'Galleria Plaza',      base: '#343038', fog: 'rgba(44,38,52,0.52)', ambient: 'dust',  lamp: '#ffd0f0' },
+    subway:  { name: 'Metro Interchange',   base: '#2c3036', fog: 'rgba(34,40,48,0.58)', ambient: 'ash',   lamp: '#c8fff0' },
+    warehouse:{name: 'Freight Yards',       base: '#312f2a', fog: 'rgba(48,42,34,0.52)', ambient: 'dust',  lamp: '#ffd080' },
+    park:    { name: 'Overgrown Park',      base: '#283428', fog: 'rgba(30,42,34,0.48)', ambient: 'ash',   lamp: '#e8ffb0' },
+    canal:   { name: 'Canal Quarter',       base: '#263034', fog: 'rgba(30,46,52,0.55)', ambient: 'rain',  lamp: '#b8e8ff' }
   };
 
   /* world dimensions + tile constants */
@@ -181,6 +190,237 @@ window.ZH = window.ZH || {};
       ctx.strokeStyle = 'rgba(140,190,235,0.16)'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.ellipse(px, py - 4, pr * 0.7, pr * 0.3, 0.3, 0, TAU); ctx.stroke();
     }
+  }
+
+  function downtownBase(ctx, w, h, ox, oy, rnd) {
+    ctx.fillStyle = '#242830'; ctx.fillRect(ox, oy, w, h);
+    var tile = 128;
+    for (var y = (oy / tile | 0) * tile; y < oy + h; y += tile) {
+      for (var x = (ox / tile | 0) * tile; x < ox + w; x += tile) {
+        var v = rr(rnd, -8, 10);
+        ctx.fillStyle = 'rgb(' + (42 + v) + ',' + (48 + v) + ',' + (56 + v) + ')';
+        ctx.fillRect(x + 1, y + 1, tile - 2, tile - 2);
+        ctx.fillStyle = 'rgba(150,200,255,0.035)';
+        ctx.fillRect(x + 10, y + 10, tile - 20, 5);
+      }
+    }
+    ctx.strokeStyle = 'rgba(10,14,18,0.45)'; ctx.lineWidth = 2;
+    ctx.strokeRect(ox, oy, w, h);
+    /* glass-tower reflections sliding across the plaza */
+    for (var i = 0; i < 24; i++) {
+      var rx = ox + rr(rnd, 0, w), ry = oy + rr(rnd, 0, h), len = rr(rnd, 50, 180);
+      var g = ctx.createLinearGradient(rx, ry, rx + len, ry + len * 0.35);
+      g.addColorStop(0, 'rgba(120,190,255,0.10)');
+      g.addColorStop(1, 'rgba(120,190,255,0)');
+      ctx.strokeStyle = g; ctx.lineWidth = rr(rnd, 6, 16);
+      ctx.beginPath(); ctx.moveTo(rx, ry); ctx.lineTo(rx + len, ry + len * 0.35); ctx.stroke();
+    }
+    /* neon shop signs, the district's signature */
+    for (var n = 0; n < 7; n++) {
+      var nx = ox + rr(rnd, 40, w - 40), ny = oy + rr(rnd, 40, h - 40);
+      ctx.fillStyle = rnd() > 0.5 ? 'rgba(255,110,180,0.16)' : 'rgba(120,220,255,0.16)';
+      ctx.fillRect(nx, ny, rr(rnd, 26, 70), 12);
+    }
+  }
+
+  function docksBase(ctx, w, h, ox, oy, rnd) {
+    ctx.fillStyle = '#2a2e30'; ctx.fillRect(ox, oy, w, h);
+    for (var i = 0; i < 900; i++) {
+      var v = rr(rnd, 30, 58);
+      ctx.fillStyle = 'rgba(' + Math.round(v) + ',' + Math.round(v + 2) + ',' + Math.round(v + 2) + ',' + rr(rnd, 0.2, 0.6) + ')';
+      ctx.fillRect(ox + rr(rnd, 0, w), oy + rr(rnd, 0, h), rr(rnd, 1, 3), rr(rnd, 1, 3));
+    }
+    /* standing water and oil, the harbour never drains */
+    for (var p = 0; p < 12; p++) {
+      var px = ox + rr(rnd, 0, w), py = oy + rr(rnd, 0, h), pr = rr(rnd, 40, 120);
+      ctx.fillStyle = 'rgba(30,60,74,0.35)';
+      ctx.beginPath(); ctx.ellipse(px, py, pr, pr * rr(rnd, 0.3, 0.7), rr(rnd, 0, TAU), 0, TAU); ctx.fill();
+      ctx.strokeStyle = 'rgba(150,210,235,0.14)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(px, py + 4, pr * 0.6, pr * 0.22, 0.2, 0, TAU); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(210,200,120,0.22)'; ctx.lineWidth = 5;
+    for (var y2 = (oy / 220 | 0) * 220; y2 < oy + h; y2 += 220) {
+      ctx.setLineDash([40, 34]);
+      ctx.beginPath(); ctx.moveTo(ox, y2); ctx.lineTo(ox + w, y2); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  function suburbBase(ctx, w, h, ox, oy, rnd) {
+    ctx.fillStyle = '#2f3a30'; ctx.fillRect(ox, oy, w, h);
+    var tile = 96;
+    for (var y = (oy / tile | 0) * tile; y < oy + h; y += tile) {
+      for (var x = (ox / tile | 0) * tile; x < ox + w; x += tile) {
+        var v = rr(rnd, -10, 12);
+        ctx.fillStyle = 'rgb(' + (48 + v) + ',' + (62 + v) + ',' + (46 + v) + ')';
+        ctx.fillRect(x + 1, y + 1, tile - 3, tile - 3);
+      }
+    }
+    /* driveways and their kerbs */
+    for (var d = 0; d < 8; d++) {
+      var dx = ox + rr(rnd, 20, w - 150), dy = oy + rr(rnd, 20, h - 100);
+      ctx.fillStyle = 'rgba(96,94,88,0.45)';
+      ctx.fillRect(dx, dy, 90, 52);
+      ctx.strokeStyle = 'rgba(30,30,28,0.4)'; ctx.lineWidth = 2;
+      ctx.strokeRect(dx, dy, 90, 52);
+    }
+    for (var g2 = 0; g2 < 22; g2++) {
+      ctx.fillStyle = 'rgba(40,80,44,0.4)';
+      ctx.beginPath();
+      ctx.ellipse(ox + rr(rnd, 0, w), oy + rr(rnd, 0, h), rr(rnd, 8, 26), rr(rnd, 5, 14), rr(rnd, 0, TAU), 0, TAU);
+      ctx.fill();
+    }
+  }
+
+  function airportBase(ctx, w, h, ox, oy, rnd) {
+    ctx.fillStyle = '#2c2f33'; ctx.fillRect(ox, oy, w, h);
+    var tile = 160;
+    for (var y = (oy / tile | 0) * tile; y < oy + h; y += tile) {
+      for (var x = (ox / tile | 0) * tile; x < ox + w; x += tile) {
+        var v = rr(rnd, -6, 8);
+        ctx.fillStyle = 'rgb(' + (52 + v) + ',' + (55 + v) + ',' + (60 + v) + ')';
+        ctx.fillRect(x + 1, y + 1, tile - 2, tile - 2);
+        ctx.strokeStyle = 'rgba(24,26,30,0.5)'; ctx.lineWidth = 1.5;
+        ctx.strokeRect(x + 1, y + 1, tile - 2, tile - 2);
+      }
+    }
+    ctx.strokeStyle = 'rgba(235,238,240,0.32)'; ctx.lineWidth = 4;
+    for (var c = (ox / 300 | 0) * 300; c < ox + w; c += 300) {
+      ctx.setLineDash([46, 40]);
+      ctx.beginPath(); ctx.moveTo(c, oy); ctx.lineTo(c, oy + h); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    for (var i = 0; i < 12; i++) {
+      ctx.fillStyle = 'rgba(200,190,90,0.22)';
+      ctx.fillRect(ox + rr(rnd, 0, w), oy + rr(rnd, 0, h), rr(rnd, 10, 26), 4);
+    }
+  }
+
+  function mallBase(ctx, w, h, ox, oy, rnd) {
+    ctx.fillStyle = '#343038'; ctx.fillRect(ox, oy, w, h);
+    var tile = 96;
+    for (var y = (oy / tile | 0) * tile; y < oy + h; y += tile) {
+      for (var x = (ox / tile | 0) * tile; x < ox + w; x += tile) {
+        var alt = (((x / tile | 0) + (y / tile | 0)) & 1);
+        var v = rr(rnd, -8, 10);
+        var r = (alt ? 62 : 54) + v, g = (alt ? 56 : 52) + v, b = (alt ? 72 : 64) + v;
+        ctx.fillStyle = 'rgb(' + Math.round(r) + ',' + Math.round(g) + ',' + Math.round(b) + ')';
+        ctx.fillRect(x, y, tile - 1, tile - 1);
+      }
+    }
+    ctx.strokeStyle = 'rgba(18,16,22,0.35)'; ctx.lineWidth = 1;
+    for (var gx = (ox / tile | 0) * tile; gx < ox + w; gx += tile) { ctx.beginPath(); ctx.moveTo(gx, oy); ctx.lineTo(gx, oy + h); ctx.stroke(); }
+    for (var gy = (oy / tile | 0) * tile; gy < oy + h; gy += tile) { ctx.beginPath(); ctx.moveTo(ox, gy); ctx.lineTo(ox + w, gy); ctx.stroke(); }
+    for (var n = 0; n < 10; n++) {
+      var nx = ox + rr(rnd, 20, w - 80), ny = oy + rr(rnd, 20, h - 30);
+      var cols = ['rgba(255,120,200,0.18)', 'rgba(120,220,255,0.16)', 'rgba(255,220,120,0.14)'];
+      ctx.fillStyle = cols[(rnd() * 3) | 0];
+      ctx.fillRect(nx, ny, rr(rnd, 30, 90), 10);
+      ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(nx, ny, rr(rnd, 30, 90), 2);
+    }
+    for (var p = 0; p < 6; p++) {
+      var px = ox + rr(rnd, 60, w - 60), py = oy + rr(rnd, 60, h - 60);
+      var g2 = ctx.createRadialGradient(px, py, 4, px, py, 70);
+      g2.addColorStop(0, 'rgba(255,210,240,0.12)'); g2.addColorStop(1, 'rgba(255,210,240,0)');
+      ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(px, py, 70, 0, TAU); ctx.fill();
+    }
+  }
+
+  function subwayBase(ctx, w, h, ox, oy, rnd) {
+    ctx.fillStyle = '#2c3036'; ctx.fillRect(ox, oy, w, h);
+    var tile = 128;
+    for (var y = (oy / tile | 0) * tile; y < oy + h; y += tile) {
+      for (var x = (ox / tile | 0) * tile; x < ox + w; x += tile) {
+        var v = rr(rnd, -7, 9);
+        ctx.fillStyle = 'rgb(' + Math.round(48 + v) + ',' + Math.round(54 + v) + ',' + Math.round(60 + v) + ')';
+        ctx.fillRect(x, y, tile - 2, tile - 2);
+      }
+    }
+    ctx.strokeStyle = 'rgba(200,255,240,0.10)'; ctx.lineWidth = 6;
+    var bandY = oy + ((-oy % 320) + 320) % 320;
+    for (; bandY < oy + h; bandY += 320) {
+      ctx.beginPath(); ctx.moveTo(ox, bandY); ctx.lineTo(ox + w, bandY); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(240,220,120,0.22)'; ctx.lineWidth = 3;
+    ctx.setLineDash([18, 22]);
+    for (var by = oy + ((-oy % 160) + 160) % 160; by < oy + h; by += 160) {
+      ctx.beginPath(); ctx.moveTo(ox, by + 18); ctx.lineTo(ox + w, by + 18); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    for (var i = 0; i < 14; i++) {
+      ctx.fillStyle = 'rgba(18,22,26,0.35)';
+      ctx.fillRect(ox + rr(rnd, 0, w), oy + rr(rnd, 0, h), rr(rnd, 24, 60), rr(rnd, 6, 14));
+    }
+  }
+
+  function warehouseBase(ctx, w, h, ox, oy, rnd) {
+    ctx.fillStyle = '#312f2a'; ctx.fillRect(ox, oy, w, h);
+    var tile = 140;
+    for (var y = (oy / tile | 0) * tile; y < oy + h; y += tile) {
+      for (var x = (ox / tile | 0) * tile; x < ox + w; x += tile) {
+        var v = rr(rnd, -10, 10);
+        ctx.fillStyle = 'rgb(' + Math.round(54 + v) + ',' + Math.round(50 + v) + ',' + Math.round(44 + v) + ')';
+        ctx.fillRect(x, y, tile - 2, tile - 2);
+        ctx.strokeStyle = 'rgba(20,18,14,0.45)'; ctx.strokeRect(x, y, tile - 2, tile - 2);
+      }
+    }
+    ctx.strokeStyle = 'rgba(255,190,90,0.18)'; ctx.lineWidth = 4;
+    for (var ly = oy + ((-oy % 240) + 240) % 240; ly < oy + h; ly += 240) {
+      ctx.setLineDash([50, 30]); ctx.beginPath(); ctx.moveTo(ox, ly); ctx.lineTo(ox + w, ly); ctx.stroke(); ctx.setLineDash([]);
+    }
+    for (var s = 0; s < 18; s++) {
+      ctx.fillStyle = 'rgba(90,70,40,0.16)';
+      ctx.beginPath(); ctx.ellipse(ox + rr(rnd, 0, w), oy + rr(rnd, 0, h), rr(rnd, 12, 40), rr(rnd, 8, 22), rr(rnd, 0, TAU), 0, TAU); ctx.fill();
+    }
+  }
+
+  function parkBase(ctx, w, h, ox, oy, rnd) {
+    ctx.fillStyle = '#283428'; ctx.fillRect(ox, oy, w, h);
+    for (var i = 0; i < 50; i++) {
+      var px = ox + rr(rnd, 0, w), py = oy + rr(rnd, 0, h);
+      var v = rr(rnd, -12, 16);
+      ctx.fillStyle = 'rgba(' + Math.round(38 + v) + ',' + Math.round(68 + v) + ',' + Math.round(40 + v) + ',' + rr(rnd, 0.18, 0.38) + ')';
+      ctx.beginPath(); ctx.ellipse(px, py, rr(rnd, 40, 140), rr(rnd, 30, 90), rr(rnd, 0, TAU), 0, TAU); ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(110,95,70,0.28)'; ctx.lineWidth = 14;
+    ctx.beginPath();
+    var sx = ox + rr(rnd, 0, w), sy = oy;
+    ctx.moveTo(sx, sy);
+    for (var k = 0; k < 5; k++) { sx += rr(rnd, -80, 80); sy += h / 5; ctx.quadraticCurveTo(sx + rr(rnd, -40, 40), sy - h / 10, sx, sy); }
+    ctx.stroke();
+    for (var f = 0; f < 26; f++) {
+      ctx.fillStyle = ['rgba(180,200,120,0.22)', 'rgba(140,90,120,0.16)', 'rgba(200,180,90,0.14)'][(rnd() * 3) | 0];
+      ctx.beginPath(); ctx.arc(ox + rr(rnd, 0, w), oy + rr(rnd, 0, h), rr(rnd, 3, 7), 0, TAU); ctx.fill();
+    }
+    for (var p = 0; p < 4; p++) {
+      var wx = ox + rr(rnd, 80, w - 80), wy = oy + rr(rnd, 80, h - 80);
+      ctx.fillStyle = 'rgba(40,80,100,0.22)';
+      ctx.beginPath(); ctx.ellipse(wx, wy, rr(rnd, 28, 55), rr(rnd, 16, 30), rr(rnd, 0, TAU), 0, TAU); ctx.fill();
+    }
+  }
+
+  function canalBase(ctx, w, h, ox, oy, rnd) {
+    ctx.fillStyle = '#263034'; ctx.fillRect(ox, oy, w, h);
+    var tile = 120;
+    for (var y = (oy / tile | 0) * tile; y < oy + h; y += tile) {
+      for (var x = (ox / tile | 0) * tile; x < ox + w; x += tile) {
+        var v = rr(rnd, -8, 10);
+        ctx.fillStyle = 'rgb(' + Math.round(44 + v) + ',' + Math.round(54 + v) + ',' + Math.round(58 + v) + ')';
+        ctx.fillRect(x, y, tile - 2, tile - 2);
+      }
+    }
+    var cy = oy + h * 0.5 + rr(rnd, -60, 60);
+    ctx.fillStyle = 'rgba(30,70,90,0.45)';
+    ctx.fillRect(ox, cy - 46, w, 92);
+    ctx.strokeStyle = 'rgba(120,190,220,0.16)'; ctx.lineWidth = 2;
+    for (var r = 0; r < 4; r++) {
+      ctx.beginPath(); ctx.moveTo(ox, cy - 30 + r * 18); ctx.lineTo(ox + w, cy - 24 + r * 18 + rr(rnd, -4, 4)); ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(90,82,70,0.55)';
+    ctx.fillRect(ox, cy - 50, w, 6); ctx.fillRect(ox, cy + 44, w, 6);
+    ctx.strokeStyle = 'rgba(200,200,180,0.12)'; ctx.lineWidth = 2;
+    ctx.setLineDash([14, 14]); ctx.beginPath(); ctx.moveTo(ox, cy - 70); ctx.lineTo(ox + w, cy - 70); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ox, cy + 70); ctx.lineTo(ox + w, cy + 70); ctx.stroke(); ctx.setLineDash([]);
   }
 
   /* ------- props (drawn in chunk local space; caller translates first) */
@@ -430,6 +670,54 @@ window.ZH = window.ZH || {};
     }
   }
 
+  function drawHydrant(ctx, x, y) {
+    ctx.save(); ctx.translate(x, y);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(2, 5, 9, 5, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#a5402c'; ctx.fillRect(-5, -10, 10, 15);
+    ctx.fillStyle = '#c25a3c'; ctx.fillRect(-7, -6, 14, 4);
+    ctx.fillStyle = '#7d2f20'; ctx.beginPath(); ctx.arc(0, -11, 5, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawDumpster(ctx, x, y, rot) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+    ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(-24, -12, 52, 30);
+    var g = ctx.createLinearGradient(0, -16, 0, 14);
+    g.addColorStop(0, '#3f5a4a'); g.addColorStop(1, '#22332a');
+    ctx.fillStyle = g; ctx.fillRect(-26, -14, 52, 30);
+    ctx.fillStyle = 'rgba(180,200,190,0.16)'; ctx.fillRect(-26, -14, 52, 5);
+    ctx.strokeStyle = 'rgba(12,18,14,0.7)'; ctx.lineWidth = 2; ctx.strokeRect(-26, -14, 52, 30);
+    ctx.restore();
+  }
+
+  function drawPalm(ctx, x, y, scale) {
+    var s = scale || 1;
+    ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+    ctx.strokeStyle = '#4a3a26'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(6, -22, 2, -46); ctx.stroke();
+    ctx.fillStyle = '#2f5a3a';
+    for (var i = 0; i < 7; i++) {
+      var a = -Math.PI / 2 + (i - 3) * 0.6;
+      ctx.beginPath(); ctx.ellipse(2 + Math.cos(a) * 15, -46 + Math.sin(a) * 9, 16, 5, a, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawContainer(ctx, x, y, rot, rnd) {
+    var cols = ['#8a4030', '#3f5a72', '#6a5a2e', '#4a6a4a'];
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+    ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(-31, -14, 70, 34);
+    ctx.fillStyle = cols[(rnd() * 4) | 0] || cols[0];
+    ctx.fillRect(-34, -16, 68, 32);
+    ctx.strokeStyle = 'rgba(14,18,20,0.7)'; ctx.lineWidth = 2;
+    ctx.strokeRect(-34, -16, 68, 32);
+    ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 1.5;
+    for (var i = -28; i < 34; i += 8) {
+      ctx.beginPath(); ctx.moveTo(i, -16); ctx.lineTo(i, 16); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   var _PROP_DRAW = [
     function (ctx, x, y, rnd) { drawBarrel(ctx, x, y, '#5b6a72', rnd); },
     function (ctx, x, y, rnd) { drawCrate(ctx, x, y, rr(rnd, 30, 40), rr(rnd, 0, 1), rnd); },
@@ -439,7 +727,11 @@ window.ZH = window.ZH || {};
       var carCols = ['#4c5d63', '#6a4a3c', '#3f4b32', '#5a5a63', '#6d3f3a'];
       drawCar(ctx, x, y, rr(rnd, 0, TAU), carCols[(rr(rnd) * 5) | 0], rnd);
     },
-    function (ctx, x, y, rnd) { drawBarricade(ctx, x, y, rr(rnd, 0, TAU), rnd); }
+    function (ctx, x, y, rnd) { drawBarricade(ctx, x, y, rr(rnd, 0, TAU), rnd); },
+    function (ctx, x, y, rnd) { drawHydrant(ctx, x, y); },
+    function (ctx, x, y, rnd) { drawDumpster(ctx, x, y, rr(rnd, 0, TAU)); },
+    function (ctx, x, y, rnd) { drawPalm(ctx, x, y, 0.8 + rr(rnd, 0, 0.5)); },
+    function (ctx, x, y, rnd) { drawContainer(ctx, x, y, rr(rnd, 0, TAU), rnd); }
   ];
   var PROP_DRAW_COUNT = _PROP_DRAW.length;
 
@@ -463,7 +755,9 @@ window.ZH = window.ZH || {};
       var dx = Math.floor(cx / DISTRICT), dy = Math.floor(cy / DISTRICT);
       var h = Math.abs(hash(this._seed * 7919 + 13, dx, dy));
       if (h % 100 < 62) return this._fn;
-      var others = ['street', 'factory', 'hospital', 'rooftop'];
+      /* every other district in the city is fair game, so one long run walks
+         through downtown, the docks, the suburbs and the airstrip */
+      var others = Object.keys(THEMES);
       var pick = [];
       for (var i = 0; i < others.length; i++) if (others[i] !== this._fn) pick.push(others[i]);
       return pick[(h >> 8) % pick.length];
@@ -635,10 +929,12 @@ window.ZH = window.ZH || {};
     ctx.translate(-ox, -oy);
     var rnd = rng(hash(world._seed, cx, cy));
     var fn = world.themeAt ? world.themeAt(cx, cy) : world._fn;
-    if (fn === 'street') streetBase(ctx, CHUNK, CHUNK, ox, oy, rnd);
-    else if (fn === 'factory') concreteBase(ctx, CHUNK, CHUNK, ox, oy, rnd);
-    else if (fn === 'hospital') hospitalBase(ctx, CHUNK, CHUNK, ox, oy, rnd);
-    else roofBase(ctx, CHUNK, CHUNK, ox, oy, rnd);
+    var BASE = {
+      street: streetBase, factory: concreteBase, hospital: hospitalBase, rooftop: roofBase,
+      downtown: downtownBase, docks: docksBase, suburb: suburbBase, airport: airportBase,
+      mall: mallBase, subway: subwayBase, warehouse: warehouseBase, park: parkBase, canal: canalBase
+    };
+    (BASE[fn] || roofBase)(ctx, CHUNK, CHUNK, ox, oy, rnd);
 
     if (fn === 'street') {
       streetRoads(ctx, ox, oy, CHUNK, CHUNK, cx, cy);
@@ -656,11 +952,17 @@ window.ZH = window.ZH || {};
         for (var i = pcx0; i < pcx1; i++) {
           var bx0 = i * CELL + ROAD_HALF * 0, by0 = j * CELL + ROAD_HALF * 0;
           var bx1 = (i + 1) * CELL, by1 = (j + 1) * CELL;
-          var lRnd = rng(hash(world._seed, i * 7 + j * 13));
           var kinds = fn === 'factory' ? [0, 1, 0, 2] :
                       fn === 'hospital' ? [1, 0, 3, 0] :
+                      fn === 'docks' ? [0, 0, 3, 0] :
+                      fn === 'suburb' ? [1, 1, 3, 1] :
+                      fn === 'downtown' ? [0, 2, 0, 1] :
+                      fn === 'mall' ? [0, 2, 1, 2] :
+                      fn === 'subway' ? [2, 0, 2, 1] :
+                      fn === 'warehouse' ? [0, 1, 0, 0] :
+                      fn === 'park' ? [1, 3, 1, 3] :
+                      fn === 'canal' ? [0, 3, 2, 0] :
                       [2, 3, 0, 1];
-          var k = kinds[(i + j) % kinds.length];
           var cellRnd = rng(hash(world._seed, i * 7 + j * 13));
           if (fn === 'factory') {
             ctx.fillStyle = 'rgba(20,20,22,0.22)'; ctx.fillRect(bx0, by0, bx1 - bx0, by1 - by0);
@@ -678,8 +980,7 @@ window.ZH = window.ZH || {};
             }
             for (var p = 0; p < 3; p++) {
               var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
-              _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](
-                ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
+              _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
             }
           } else if (fn === 'hospital') {
             for (var s = 0; s < 2; s++) {
@@ -693,8 +994,88 @@ window.ZH = window.ZH || {};
             }
             for (var p = 0; p < 3; p++) {
               var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
-              _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](
-                ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
+              _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
+            }
+          } else if (fn === 'mall') {
+            for (var s = 0; s < 2; s++) {
+              var sbx = bx0 + 24 + cellRnd() * Math.max(1, bx1 - bx0 - 140), sby = by0 + 24 + cellRnd() * Math.max(1, by1 - by0 - 110);
+              var sw = 90 + cellRnd() * 80, sh = 56 + cellRnd() * 34;
+              ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(sbx + 5, sby + 8, sw, sh);
+              var sg = ctx.createLinearGradient(sbx, sby, sbx, sby + sh);
+              sg.addColorStop(0, '#6a6078'); sg.addColorStop(1, '#3a3444');
+              ctx.fillStyle = sg; ctx.fillRect(sbx, sby, sw, sh);
+              ctx.strokeStyle = 'rgba(255,200,240,0.22)'; ctx.lineWidth = 2; ctx.strokeRect(sbx + 2, sby + 2, sw - 4, sh - 4);
+              var nc = ['rgba(255,120,200,0.55)', 'rgba(120,220,255,0.5)', 'rgba(255,220,120,0.45)'][(hash(world._seed, i * 7 + s) % 3)];
+              ctx.fillStyle = nc; ctx.fillRect(sbx + 8, sby + 8, Math.min(sw - 16, 50), 8);
+              for (var w = 0; w < 4; w++) { ctx.fillStyle = w % 2 ? 'rgba(255,230,180,0.35)' : 'rgba(30,40,60,0.5)'; ctx.fillRect(sbx + 10 + w * 18, sby + 22, 12, 10); }
+            }
+            for (var p = 0; p < 4; p++) {
+              var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
+              _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
+            }
+          } else if (fn === 'subway') {
+            ctx.fillStyle = 'rgba(18,22,28,0.18)'; ctx.fillRect(bx0, by0, bx1 - bx0, by1 - by0);
+            for (var s = 0; s < 2; s++) {
+              var sbx = bx0 + 30 + cellRnd() * Math.max(1, bx1 - bx0 - 120), sby = by0 + 30 + cellRnd() * Math.max(1, by1 - by0 - 100);
+              var sw = 70 + cellRnd() * 60, sh = 42 + cellRnd() * 26;
+              ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(sbx, sby, sw, sh);
+              var sg = ctx.createLinearGradient(sbx, sby, sbx, sby + sh);
+              sg.addColorStop(0, '#5a6672'); sg.addColorStop(1, '#343c46');
+              ctx.fillStyle = sg; ctx.fillRect(sbx, sby, sw, sh);
+              ctx.fillStyle = 'rgba(200,255,240,0.18)'; ctx.fillRect(sbx + 6, sby + sh - 10, sw - 12, 4);
+              ctx.strokeStyle = 'rgba(200,255,240,0.25)'; ctx.lineWidth = 2; ctx.strokeRect(sbx + 2, sby + 2, sw - 4, sh - 4);
+            }
+            for (var p = 0; p < 3; p++) {
+              var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
+              _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
+            }
+          } else if (fn === 'warehouse') {
+            for (var s = 0; s < 3; s++) {
+              var sbx = bx0 + cellRnd() * Math.max(1, bx1 - bx0 - 120), sby = by0 + cellRnd() * Math.max(1, by1 - by0 - 90);
+              var sw = 100 + cellRnd() * 80, sh = 44 + cellRnd() * 36;
+              ctx.fillStyle = 'rgba(0,0,0,0.38)'; ctx.fillRect(sbx + 4, sby + 6, sw, sh);
+              var sg = ctx.createLinearGradient(sbx, sby, sbx, sby + sh);
+              sg.addColorStop(0, '#7a7264'); sg.addColorStop(1, '#403b34');
+              ctx.fillStyle = sg; ctx.fillRect(sbx, sby, sw, sh);
+              ctx.strokeStyle = 'rgba(24,20,16,0.7)'; ctx.lineWidth = 2; ctx.strokeRect(sbx + 2, sby + 2, sw - 4, sh - 4);
+              ctx.fillStyle = 'rgba(255,190,90,0.22)'; ctx.fillRect(sbx + sw / 2 - 12, sby + sh - 20, 24, 18);
+            }
+            for (var p = 0; p < 3; p++) {
+              var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
+              if (p === 0) drawContainer(ctx, px, py, cellRnd() * TAU, rng(hash(world._seed, i * 19 + j * 23 + 3)));
+              else _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
+            }
+          } else if (fn === 'park') {
+            for (var t = 0; t < 3; t++) {
+              var tx = bx0 + 40 + cellRnd() * Math.max(10, bx1 - bx0 - 80), ty = by0 + 50 + cellRnd() * Math.max(10, by1 - by0 - 90);
+              drawTree(ctx, tx, ty, 0.9 + cellRnd() * 0.5, rng(hash(world._seed, i * 31 + j * 17 + t * 7)));
+            }
+            for (var s = 0; s < 1; s++) {
+              var sbx = bx0 + 40 + cellRnd() * Math.max(1, bx1 - bx0 - 160), sby = by0 + 40 + cellRnd() * Math.max(1, by1 - by0 - 120);
+              var sw = 60 + cellRnd() * 50, sh = 34 + cellRnd() * 24;
+              ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(sbx, sby, sw, sh);
+              var sg = ctx.createLinearGradient(sbx, sby, sbx, sby + sh);
+              sg.addColorStop(0, '#8a7a60'); sg.addColorStop(1, '#5a4e3e');
+              ctx.fillStyle = sg; ctx.fillRect(sbx, sby, sw, sh);
+            }
+            for (var p = 0; p < 2; p++) {
+              var px = bx0 + 30 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 30 + cellRnd() * (by1 - by0 - 60);
+              drawBench(ctx, px, py, cellRnd() * TAU, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
+            }
+          } else if (fn === 'canal') {
+            for (var s = 0; s < 2; s++) {
+              var sbx = bx0 + 30 + cellRnd() * Math.max(1, bx1 - bx0 - 130), sby = by0 + 20 + cellRnd() * Math.max(1, by1 - by0 - 100);
+              var sw = 80 + cellRnd() * 60, sh = 42 + cellRnd() * 30;
+              ctx.fillStyle = 'rgba(0,0,0,0.36)'; ctx.fillRect(sbx, sby, sw, sh);
+              var sg = ctx.createLinearGradient(sbx, sby, sbx, sby + sh);
+              sg.addColorStop(0, '#889098'); sg.addColorStop(1, '#4a535a');
+              ctx.fillStyle = sg; ctx.fillRect(sbx, sby, sw, sh);
+              ctx.fillStyle = 'rgba(120,190,220,0.12)'; ctx.fillRect(sbx + 6, sby + 8, sw - 12, 6);
+              ctx.strokeStyle = 'rgba(20,26,30,0.65)'; ctx.lineWidth = 2; ctx.strokeRect(sbx + 2, sby + 2, sw - 4, sh - 4);
+            }
+            for (var p = 0; p < 3; p++) {
+              var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
+              _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
             }
           } else {
             for (var s = 0; s < 3; s++) {
@@ -713,8 +1094,7 @@ window.ZH = window.ZH || {};
             }
             for (var p = 0; p < 3; p++) {
               var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
-              _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](
-                ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
+              _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
             }
           }
         }
