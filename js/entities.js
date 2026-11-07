@@ -498,6 +498,7 @@
         var GAP = 0.150, UZI_GAP = 0.160;
         var tgt = nearestEnemy(world, p, range);
         ang = tgt ? Math.atan2(tgt.y - p.y, tgt.x - p.x) : aim;
+        if (tgt) { p.aimDir = ang; p.facing = Math.cos(ang) >= 0 ? 1 : -1; }
 
         if (level > 5) {
           pushShot(world, {
@@ -566,6 +567,7 @@
       case 'burst': {
         var bt = nearestEnemy(world, p, range);
         ang = bt ? Math.atan2(bt.y - p.y, bt.x - p.x) : aim;
+        if (bt) { p.aimDir = ang; p.facing = Math.cos(ang) >= 0 ? 1 : -1; }
         var cnt = def.count || 5;
         for (i = 0; i < cnt; i++) {
           var ba = ang + rand(-(def.spread || 0.05), (def.spread || 0.05));
@@ -583,6 +585,7 @@
       case 'rocket': {
         var rt = nearestEnemy(world, p, range);
         ang = rt ? Math.atan2(rt.y - p.y, rt.x - p.x) : aim;
+        if (rt) { p.aimDir = ang; p.facing = Math.cos(ang) >= 0 ? 1 : -1; }
         pushShot(world, {
           x: p.x + Math.cos(ang) * 22, y: p.y + Math.sin(ang) * 22,
           vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
@@ -617,6 +620,7 @@
             // base boomerang: throw toward nearest enemy
             var bTgt = nearestEnemy(world, p, range);
             bAng = bTgt ? Math.atan2(bTgt.y - p.y, bTgt.x - p.x) : aim;
+            if (bTgt) { p.aimDir = bAng; p.facing = Math.cos(bAng) >= 0 ? 1 : -1; }
           }
           pushShot(world, {
             x: p.x, y: p.y,
@@ -643,6 +647,8 @@
         }
         if (!pool.length) return cd;
         var pick = pool[(Math.random() * pool.length) | 0];
+        p.aimDir = Math.atan2(pick.y - p.y, pick.x - p.x);
+        p.facing = Math.cos(p.aimDir) >= 0 ? 1 : -1;
         pushShot(world, {
           x: p.x, y: p.y, vx: 0, vy: 0, dmg: dmg,
           life: 0.45, r: 4, splash: def.blast || 90, enemy: false,
@@ -659,7 +665,7 @@
           var sa = bc > 1 ? (i / bc) * TAU : baseAng;
           if (bc === 1) {
             var st = nearestEnemy(world, p, range);
-            if (st) sa = Math.atan2(st.y - p.y, st.x - p.x);
+            if (st) { sa = Math.atan2(st.y - p.y, st.x - p.x); p.aimDir = sa; p.facing = Math.cos(sa) >= 0 ? 1 : -1; }
           }
           pushShot(world, {
             x: p.x, y: p.y,
