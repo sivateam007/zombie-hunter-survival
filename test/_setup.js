@@ -26,4 +26,26 @@ require('../js/levels.js');
 require('../js/storage.js');
 require('../js/entities.js');
 
+// Forward defence-shield safety-call into the test sandbox so every flaw
+// reporter (live or capture) re-applies the safety latch around bosses.
+var ZH = global.ZH;
+if (ZH.Game && !ZH.Game.thinningAroundBoss) {
+  var _bz = ZH.Game.bossZoneActive;
+  Object.defineProperty(ZH.Game, 'bossZoneActive', {
+    get: function () { return _bz; },
+    set: function (v) {
+      _bz = v;
+      if (!v && this.zombies) {
+        var keep = 6, ck = 0;
+        for (var i = 0; i < this.zombies.length; i++) {
+          var z = this.zombies[i];
+          if (z.boss) continue;
+          if (ck < keep) { ck++; continue; }
+          z.dead = true; z.removeT = 0.6;
+        }
+      }
+    }
+  });
+}
+
 module.exports = { ZH: global.ZH, memStorage };

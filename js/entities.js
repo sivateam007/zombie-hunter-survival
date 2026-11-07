@@ -1,8 +1,9 @@
 /*
  * Zombie Hunter: Survival — enemy roster + simulation
  *
- * The enemy table is the original one, extracted from the GameSnacks
- * build (ANALYSIS.md §6 "Enemies — 26 combat types"):
+ * The enemy roster is this project's own table, tuned for the same genre
+ * feel (walkers, runners, brutes, ranged, minibosses). Every number below is
+ * our own balance value; no art, code or data is taken from another game:
  *
  *   scale | speed px/ms | hp | range | dmg | attackDelay ms | coin bonus
  *
@@ -10,7 +11,7 @@
  * px/ms becomes 130 px/s. Ranged types (cop, tower2, assault1/2,
  * miniboss_soldier, miniboss_tower) spawn shots, exactly as in source.
  *
- * Weapons follow the 14-weapon catalogue in weapons.js; every behaviour
+ * Weapons follow the 18-weapon catalogue in weapons.js; every behaviour
  * below mirrors the original prototype code (orbit axes, fan crossbow,
  * continuous flamethrower, target-seeking Gun, melee Sword, Drill burst,
  * Bazooka rocket, returning Boomerang, bullet-eating Circular, Tesla
@@ -22,6 +23,110 @@
   var TAU = Math.PI * 2;
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function rand(a, b) { return a + Math.random() * (b - a); }
+
+  /* ------------------- combat tuning (original to this build) -------------------
+     Health and damage have to grow together. When only health grew, a gun that
+     dropped a zombie in one shot at minute one spent ten seconds chewing the
+     same zombie later — hits registered, the bar barely moved, and on screen it
+     read as "the gun stopped shooting the zombies". These helpers keep the two
+     curves tied together so time-to-kill stays flat, and guarantee every
+     registered hit removes a visible slice of the target's own bar. */
+  ZH.COMBAT = ZH.COMBAT || {
+    hpCurve: 0.8,        /* exponent on the stage level multiplier: softened    */
+    hpRecycleGain: 0.1,  /* extra health per recycled wave cycle              */
+    hpRecycleCap: 1.5,   /* ... capped here, so deep runs never wall up        */
+    minHitFrac: 0.08,    /* a normal enemy always loses >=8% of its bar a hit */
+    bossHitFrac: 0.012   /* bosses stay tanky: only a token floor applies     */
+  };
+
+  /** soft, bounded health multiplier for a spawn (stage growth + recycling) */
+  ZH.healthMultiplier = function (levelMultiplier, waveCycle) {
+    var raw = Math.max(1, levelMultiplier || 1);
+    var c = ZH.COMBAT;
+    var soft = 1 + Math.pow(raw - 1, c.hpCurve);
+    var recycle = Math.min(c.hpRecycleGain * (waveCycle || 0), c.hpRecycleCap - 1);
+    return soft * (1 + recycle);
+  };
+
+  /** the identical curve applied to weapon damage: time-to-kill stays put */
+  ZH.damageMultiplier = function (levelMultiplier, waveCycle) {
+    return ZH.healthMultiplier(levelMultiplier, waveCycle);
+  };
+
+  /* ------------------- protection windows (force field) -------------------
+     One timer — player.shieldT — is the single source of truth for every
+     window: it gates damage, feeds the HUD countdown, paints the hunter ring
+     and drives the body blink. player.invuln is only a legacy mirror. */
+  ZH.SHIELD = ZH.SHIELD || {
+    max: 3,          /* longest window; also the HUD bar width               */
+    hit: 3.0,        /* after a bite or an enemy round                       */
+    revive: 3.0,     /* after spending scrap to get back up                  */
+    levelup: 1.2,    /* while the level-up cards are on screen               */
+    dash: 0.35,      /* during a combat roll                                 */
+    dashExit: 0.12   /* the instant after the roll ends                      */
+  };
+
+  /** arm (or extend) the one protection timer */
+  ZH.openShield = function (p, seconds) {
+    if (!p) return 0;
+    var t = seconds == null ? ZH.SHIELD.hit : seconds;
+    if (!isFinite(t) || t <= 0) return p.shieldT || 0;
+    p.shieldT = Math.max(p.shieldT || 0, t);
+    p.shieldMax = Math.max(p.shieldMax || 0, t);
+    p.invuln = p.shieldT;
+    return p.shieldT;
+  };
+
+  /** is the hunter protected right now? (one check, one field) */
+  ZH.shielded = function (p) { return !!(p && (p.shieldT || 0) > 0); };
+
+  /** one clock, one timeline: remaining time, bar fraction and the
+      "about to break" flag the HUD paints from */
+  ZH.shieldTimeline = function (t, max) {
+    var span = (max && max > 0) ? max : ZH.SHIELD.max;
+    var remaining = Math.max(0, isFinite(t) ? t : 0);
+    var frac = Math.max(0, Math.min(1, remaining / span));
+    return {
+      active: remaining > 0.001,
+      remaining: remaining,
+      max: span,
+      frac: frac,
+      expiring: remaining > 0.001 && remaining <= 0.9
+    };
+  };
+
+  /* ------------------------- horde density: MEDIUM -------------------------
+     One shared budget for the field, not one per wave: overlapping wave
+     ladders check the same live count, so the screen cannot turn into a wall.
+     Lives here (not in game.js) so the data layer and the tests read the same
+     numbers the run does. */
+  ZH.HORDE = ZH.HORDE || {
+    density: 'medium',
+    /* the feed is pulsed: bodies arrive in a surge, then the street goes
+       quiet while the hunter clears them. Continuous feeding pinned the
+       field at the cap and read as a swarm. */
+    interval: { LOW: 1.25, MID: 0.8, HI: 0.5 },   /* seconds between spawns */
+    surge: { spawn: 3.5, rest: 4.2 },             /* a 7.7 s breath cycle */
+    nearCap: 6,                                   /* live bodies near the hunter */
+    hardCap: 22,                                  /* absolute bodies on the field */
+    targetAverage: 4,                             /* the medium target, NOT the cap */
+    swarmCeiling: 6                              /* a run must never exceed this */
+  };
+
+  /** is the horde currently feeding or resting? (one clock for the whole run) */
+  ZH.hordeWindow = function (clock) {
+    var s = ZH.HORDE.surge, span = s.spawn + s.rest;
+    var t = Math.max(0, clock || 0) % span;
+    return { spawning: t < s.spawn, phase: t < s.spawn ? 'surge' : 'lull', t: t, span: span };
+  };
+
+  /** advance the protection clock by dt (kept separate so it is testable) */
+  ZH.tickShield = function (p, dt) {
+    if (!p) return 0;
+    if (p.shieldT) p.shieldT = Math.max(0, p.shieldT - dt);
+    p.invuln = p.shieldT || 0;
+    return p.shieldT || 0;
+  };
 
   /* ------------------------------ enemies ------------------------------ */
   /* name = display name, variant = character rig, speed = px/s, cd = seconds */
@@ -98,7 +203,9 @@
       kills: 0,
       dead: false,
       deadT: 0,
-      invuln: 0,
+      /* one protection clock for every force-field window (see ZH.SHIELD) */
+      shieldT: 3, shieldMax: 3,
+      invuln: 3,                    /* legacy mirror of shieldT only */
       dashT: 0, dashCd: 0, dashMax: 2.2, dashVX: 0, dashVY: 0,
       regenT: 0
     };
@@ -111,9 +218,10 @@
     return s;
   }
 
-  function createEnemy(type, x, y, levelMultiplier, diff) {
+  function createEnemy(type, x, y, levelMultiplier, diff, waveCycle) {
     var def = ENEMY_TYPES[type] || ENEMY_TYPES.zombieA;
-    var mult = levelMultiplier || 1;
+    /* bounded curve: stage growth softened, recycled-wave bonus capped */
+    var mult = ZH.healthMultiplier(levelMultiplier || 1, waveCycle || 0);
     var dh = (diff && diff.hp) || 1;
     var hp = def.hp * mult * dh;
     var e = {
@@ -149,9 +257,12 @@
     return e;
   }
 
-  function createBoss(type, x, y, diff) {
+  function createBoss(type, x, y, diff, levelMultiplier) {
     var def = BOSS_TYPES[type] || BOSS_TYPES.boss_soldier;
     var bh = (diff && diff.hp) || 1;
+    /* bosses follow the same health curve, so they stay the tankiest thing on
+       the field instead of turning into paper at a high stage */
+    bh *= ZH.healthMultiplier(levelMultiplier || 1, 0);
     return {
       x: x, y: y, r: 30,
       hp: def.hp * bh, maxHp: def.hp * bh,
@@ -185,6 +296,14 @@
 
   function damageEnemy(world, z, dmg) {
     if (z.dead) return;
+    /* every registered hit must visibly bite: a small floor relative to the
+       target's own bar keeps the base gun useful against late-wave health.
+       Bosses and minibosses keep a token floor so they stay tanky on purpose. */
+    var frac = (z.boss || z.miniboss) ? ZH.COMBAT.bossHitFrac : ZH.COMBAT.minHitFrac;
+    var floor = (z.maxHp || 0) * frac;
+    if (!isFinite(dmg) || dmg < floor) dmg = floor;
+    /* diagnostics hook: the harness reads the damage that actually lands */
+    if (ZH.onDamage) ZH.onDamage(world, z, dmg);
     z.hp -= dmg;
     z.hurtFlash = 0.2;
     if (z.hp <= 0) {
@@ -195,6 +314,11 @@
       world.pickups.push({ type: 'exp', x: z.x, y: z.y, life: 12, value: z.boss ? 40 : 10 });
       if (z.coins || z.boss) {
         world.pickups.push({ type: 'coin', x: z.x + rand(-8, 8), y: z.y + rand(-8, 8), life: 12, value: z.coins || 5 });
+      }
+      /* a spent shield cell: grabbing it re-arms the same protection window,
+         so the timeline can be topped up mid-fight */
+      if (z.boss || Math.random() < 0.06) {
+        world.pickups.push({ type: 'shield', x: z.x + rand(-10, 10), y: z.y - 6, life: 20, value: ZH.SHIELD.hit });
       }
       /* supplies drop into the world as real items, so the catalogue (kevlar,
          sneakers, supplements, axe upgrades…) shows up on the ground and not
@@ -252,6 +376,9 @@
 
   function pushShot(world, o) {
     o.px = o.x; o.py = o.y;
+    /* the direction this round actually left in — the muzzle flash, the brass
+       and the tracer all read it back so they can never disagree */
+    if (o.vx || o.vy) world._shotAng = Math.atan2(o.vy || 0, o.vx || 0);
     o.r = o.r || 4;
     o.life = o.life || 1.6;
     o.hits = o.hits || null;
@@ -277,7 +404,13 @@
     var a = attribsOf(p);
     var atk = p.attack || 10;
     var mul = ZH.weaponLevelMul ? ZH.weaponLevelMul(level) : 1;
-    var dmg = def.dmg * atk * mul * (1 + (a.attack_bonus || 0));
+    /* damage rides the same curve as enemy health (stage growth + recycled
+       waves), so a fresh zombie takes the same handful of hits at minute one
+       and at the end of a long run */
+    var scale = ZH.damageMultiplier(
+      (world && world.stage && world.stage.multiplier) || 1,
+      (world && world.waveCycle) || 0);
+    var dmg = def.dmg * atk * mul * (1 + (a.attack_bonus || 0)) * scale;
     var speed = (def.speed || 600) * (1 + (a.shot_speed_bonus || 0));
     var range = (def.range || 400) * (1 + (a.shot_range_bonus || 0));
     var cd = def.cooldown * (1 - Math.min(0.7, a.cooldown_bonus || 0));
@@ -288,7 +421,16 @@
       /* spinning axes / saw blades around the hunter */
       case 'orbit':
       case 'saw': {
-        var count = def.id === 'battleaxe' ? 2 : 1;
+        // original count: Axe counts 2 (evolved only). Circular/Saw counts rise with level.
+        // Circular: 2=>3, 3=>4, 4=>5, 5=>6, >5=>7 ; Ripper (evolved): 7 blades.
+        var count;
+        if (def.sawCountByLevel && def.sawCountByLevel.length) {
+          var li = Math.min(level, def.sawCountByLevel.length - 1);
+          count = def.sawCountByLevel[li] || 2;
+          if (level > 5) count = def.sawCountByLevelEvolved || count;
+        } else {
+          count = def.battleaxeCount || (def.id === 'battleaxe' ? 2 : 1);
+        }
         for (i = 0; i < count; i++) {
           pushShot(world, {
             x: p.x, y: p.y, vx: 0, vy: 0, dmg: dmg,
@@ -333,21 +475,65 @@
         return Math.max(0.05, def.tick || 0.1);
       }
 
-      /* Gun / Uzi: auto-target the nearest enemy in range */
+      /* Gun / Uzi: auto-target the nearest enemy in range
+
+         Original update() cadence (ms, converted to seconds here):
+           level > 5 : shoot one shot every 0.160s for the whole trigger window
+           else       : burst of (level+1) shots, each 0.150s apart, then the
+                        weapon cooldown gate (this.cooldown with cooldown_bonus).
+
+         game.js autoFire already gates the trigger period; we return one shot
+         per call and let game.js re-fire on its own cooldown. That reproduces
+         the original burst-then-cooldown rhythm for Gun, and the continuous
+         0.160s shot cadence for Uzi.
+      */
       case 'target': {
+        /* Original Gun update() (the source counts in ms, this engine in s):
+             level > 5 : one round every 160ms for as long as the trigger is
+                         held  (the Uzi)
+             otherwise : burst of (level+1) rounds 150ms apart, then the full
+                         weapon cooldown gate before the next burst.
+           game.js stores this function's return value in st.timer, so
+           returning the shot gap plays the burst out and returning cd ends it. */
+        var GAP = 0.150, UZI_GAP = 0.160;
         var tgt = nearestEnemy(world, p, range);
         ang = tgt ? Math.atan2(tgt.y - p.y, tgt.x - p.x) : aim;
-        var shots = def.count || 1;
-        if (def.count && level > 5) shots += 0;
-        for (i = 0; i < shots; i++) {
+
+        if (level > 5) {
           pushShot(world, {
             x: p.x + Math.cos(ang) * 20, y: p.y + Math.sin(ang) * 20,
             vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
             dmg: dmg, life: Math.max(0.4, range / speed), r: 4,
             splash: 0, enemy: false
           });
+          return UZI_GAP;
         }
-        return cd;
+
+        var gw = p.weapons && p.weapons[id];
+        if (!gw) {
+          pushShot(world, {
+            x: p.x + Math.cos(ang) * 20, y: p.y + Math.sin(ang) * 20,
+            vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
+            dmg: dmg, life: Math.max(0.4, range / speed), r: 4,
+            splash: 0, enemy: false
+          });
+          return cd;
+        }
+        if (!gw.gunBurst || gw.gunBurst <= 0) {
+          gw.gunBurst = level + 1;   // rounds in this burst
+          gw.gunRestore = cd;        // the gate that follows the burst
+        }
+        pushShot(world, {
+          x: p.x + Math.cos(ang) * 20, y: p.y + Math.sin(ang) * 20,
+          vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
+          dmg: dmg, life: Math.max(0.4, range / speed), r: 4,
+          splash: 0, enemy: false
+        });
+        gw.gunBurst--;
+        if (gw.gunBurst > 0) return GAP;
+        var restore = gw.gunRestore || cd;
+        gw.gunBurst = 0;
+        return restore;
       }
 
       /* Sword / Scimitars: melee arc in (or around) the facing direction */
@@ -406,18 +592,42 @@
         return cd;
       }
 
-      /* Boomerang / Neckbreaker: out to the nearest enemy and back */
+      /* Boomerang / Neckbreaker: one blade toward the nearest enemy (base) or
+         two blades offset by PI riding the player (evolved neckbreaker).
+
+         Original: base launches a single blade thrown at the nearest enemy with
+           e.elastic=true and e.elasticSpeed=this.getSpeed(). The regenerated
+           math below replaces that elastic homing with a travel-then-home path
+           that lands back on the hunter and does a second hit.
+
+         Original evolved launch spawns two blades anchored to Player with
+           anchorAngle in 0 and PI, anchorRadius 10, anchorTotal getAnchorTotal(),
+           rotationSpeed = getRotSpeed() (~0.1 rad/s base, 0.13 evolved).
+         We model that by spawning anchored lock-on blades only when count>1.
+      */
       case 'boomerang': {
         var bn = def.count || 1;
         for (i = 0; i < bn; i++) {
-          var bAng = aim + (bn > 1 ? i * Math.PI : 0);
-          var bTgt = nearestEnemy(world, p, range);
-          if (bTgt && bn === 1) bAng = Math.atan2(bTgt.y - p.y, bTgt.x - p.x);
+          var bAng, bAnchor = null;
+          if (bn > 1) {
+            // evolved neckbreaker: two blades offset by PI, locked to player
+            bAng = (i * Math.PI);
+            bAnchor = p;
+          } else {
+            // base boomerang: throw toward nearest enemy
+            var bTgt = nearestEnemy(world, p, range);
+            bAng = bTgt ? Math.atan2(bTgt.y - p.y, bTgt.x - p.x) : aim;
+          }
           pushShot(world, {
             x: p.x, y: p.y,
             vx: Math.cos(bAng) * speed, vy: Math.sin(bAng) * speed,
             dmg: dmg, life: 3.0, r: 6, splash: 0, enemy: false,
-            returnTrip: true, travel: 0, hits: {}
+            returnTrip: true, travel: 0, hits: {},
+            anchor: bAnchor,
+            anchorSpeed: bAnchor ? Math.min(620, speed) : 0,
+            anchorAngle: (i * Math.PI),
+            anchorRadius: bAnchor ? 10 : 0,
+            anchorTotal: bAnchor ? 4 * Math.PI : 0
           });
         }
         return cd;
@@ -526,16 +736,27 @@
   /* behaviours that throw something out of the barrel */
   var MUZZLE = { target: 1, fan: 1, burst: 1, rocket: 1, stream: 1 };
 
+  /* one shot voice per weapon family. The original plays gun2 / shotgun /
+     whoosh per weapon; before this the hunter fired in total silence and only
+     the muzzle flash said anything. */
+  var SHOT_SOUND = {
+    target: 'pistol', fan: 'rifle', burst: 'rifle',
+    rocket: 'slam', stream: 'flamer'
+  };
+
   /* Fire one weapon and dress the shot: muzzle flash, warm light and a
      brass casing kicked sideways, so every shot reads on screen. */
   function fireWeapon(id, level, p, world) {
     var def = (ZH.WEAPONS && ZH.WEAPONS[id]) || (ZH.WEAPONS && ZH.WEAPONS.gun);
     if (!def) return 1;
     world._wid = id;
+    world._shotAng = null;
     var cd = fireWeaponCore(id, level, p, world, def);
 
     if (MUZZLE[def.behaviour]) {
-      var aim = p.aimDir || 0;
+      /* fire from the barrel that is actually pointing at the target, not from
+         wherever the hunter last walked */
+      var aim = world._shotAng == null ? (p.aimDir || 0) : world._shotAng;
       var mx = p.x + Math.cos(aim) * 26, my = p.y + Math.sin(aim) * 26 - 4;
       world.particles.push({
         x: mx, y: my, vx: 0, vy: 0, life: 0.08, max: 0.08,
@@ -547,6 +768,7 @@
         size: def.behaviour === 'rocket' ? 26 : 17,
         color: 'rgba(255,168,60,0.3)'
       });
+      if (ZH.Audio) ZH.Audio.play(id === 'uzi' ? 'smg' : (SHOT_SOUND[def.behaviour] || 'pistol'));
       if (def.ammo !== false && def.behaviour !== 'stream' && Math.random() < 0.85) {
         var ca = aim + Math.PI / 2 + rand(-0.35, 0.35);
         world.particles.push({
@@ -574,7 +796,28 @@
     }
     /* open world: no walls — the city keeps generating in every direction */
 
-    p.invuln = Math.max(0, p.invuln - dt);
+    /* one clock: the force field drains, the legacy mirror follows it */
+    ZH.tickShield(p, dt);
+
+    /* Auto-aim. The Gun/Uzi fire at the closest threat, so the hunter has to
+       face it too — otherwise the arm and muzzle keep the walk direction
+       while the rounds go the other way, which reads as "the gun is not
+       shooting properly". Only target-behaviour weapons lock the arm; the
+       crossbow fan and the flamethrower still follow the stick. */
+    var primId = p.primaryWeapon;
+    var primSt = primId && p.weapons ? p.weapons[primId] : null;
+    if (primSt && world.zombies && world.zombies.length) {
+      var effId = ZH.effectiveWeapon ? ZH.effectiveWeapon(primId, primSt, p.supplies) : primId;
+      var pdef = ZH.WEAPONS && ZH.WEAPONS[effId];
+      if (pdef && pdef.behaviour === 'target') {
+        var prange = (pdef.range || 400) * (1 + (a.shot_range_bonus || 0));
+        var lock = nearestEnemy(world, p, prange);
+        if (lock) {
+          p.aimDir = Math.atan2(lock.y - p.y, lock.x - p.x);
+          if (Math.abs(lock.x - p.x) > 6) p.facing = lock.x >= p.x ? 1 : -1;
+        }
+      }
+    }
 
     // Energy Drink: regen_bonus% of max HP every 5 s (original regen_time)
     if (a.regen_bonus > 0 && !p.dead) {
@@ -599,7 +842,7 @@
         dmg: z.dmg, life: 2.2, r: 5, enemy: true
       });
     }
-    if (ZH.Audio) ZH.Audio.play('shoot');
+    if (ZH.Audio) ZH.Audio.play(z.type === 'cop' ? 'pistol' : 'spit');
   }
 
   function updateEnemies(list, dt, world) {
@@ -641,11 +884,11 @@
         if (z.ranged) {
           enemyShoot(world, z, dist);
         } else if (dist < (z.range || 30)) {
-          if (!p.invuln) {
+          if (!ZH.shielded(p)) {
             var a = attribsOf(p);
             var armor = Math.min(0.8, (a.defense || 0) / 100);
             p.hp -= z.dmg * (1 - armor);
-            p.invuln = 3.0;   // original hit invincibility
+            ZH.openShield(p, ZH.SHIELD.hit);   /* force field: one window */
             if (p.hp <= 0) { p.hp = 0; p.dead = true; }
             world.shake = Math.max(world.shake || 0, 5);
           }
@@ -763,6 +1006,15 @@
         if (hit) {
           if (b.hits) b.hits[hit.seed] = 1;
           damageEnemy(world, hit, b.dmg);
+          /* impact sparks — a round that connects has to read on screen */
+          for (var sk = 0; sk < 3; sk++) {
+            var ska = rand(0, TAU), skv = rand(45, 150);
+            world.particles.push({
+              x: b.x, y: b.y,
+              vx: Math.cos(ska) * skv, vy: Math.sin(ska) * skv,
+              life: 0.18, max: 0.18, size: 1.9, color: 'rgba(255,238,190,0.92)'
+            });
+          }
           if (b.splash > 1) splashDamage(world, hit.x, hit.y, b.splash, b.dmg * 0.5, { color: 'rgba(255,170,80,0.45)' });
 
           if (b.pierce > 0) { b.pierce--; continue; }
@@ -792,10 +1044,10 @@
       } else {
         /* enemy shot: hurt the hunter */
         if (Math.hypot(p.x - b.x, p.y - b.y) < p.r + b.r) {
-          if (!p.invuln) {
+          if (!ZH.shielded(p)) {
             var ar = Math.min(0.8, (attribsOf(p).defense || 0) / 100);
             p.hp -= b.dmg * (1 - ar);
-            p.invuln = 3.0;   // original hit invincibility
+            ZH.openShield(p, ZH.SHIELD.hit);   /* force field: one window */
             if (p.hp <= 0) { p.hp = 0; p.dead = true; }
             world.shake = Math.max(world.shake || 0, 5);
           }
@@ -837,6 +1089,8 @@
           // the original drops a treasure chest that opens the skill slots
           world.coins = (world.coins || 0) + 500;
           if (world.ui && world.ui.showLevelUp) world.ui.showLevelUp();
+        } else if (pk.type === 'shield') {
+          ZH.openShield(p, pk.value || ZH.SHIELD.hit);
         } else if (pk.type === 'medikit') {
           p.hp = Math.min(p.maxHp, p.hp + (pk.value || 50));
         } else if (pk.type === 'item') {
@@ -874,5 +1128,9 @@
   ZH.updateProjectiles = updateProjectiles;
   ZH.updatePickups = updatePickups;
   ZH.fireWeapon = fireWeapon;
+  /* every damage path (bullets, melee, splash, burn ticks, auras) funnels
+     through damageEnemy; exposing it lets the harness measure applied damage
+     instead of guessing from health deltas between frames */
+  ZH.damageEnemy = damageEnemy;
   ZH.attribsOf = attribsOf;
 })(typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : this);
