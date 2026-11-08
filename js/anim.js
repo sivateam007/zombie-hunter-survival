@@ -8,6 +8,10 @@ window.ZH = window.ZH || {};
 (function (ZH) {
   'use strict';
   var A = window.anime;
+  /* Embedded webviews and desktop shells can report the document as hidden
+     while it is on screen; anime.js would pause every tween there. UI motion
+     (including the damage flash) must follow the game clock, not that flag. */
+  if (A) A.suspendWhenDocumentHidden = false;
 
   function has() { return !!A; }
 
@@ -197,6 +201,35 @@ window.ZH = window.ZH || {};
     });
   }
 
+  /* anime.js event wash: a red hit, a red-alert boss entrance, a gold
+     level-up. The overlay is a single element, so a burst of hits reuses it
+     instead of stacking dozens of tweens. */
+  function flash(rgb, opts) {
+    opts = opts || {};
+    var el = document.getElementById('fx-flash');
+    if (!el) return;
+    rgb = rgb || '228,72,48';
+    el.style.background = 'radial-gradient(circle at 50% 50%, rgba(' + rgb +
+      ',0) 30%, rgba(' + rgb + ',' + (opts.edge || 0.7) + ') 100%)';
+    var peak = opts.peak || 0.85, dur = opts.duration || 340;
+    /* Set the peak immediately, so the wash is visible even when the shell
+       throttles animation frames; the timer guarantees it always clears. */
+    el.style.opacity = String(peak);
+    clearTimeout(el._fxT);
+    el._fxT = setTimeout(function () { el.style.opacity = 0; }, dur + 60);
+    if (!has()) return;
+    A.remove(el);
+    A({
+      targets: el, opacity: [peak, 0],
+      duration: dur, easing: 'easeOutQuad'
+    });
+  }
+
+  function hurt() {
+    flash('228,72,48', { peak: 0.85, duration: 300 });
+    shakeEl(document.getElementById('hud'), 5);
+  }
+
   function bar(el, frac) {
     if (!el) return;
     frac = Math.max(0, Math.min(1, frac));
@@ -220,6 +253,7 @@ window.ZH = window.ZH || {};
     show: show, hide: hide, screen: screen, staggerIn: staggerIn,
     countUp: countUp, pop: pop, pulse: pulse, press: press,
     banner: banner, toast: toast, shakeEl: shakeEl, bar: bar,
+    flash: flash, hurt: hurt,
     resetScreen: resetScreen,
     has: has
   };

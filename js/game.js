@@ -364,6 +364,7 @@ window.ZH = window.ZH || {};
     this.bossZoneActive = true;
     this.bossZoneT = 0;
     ZH.Anim.banner('BOSS APPROACHING', 'Get ready!');
+    if (ZH.Anim && ZH.Anim.flash) ZH.Anim.flash('214,42,32', { peak: 1, duration: 620 });
     var bosses = wave.bosses || [];
     for (var i = 0; i < bosses.length; i++) {
       var pos = this.findSpawnPoint(800);
@@ -711,6 +712,7 @@ window.ZH = window.ZH || {};
       /* the chooser takes over the screen: park the stick so the hunter does
          not keep walking while the cards are up, and so the next press is a
          clean grab */
+      if (ZH.Anim && ZH.Anim.flash) ZH.Anim.flash('255,196,90', { peak: 0.65, duration: 420 });
       if (this.releaseInput) this.releaseInput();
       if (this.ui) this.ui.showLevelUp();
       if (this.state === 'levelup') break;
@@ -789,15 +791,6 @@ window.ZH = window.ZH || {};
   };
 
   /* ------------------------------ render ------------------------------ */
-  Game.frame = function (ts) {
-    var dt = Math.min(0.05, (ts - this.lastTs) / 1000) || 0.016;
-    this.lastTs = ts;
-    this.update(dt);
-    this.render();
-    var self = this;
-    requestAnimationFrame(function (t2) { self.frame(t2); });
-  };
-
   Game.render = function () {
     /* keep drawing during 'levelup' — the chooser is a DOM overlay on top of
        the frozen world. Bailing here used to leave the canvas black if the
@@ -1426,6 +1419,14 @@ window.ZH = window.ZH || {};
 
       st.timer = (st.timer || 0) - dt;
       if (!isFinite(st.timer)) st.timer = 0;
+      /* A horde at arm's length used to wait out the whole authored gun gate
+         (about a second) between bursts, which on screen reads as the gun
+         having stopped. Close threats earn a faster trigger, never faster
+         than 0.22 s, while the target lock keeps the rounds on one body. */
+      if (st.timer > 0.22 && def.behaviour === 'target' && this.zombies &&
+          ZH.acquireTarget && ZH.acquireTarget(this, p, 300)) {
+        st.timer = 0.22;
+      }
       if (st.timer > 0) continue;
 
       /* magazine dry: auto-reload (the button just starts it early) */

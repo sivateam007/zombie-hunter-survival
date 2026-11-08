@@ -65,7 +65,7 @@
       console.log('%cZOMBIE HUNTER: SURVIVAL', 'color:#ffb347;font-weight:bold;letter-spacing:2px');
       console.log('Campaign: ' + (ZH.STAGES ? ZH.STAGES.length : 0) + ' stages · ' + ZH.WEAPON_ORDER.length + ' weapons · anime.js motion');
       console.log('%cDeveloped by SIVA', 'color:#9be15d;font-weight:bold;letter-spacing:1px');
-      console.log('Build 4 · gun auto-aim + district atmosphere');
+      console.log('Build 5 · sticky target lock + anime.js hit FX');
     }
   });
 })(window.ZH);

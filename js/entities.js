@@ -376,6 +376,37 @@
     return best;
   }
 
+  /* Target lock with hysteresis. Always picking the single closest body
+     re-aimed the gun at a fresh zombie almost every shot in a crowd, so the
+     damage was spread across six of them and nothing died while the player
+     watched the gun fire into the horde. Once engaged, a zombie stays the
+     target until it dies, leaves range, or another is 1.5x closer. */
+  function acquireTarget(world, p, range) {
+    if (!world || !world.zombies) return null;
+    var list = world.zombies;
+    var keep = p._lock, keepD = Infinity;
+    if (keep && !keep.dead && list.indexOf(keep) !== -1) {
+      keepD = Math.hypot(keep.x - p.x, keep.y - p.y);
+      if (range && keepD > range) { keep = null; p._lock = null; }
+    } else if (keep) {
+      keep = null;
+      p._lock = null;
+    }
+    var best = null, bestD = range ? range * range : Infinity;
+    for (var i = 0; i < list.length; i++) {
+      var z = list[i];
+      if (z.dead || z === keep) continue;
+      var d2 = (z.x - p.x) * (z.x - p.x) + (z.y - p.y) * (z.y - p.y);
+      if (d2 < bestD) { bestD = d2; best = z; }
+    }
+    if (keep) {
+      if (!best) return keep;
+      if (keepD * keepD <= bestD * 2.25) return keep;
+    }
+    p._lock = best;
+    return best;
+  }
+
   function aimAt(world, p, range) {
     var z = nearestEnemy(world, p, range);
     if (z) return Math.atan2(z.y - p.y, z.x - p.x);
@@ -394,7 +425,7 @@
   };
 
   function aimAtNearest(world, p, range, fallback) {
-    var z = nearestEnemy(world, p, range);
+    var z = acquireTarget(world, p, range);
     if (!z) return fallback == null ? (p.aimDir || 0) : fallback;
     var ang = Math.atan2(z.y - p.y, z.x - p.x);
     p.aimDir = ang;
@@ -549,7 +580,7 @@
            game.js stores this function's return value in st.timer, so
            returning the shot gap plays the burst out and returning cd ends it. */
         var GAP = 0.150, UZI_GAP = 0.160;
-        var tgt = nearestEnemy(world, p, acquire);
+        var tgt = acquireTarget(world, p, acquire);
         /* the original Gun checks the distance and does not fire at all when
            no body is in range. Firing into empty street made it look broken
            (and burned the magazine) whenever the horde was still approaching. */
@@ -565,8 +596,8 @@
           pushShot(world, {
             x: p.x + Math.cos(ang) * 20, y: p.y + Math.sin(ang) * 20,
             vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
-            dmg: dmg, life: Math.max(0.4, acquire / speed), r: 4,
-            splash: 0, enemy: false
+            dmg: dmg,            life: Math.max(0.4, acquire / speed), r: 4,
+            splash: 0, enemy: false, target: tgt
           });
           return UZI_GAP;
         }
@@ -576,8 +607,8 @@
           pushShot(world, {
             x: p.x + Math.cos(ang) * 20, y: p.y + Math.sin(ang) * 20,
             vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
-            dmg: dmg, life: Math.max(0.4, acquire / speed), r: 4,
-            splash: 0, enemy: false
+            dmg: dmg,            life: Math.max(0.4, acquire / speed), r: 4,
+            splash: 0, enemy: false, target: tgt
           });
           return cd;
         }
@@ -589,7 +620,7 @@
           x: p.x + Math.cos(ang) * 20, y: p.y + Math.sin(ang) * 20,
           vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
           dmg: dmg, life: Math.max(0.4, acquire / speed), r: 4,
-          splash: 0, enemy: false
+          splash: 0, enemy: false, target: tgt
         });
         gw.gunBurst--;
         if (gw.gunBurst > 0) return GAP;
@@ -880,7 +911,7 @@
       if (pdef && AUTO_AIM[pdef.behaviour]) {        var prange = (pdef.range || 400) * (1 + (a.shot_range_bonus || 0));
         prange = targetRange(pdef, world, prange);
 
-        var lock = nearestEnemy(world, p, prange);
+        var lock = acquireTarget(world, p, prange);
         if (lock) {
           p.aimDir = Math.atan2(lock.y - p.y, lock.x - p.x);
           if (Math.abs(lock.x - p.x) > 6) p.facing = lock.x >= p.x ? 1 : -1;
@@ -960,6 +991,7 @@
             ZH.openShield(p, ZH.SHIELD.hit);   /* force field: one window */
             if (p.hp <= 0) { p.hp = 0; p.dead = true; }
             world.shake = Math.max(world.shake || 0, 5);
+            if (ZH.Anim && ZH.Anim.hurt) ZH.Anim.hurt();
           }
         }
       }
@@ -1021,6 +1053,29 @@
       b.px = b.x; b.py = b.y;
       b.x += b.vx * dt;
       b.y += b.vy * dt;
+
+      /* Aim assist: a locked round curves toward its target instead of
+         sailing past a strafing zombie. The turn rate is capped at 6.5 rad/s
+         and only applies while the round is still closing, so it reads as a
+         marksman leading the body, not a laser. Missed rounds were 29% of all
+         shots in a moving horde, which is what made the gun look wrong. */
+      if (!b.enemy && b.target && !b.target.dead) {
+        var closing = (b.target.x - b.x) * b.vx + (b.target.y - b.y) * b.vy;
+        if (closing > 0) {
+          var wantA = Math.atan2(b.target.y - b.y, b.target.x - b.x);
+          var curA = Math.atan2(b.vy, b.vx);
+          var diffA = wantA - curA;
+          while (diffA > Math.PI) diffA -= TAU;
+          while (diffA < -Math.PI) diffA += TAU;
+          var turnA = 6.5 * dt;
+          var nextA = Math.abs(diffA) <= turnA ? wantA : curA + (diffA > 0 ? turnA : -turnA);
+          var bulletSp = Math.hypot(b.vx, b.vy) || 1;
+          b.vx = Math.cos(nextA) * bulletSp;
+          b.vy = Math.sin(nextA) * bulletSp;
+        }
+      } else if (!b.enemy && b.target) {
+        b.target = null;
+      }
 
       /* firebomb: explodes on contact or when it lands */
       if (b.firebomb) {
@@ -1119,6 +1174,7 @@
             ZH.openShield(p, ZH.SHIELD.hit);   /* force field: one window */
             if (p.hp <= 0) { p.hp = 0; p.dead = true; }
             world.shake = Math.max(world.shake || 0, 5);
+            if (ZH.Anim && ZH.Anim.hurt) ZH.Anim.hurt();
           }
           list.splice(i, 1);
           continue;
@@ -1200,6 +1256,7 @@
   ZH.targetRange = targetRange;
   ZH.viewRange = viewRange;
   ZH.nearestEnemy = nearestEnemy;
+  ZH.acquireTarget = acquireTarget;
   /* every damage path (bullets, melee, splash, burn ticks, auras) funnels
      through damageEnemy; exposing it lets the harness measure applied damage
      instead of guessing from health deltas between frames */

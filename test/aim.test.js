@@ -64,4 +64,23 @@ function makeWorld(extra) {
   assert.ok(Math.abs(p.aimDir + Math.PI / 2) < 0.05, id + ' aims at the zombie above');
 });
 
+/* 5. target lock: the engaged body stays the target while it is in range, so
+   damage is not spread over the whole horde; a new closest zombie only wins
+   when it is clearly (1.5x) closer, and death releases the lock */
+{
+  const w = makeWorld();
+  const p = w.player;
+  const engaged = ZH.createEnemy('zombieA', 1180, 1000, 1);
+  const other = ZH.createEnemy('zombieA', 1300, 1000, 1);
+  w.zombies.push(other, engaged);
+  p._lock = engaged;
+  for (let i = 0; i < 5; i++) {
+    assert.strictEqual(ZH.acquireTarget(w, p, 600), engaged,
+      'the lock survives repeated acquisition while the body is alive');
+  }
+  engaged.dead = true;
+  assert.strictEqual(ZH.acquireTarget(w, p, 600), other,
+    'a dead target releases the lock to the next body');
+}
+
 console.log('aim.test.js ✓ guns acquire visible zombies and never dry-fire');

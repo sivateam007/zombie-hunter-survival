@@ -1,7 +1,7 @@
 # Zombie Hunter: Survival 🧟
 
 A complete top-down survival shooter in the classic horde-survivor genre:
-four chapters, fifteen hand-authored missions, boss fights, endless night, a permanent upgrade
+seven chapters, twelve hand-authored missions, boss fights, endless night, a permanent upgrade
 economy and a persistent leaderboard.
 
 Everything you see is drawn at runtime — **no sprite sheets, no image downloads, no licensed art**.
@@ -10,10 +10,11 @@ kinematics each frame, so walking, aiming, reloading, reeling from a hit and dyi
 animation rather than frame swaps. [anime.js](js/vendor/anime.min.js) drives every screen change,
 card stagger, count-up and banner.
 
-![chapters](https://img.shields.io/badge/chapters-4-ffb347)
-![missions](https://img.shields.io/badge/missions-15-ffb347)
-![bosses](https://img.shields.io/badge/bosses-4-e0492f)
-![weapons](https://img.shields.io/badge/weapons-6-9be15d)
+![chapters](https://img.shields.io/badge/chapters-7-ffb347)
+![missions](https://img.shields.io/badge/missions-12-ffb347)
+![boss types](https://img.shields.io/badge/boss%20types-6-e0492f)
+![weapons](https://img.shields.io/badge/weapons-18-9be15d)
+![districts](https://img.shields.io/badge/districts-13-6da8ff)
 ![deps](https://img.shields.io/badge/npm%20dependencies-0-8d9793)
 
 ---
@@ -34,7 +35,7 @@ Touch-first, no keyboard needed. Everything is driven on screen:
 
 | Input | Action |
 | --- | --- |
-| Thumbstick (bottom-left) | Move — your hunter aims where they walk |
+| Thumbstick (bottom-left) | Move — the gun auto-aims at the nearest visible zombie |
 | — | Weapons fire automatically |
 | `ROLL` (bottom-right) | Combat roll (i-frames) |
 | `RELOAD` (bottom-right) | Reload early; it also auto-reloads on an empty magazine |
@@ -47,37 +48,35 @@ desktop browser. The buttons use pointer events, so they respond to touch, mouse
 
 ## What is in the game
 
-**Four chapters, fifteen missions, four bosses**
+**Seven chapters, twelve missions, six boss types**
 
-| # | Mission | Chapter | Boss |
+| # | Chapter | District | Boss zone |
 | --- | --- | --- | --- |
-| 1 | First Contact | Ashfall Streets | |
-| 2 | Pharmacy Run | Ashfall Streets | |
-| 3 | Alley Ambush | Ashfall Streets | |
-| 4 | Rott | Ashfall Streets | **ROTT** — charges across the street |
-| 5 | Loading Bay | Rust Meat Plant | |
-| 6 | Kill Floor | Rust Meat Plant | |
-| 7 | Cold Storage | Rust Meat Plant | |
-| 8 | The Butcher | Rust Meat Plant | **THE BUTCHER** — ground slam, summons |
-| 9 | Triage | Mercy Hospital | |
-| 10 | Quarantine Ward | Mercy Hospital | |
-| 11 | Morgue Lights | Mercy Hospital | |
-| 12 | Matron | Mercy Hospital | **MATRON** — acid volleys, spitter summons |
-| 13 | Stairwell | Rooftop Last Stand | |
-| 14 | The Helipad | Rooftop Last Stand | |
-| 15 | The Warden | Rooftop Last Stand | **THE WARDEN** — every trick at once |
+| 1 | The Streets | Ashfall Streets | Soldier, Tower |
+| 2 | The Streets | Palm Grove | Dragon, Reptile |
+| 3 | The Factory | Rust Meat Plant | Mutant, Spider |
+| 4 | The Factory | Freight Yards | Reptile, Dragon, Spider, Mutant |
+| 5 | The Hospital | Mercy Hospital | Tower, Soldier, Reptile |
+| 6 | The Rooftops | Rooftop Last Stand | Mutant, Soldier, Spider, Dragon |
+| 7 | The Rooftops | Neon Downtown | Soldier, Dragon, Tower, Mutant |
+| 8 | The Last Stand | Harbour Docks | Soldier, Tower, Spider, Reptile |
+| 9 | Downtown | Galleria Plaza | Soldier, Tower |
+| 10 | Downtown | Canal Quarter | Spider, Reptile |
+| 11 | The Outskirts | Overgrown Park | Soldier, Spider |
+| 12 | The Outskirts | Greyfield Airstrip | Soldier, Tower, Spider, Reptile |
 
-**Six weapons**, each with its own feel, recoil kick, spread, pierce and sound: M9 sidearm,
-Kestrel SMG, Marrow 12g, Vanguard AR, Longshot .338 and the Cinderthrower (which sets zombies
-alight). Weapons unlock through mission milestones *and* can be bought early.
+**Eighteen weapons** across six families — sidearm, SMG, shotgun, rifle, marksman rifle and
+flamethrower — each with its own recoil, spread, pierce and sound. The M9 sidearm, Kestrel SMG,
+Marrow 12g, Vanguard AR, Longshot .338 and Cinderthrower (which sets zombies alight) are the
+first of each line. Weapons unlock through mission milestones *and* can be bought early.
 
 **Five zombie classes** plus bosses: walkers, sprinters, crawlers that drag themselves along the
 floor, acid-spitting spitters, and brutes that soak damage. The horde steers around props,
 separates from itself so it never turns into a single blob, and telegraphs every attack.
 
-**Eight permanent upgrades** — damage, magazine size, reload speed, max health, movement, armour,
-dash cooldown and scavenging — bought with scrap in the safehouse Arsenal. Prices escalate per
-level and each upgrade has a visible pip track.
+**Six permanent skills** — power, health, armour, aid, fortune and learning — thirty levels
+bought with scrap in the safehouse Arsenal. Prices escalate per level and each skill has a
+visible pip track.
 
 **Endless Night** — an endless escalating wave curve where every fifth wave is a boss. Your best
 wave is submitted to the server leaderboard.
@@ -85,7 +84,7 @@ wave is submitted to the server leaderboard.
 **Readability and feel** — bullet tracers, muzzle bloom, blood decals that stay on the ground,
 rolling dash ghosts, hit markers, camera lead toward the aim, screen shake that can be turned off,
 low-health vignette, warning rings before a boss ability, floating damage/scrap text and a
-per-chapter colour grade.
+per-district colour grade.
 
 ---
 
@@ -95,9 +94,9 @@ per-chapter colour grade.
 index.html            markup for the HUD and every screen
 css/style.css         presentation layer (dark industrial theme, responsive)
 js/rig.js             skeletal character rig: IK limbs, poses, hunter + zombie art
-js/arena.js           four procedurally generated chapters, cached to offscreen canvases
+js/arena.js           endless city districts with compatible neighbours, cached to offscreen canvases
 js/weapons.js         arsenal and upgrade tables
-js/levels.js          chapters, 15 missions, wave data, bosses, endless curve
+js/levels.js          chapters, 12 missions, wave data, bosses, endless curve
 js/entities.js        player, zombie and boss AI, bullets, shockwaves, pickups
 js/game.js            loop, camera, wave director, rendering, input, modes
 js/ui.js              screens, shop, briefing, results, leaderboard, HUD

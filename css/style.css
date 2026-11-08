@@ -55,6 +55,16 @@ body { user-select: none; }
 
 body.touch #game { cursor: default; }
 
+/* anime.js event wash: player hit, boss entrance, level-up */
+.fx-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 14;
+  background: radial-gradient(circle at 50% 50%, rgba(228, 72, 48, 0) 30%, rgba(228, 72, 48, 0.7) 100%);
+}
+
 /* ---------------------------------------------------------
    Typography helpers
    --------------------------------------------------------- */

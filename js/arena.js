@@ -66,6 +66,25 @@ window.ZH = window.ZH || {};
     canal:   { name: 'Canal Quarter',       base: '#263034', fog: 'rgba(30,46,52,0.55)', ambient: 'rain',  lamp: '#b8e8ff' }
   };
 
+  /* Districts that can border one another. A mall may flow into downtown or
+     a metro station, never into a street with parked cars, so walking out of
+     a district changes the scenery without breaking it. */
+  var NEIGHBORS = {
+    street: ['downtown', 'suburb', 'docks'],
+    factory: ['warehouse', 'docks', 'street'],
+    hospital: ['downtown', 'subway', 'mall'],
+    downtown: ['street', 'mall', 'subway', 'rooftop'],
+    docks: ['warehouse', 'canal', 'street'],
+    suburb: ['park', 'street', 'canal'],
+    airport: ['warehouse', 'downtown', 'street'],
+    rooftop: ['downtown', 'hospital'],
+    mall: ['downtown', 'subway', 'hospital'],
+    subway: ['downtown', 'mall', 'hospital'],
+    warehouse: ['factory', 'docks', 'airport'],
+    park: ['suburb', 'canal'],
+    canal: ['docks', 'park', 'suburb']
+  };
+
   /* world dimensions + tile constants */
   var OPEN = 1e9;            /* the city never ends: chunks generate on demand */
   var CHUNK = 512;           /* render tile */
@@ -749,18 +768,19 @@ window.ZH = window.ZH || {};
     };
 
     /* Infinite city: every district is 4x4 chunks and mostly keeps the stage
-       theme, with the odd factory / hospital / rooftop block so wandering
-       actually changes what you see. */
+       theme. The spawn district always does, and any variation comes from a
+       short list of compatible neighbours: a mall never grows a street with
+       parked cars, and a park never turns into a warehouse. */
     world.themeAt = function (cx, cy) {
       var dx = Math.floor(cx / DISTRICT), dy = Math.floor(cy / DISTRICT);
+      if (dx === 0 && dy === 0) return this._fn;
       var h = Math.abs(hash(this._seed * 7919 + 13, dx, dy));
-      if (h % 100 < 62) return this._fn;
-      /* every other district in the city is fair game, so one long run walks
-         through downtown, the docks, the suburbs and the airstrip */
-      var others = Object.keys(THEMES);
-      var pick = [];
-      for (var i = 0; i < others.length; i++) if (others[i] !== this._fn) pick.push(others[i]);
-      return pick[(h >> 8) % pick.length];
+      if (h % 100 < 55) return this._fn;
+      var near = NEIGHBORS[this._fn] || [this._fn];
+      /* `>>>` matters: `h >> 8` goes negative above 2^31 and indexes the
+         neighbour list out of bounds, which used to bake a null theme (and a
+         district banner with no name) on roughly half the map. */
+      return near[(h >>> 8) % near.length];
     };
 
     world.districtName = function (cx, cy) {
@@ -957,7 +977,7 @@ window.ZH = window.ZH || {};
                       fn === 'docks' ? [0, 0, 3, 0] :
                       fn === 'suburb' ? [1, 1, 3, 1] :
                       fn === 'downtown' ? [0, 2, 0, 1] :
-                      fn === 'mall' ? [0, 2, 1, 2] :
+                      fn === 'mall' ? [2, 3, 2, 3] :
                       fn === 'subway' ? [2, 0, 2, 1] :
                       fn === 'warehouse' ? [0, 1, 0, 0] :
                       fn === 'park' ? [1, 3, 1, 3] :
