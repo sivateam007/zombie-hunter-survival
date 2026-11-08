@@ -1121,18 +1121,35 @@ window.ZH = window.ZH || {};
     if (ZH.effectiveWeapon) def = ZH.WEAPONS[ZH.effectiveWeapon(wid, st, p.supplies)] || def;
     var range = (def.range || 400) * (1 + ((p.attribs && p.attribs.shot_range_bonus) || 0));
     range = ZH.targetRange ? ZH.targetRange(def, g, range) : range;
-    var z = ZH.nearestEnemy ? ZH.nearestEnemy(g, p, range) : null;
+    /* Use the same lock the gun fires at, not simply the closest body. In a
+       crowd those were two different zombies, so the ring and line pointed at
+       one while the rounds hit another — which reads as the gun shooting the
+       wrong zombie. */
+    var z = ZH.acquireTarget ? ZH.acquireTarget(g, p, range, wid)
+      : (ZH.nearestEnemy ? ZH.nearestEnemy(g, p, range) : null);
     if (!z) return;
-    var aim = p.aimDir || 0;
+    var aim = Math.atan2(z.y - p.y, z.x - p.x);
     var ax = p.x + Math.cos(aim) * 24, ay = p.y + Math.sin(aim) * 24;
     ctx.save();
-    ctx.strokeStyle = 'rgba(255,209,102,0.16)';
-    ctx.lineWidth = 1.3;
+    /* dark underlay keeps the lock readable on light hospital floors and
+       blue canal slabs as well as dark streets */
+    ctx.strokeStyle = 'rgba(4,6,8,0.5)';
+    ctx.lineWidth = 3.4;
     ctx.setLineDash([7, 9]);
     ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(z.x, z.y); ctx.stroke();
     ctx.setLineDash([]);
-    ctx.strokeStyle = 'rgba(255,209,102,0.45)';
-    ctx.beginPath(); ctx.arc(z.x, z.y, (z.r || 12) + 7, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,224,140,0.42)';
+    ctx.lineWidth = 1.6;
+    ctx.setLineDash([7, 9]);
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(z.x, z.y); ctx.stroke();
+    ctx.setLineDash([]);
+    var rr = (z.r || 12) + 7;
+    ctx.strokeStyle = 'rgba(4,6,8,0.55)';
+    ctx.lineWidth = 4.5;
+    ctx.beginPath(); ctx.arc(z.x, z.y, rr, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,224,140,0.9)';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(z.x, z.y, rr, 0, TAU); ctx.stroke();
     ctx.restore();
   }
 
@@ -1269,16 +1286,21 @@ window.ZH = window.ZH || {};
       ctx.save();
       ctx.translate(b.x, b.y);
       ctx.rotate(ang);
+      /* dark outline first: on the pale hospital floor and the canal's blue
+         stone the old thin tracer disappeared, so fire looked like it stopped */
+      ctx.strokeStyle = 'rgba(4,6,8,0.6)';
+      ctx.lineWidth = b.pierce ? 6 : 5;
+      ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-len, 0); ctx.lineTo(0, 0); ctx.stroke();
       var tg = ctx.createLinearGradient(-len, 0, 0, 0);
       tg.addColorStop(0, 'rgba(255,255,255,0)');
       tg.addColorStop(1, tint);
       ctx.strokeStyle = tg;
-      ctx.lineWidth = b.pierce ? 2.8 : 2.2;
-      ctx.lineCap = 'round';
+      ctx.lineWidth = b.pierce ? 3.4 : 2.8;
       ctx.beginPath(); ctx.moveTo(-len, 0); ctx.lineTo(0, 0); ctx.stroke();
-      ctx.globalAlpha = 0.3;
+      ctx.globalAlpha = 0.34;
       ctx.fillStyle = tint;
-      ctx.beginPath(); ctx.arc(0, 0, 8, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 0, 10, 0, TAU); ctx.fill();
       ctx.globalAlpha = 1;
       if (b.pierce) {
         ctx.fillStyle = '#ffffff';

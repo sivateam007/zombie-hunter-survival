@@ -83,4 +83,18 @@ function makeWorld(extra) {
     'a dead target releases the lock to the next body');
 }
 
+/* 6. locks are per weapon: a short-range weapon must not clear the gun's
+   target, which used to make every gun re-acquire from scratch each frame */
+{
+  const w = makeWorld();
+  const p = w.player;
+  const a = ZH.createEnemy('zombieA', 1200, 1000, 1);
+  const b = ZH.createEnemy('zombieA', 1500, 1000, 1);
+  w.zombies.push(a, b);
+  assert.strictEqual(ZH.acquireTarget(w, p, 600, 'gun'), a, 'gun locks its own target');
+  assert.strictEqual(ZH.acquireTarget(w, p, 100, 'melee'), null, 'melee has no target in reach');
+  assert.strictEqual(ZH.acquireTarget(w, p, 600, 'gun'), a, 'melee range did not clear the gun lock');
+  assert.ok(p._locks && p._locks.gun === a, 'the lock is stored per weapon');
+}
+
 console.log('aim.test.js ✓ guns acquire visible zombies and never dry-fire');

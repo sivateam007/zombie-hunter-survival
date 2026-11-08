@@ -306,6 +306,19 @@
     if (ZH.onDamage) ZH.onDamage(world, z, dmg);
     z.hp -= dmg;
     z.hurtFlash = 0.2;
+    /* impact sparks: on pale hospital tile, blue canal stone and rainy
+       rooftops a tracer alone can vanish. A short bright burst at the body
+       proves the round connected in every district. */
+    if (world.particles && world.particles.length < 240) {
+      for (var sp = 0; sp < 2; sp++) {
+        world.particles.push({
+          x: z.x + rand(-5, 5), y: z.y + rand(-9, 3),
+          vx: rand(-80, 80), vy: rand(-120, -25),
+          life: 0.16, max: 0.16, size: rand(1.6, 3),
+          color: 'rgba(255,240,190,0.95)'
+        });
+      }
+    }
     if (z.hp <= 0) {
       z.dead = true;
       if (world.player) world.player.kills = (world.player.kills || 0) + 1;
@@ -381,16 +394,22 @@
      damage was spread across six of them and nothing died while the player
      watched the gun fire into the horde. Once engaged, a zombie stays the
      target until it dies, leaves range, or another is 1.5x closer. */
-  function acquireTarget(world, p, range) {
+  function acquireTarget(world, p, range, key) {
     if (!world || !world.zombies) return null;
     var list = world.zombies;
-    var keep = p._lock, keepD = Infinity;
+    var store = null, keep;
+    if (key != null) {
+      store = p._locks || (p._locks = {});
+      keep = store[key];
+    } else {
+      keep = p._lock;
+    }
+    var keepD = Infinity;
     if (keep && !keep.dead && list.indexOf(keep) !== -1) {
       keepD = Math.hypot(keep.x - p.x, keep.y - p.y);
-      if (range && keepD > range) { keep = null; p._lock = null; }
+      if (range && keepD > range) keep = null;
     } else if (keep) {
       keep = null;
-      p._lock = null;
     }
     var best = null, bestD = range ? range * range : Infinity;
     for (var i = 0; i < list.length; i++) {
@@ -403,7 +422,7 @@
       if (!best) return keep;
       if (keepD * keepD <= bestD * 2.25) return keep;
     }
-    p._lock = best;
+    if (store) store[key] = best; else p._lock = best;
     return best;
   }
 
@@ -424,8 +443,8 @@
     fan: 1, stream: 1, salvo: 1, firebomb: 1, melee: 1
   };
 
-  function aimAtNearest(world, p, range, fallback) {
-    var z = acquireTarget(world, p, range);
+  function aimAtNearest(world, p, range, fallback, key) {
+    var z = acquireTarget(world, p, range, key);
     if (!z) return fallback == null ? (p.aimDir || 0) : fallback;
     var ang = Math.atan2(z.y - p.y, z.x - p.x);
     p.aimDir = ang;
@@ -449,7 +468,10 @@
     var seen = viewRange(world);
     /* cover the whole visible screen: a zombie the player can see is a zombie
        the sidearm may answer, even on an ultrawide monitor */
-    return Math.max(range, Math.min(2200, seen + 100));
+    /* no practical cap: on a 5K/8K ultrawide a zombie can stand 3000+ px
+       from the hunter and still be visible. Capping acquisition left those
+       bodies on screen but unshootable, which read as the gun ignoring them. */
+    return Math.max(range, Math.min(6000, seen + 100));
   }
 
   function pushShot(world, o) {
@@ -499,7 +521,7 @@
 
     /* acquire before switching so every ranged case fires at a body, not at
        the direction the thumbstick happened to be pointing */
-    if (AUTO_AIM[def.behaviour]) aim = aimAtNearest(world, p, acquire, aim);
+    if (AUTO_AIM[def.behaviour]) aim = aimAtNearest(world, p, acquire, aim, id);
 
     switch (def.behaviour) {
       /* spinning axes / saw blades around the hunter */
@@ -580,7 +602,7 @@
            game.js stores this function's return value in st.timer, so
            returning the shot gap plays the burst out and returning cd ends it. */
         var GAP = 0.150, UZI_GAP = 0.160;
-        var tgt = acquireTarget(world, p, acquire);
+        var tgt = acquireTarget(world, p, acquire, id);
         /* the original Gun checks the distance and does not fire at all when
            no body is in range. Firing into empty street made it look broken
            (and burned the magazine) whenever the horde was still approaching. */
@@ -911,7 +933,7 @@
       if (pdef && AUTO_AIM[pdef.behaviour]) {        var prange = (pdef.range || 400) * (1 + (a.shot_range_bonus || 0));
         prange = targetRange(pdef, world, prange);
 
-        var lock = acquireTarget(world, p, prange);
+        var lock = acquireTarget(world, p, prange, primId);
         if (lock) {
           p.aimDir = Math.atan2(lock.y - p.y, lock.x - p.x);
           if (Math.abs(lock.x - p.x) > 6) p.facing = lock.x >= p.x ? 1 : -1;

@@ -2,7 +2,7 @@
   "name": "zombie-hunter-survival",
   "version": "1.0.0",
   "private": true,
-  "description": "Zombie Hunter: Survival — a top-down survival shooter with procedural skeletal characters, 15 campaign missions, endless mode and a leaderboard",
+  "description": "Zombie Hunter: Survival — a top-down survival shooter with procedural skeletal characters, 12 campaign missions, endless mode and a leaderboard",
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
