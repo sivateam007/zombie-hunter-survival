@@ -245,6 +245,13 @@ p { margin: 0; line-height: 1.5; }
 .bar.dash > i { background: var(--amber); }
 .bar.dash.is-ready > i { background: var(--green); box-shadow: 0 0 10px rgba(155, 225, 93, 0.6); }
 
+/* jetpack fuel */
+.bar.jet { border: 1px solid rgba(140, 220, 255, 0.28); }
+.bar.jet > i { background: linear-gradient(90deg, #4d8dff, #8ef2d0); }
+.jet-row.is-flying .bar.jet > i { box-shadow: 0 0 12px rgba(120, 220, 255, 0.6); }
+.jet-row.is-low .bar.jet > i { background: linear-gradient(90deg, #c0301c, #ffb347); }
+.jet-num { font-size: 11px; font-weight: 700; color: #9fe6ff; font-variant-numeric: tabular-nums; min-width: 40px; text-align: right; }
+
 /* defence shield timeline — the original's TIME_INVINCIBLE countdown */
 .shield-row { display: none; }
 .shield-row.is-active { display: flex; }
@@ -270,6 +277,7 @@ p { margin: 0; line-height: 1.5; }
   .vitals { gap: 4px; }
   .dash-row .bar { height: 4px; }
   .shield-num { font-size: 12px; min-width: 32px; }
+  .jet-num { font-size: 10px; min-width: 34px; }
   .hud-kicker { font-size: 9px; }
 }
 
@@ -1175,6 +1183,8 @@ body.in-game .mobile-controls { display: flex; }
   transition: transform 0.08s, background 0.15s, border-color 0.15s, opacity 0.15s;
 }
 .touch-btn.accent { border-color: rgba(255, 179, 71, 0.6); color: var(--amber); }
+.touch-btn.jet { border-color: rgba(120, 220, 255, 0.55); color: #9fe6ff; }
+.touch-btn.jet.is-held { background: rgba(120, 220, 255, 0.24); border-color: #9fe6ff; color: #fff; box-shadow: 0 0 18px rgba(120, 220, 255, 0.32); }
 .touch-btn:active { background: rgba(255, 179, 71, 0.22); transform: scale(0.94); }
 .touch-btn.is-cooling { opacity: 0.4; }
 

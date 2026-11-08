@@ -11,11 +11,12 @@
  * px/ms becomes 130 px/s. Ranged types (cop, tower2, assault1/2,
  * miniboss_soldier, miniboss_tower) spawn shots, exactly as in source.
  *
- * Weapons follow the 18-weapon catalogue in weapons.js; every behaviour
+ * Weapons follow the 20-weapon catalogue in weapons.js; every behaviour
  * below mirrors the original prototype code (orbit axes, fan crossbow,
  * continuous flamethrower, target-seeking Gun, melee Sword, Drill burst,
  * Bazooka rocket, returning Boomerang, bullet-eating Circular, Tesla
- * chain, bouncing SpikedBall, Forcefield aura, Launcher salvo, Molotov).
+ * chain, bouncing SpikedBall, Forcefield aura, Launcher salvo, Molotov,
+ * rocket launches, Doomsday blast and Siegebreaker shell).
  */
 (function (global) {
   'use strict';
@@ -57,6 +58,32 @@
      One timer — player.shieldT — is the single source of truth for every
      window: it gates damage, feeds the HUD countdown, paints the hunter ring
      and drives the body blink. player.invuln is only a legacy mirror. */
+  /* ----------------------------- jetpack ----------------------------- */
+  ZH.JETPACK = ZH.JETPACK || {
+    max: 100, drain: 34, regen: 16, min: 12, speed: 1.5, lift: 18
+  };
+
+  /** one hold-to-fly fuel clock, separate from the shield clock */
+  ZH.tickJetpack = function (p, dt, held) {
+    if (!p) return 0;
+    var j = ZH.JETPACK;
+    if (p.jetFuel == null) p.jetFuel = j.max;
+    if (!p.jetActive) {
+      if (held && !p.dead && p.jetFuel >= j.min) p.jetActive = true;
+    } else if (!held || p.dead || p.jetFuel <= 0) {
+      p.jetActive = false;
+    }
+    if (p.jetActive) {
+      p.jetFuel = Math.max(0, p.jetFuel - j.drain * dt);
+      if (p.jetFuel <= 0) p.jetActive = false;
+    } else {
+      p.jetFuel = Math.min(j.max, p.jetFuel + j.regen * dt);
+    }
+    if (p.jetActive) p.jetLift = Math.min(j.lift || 18, (p.jetLift || 0) + 90 * dt);
+    else p.jetLift = Math.max(0, (p.jetLift || 0) - 90 * dt);
+    return p.jetFuel;
+  };
+
   ZH.SHIELD = ZH.SHIELD || {
     max: 60,         /* force-field window; also the HUD bar width            */
     force: 60,       /* a shield cell arms the full 60 s force field          */
@@ -208,6 +235,7 @@
       deadT: 0,
       /* one protection clock for every force-field window (see ZH.SHIELD) */
       shieldT: 3, shieldMax: 3,
+      jetFuel: 100, jetMax: 100, jetActive: false, jetLift: 0,
       invuln: 3,                    /* legacy mirror of shieldT only */
       dashT: 0, dashCd: 0, dashMax: 2.2, dashVX: 0, dashVY: 0,
       regenT: 0
@@ -912,7 +940,8 @@
     var mx = p.moveX, my = p.moveY;
     var len = Math.hypot(mx, my);
     var a = attribsOf(p);
-    var speed = p.speed * (1 + (a.speed_bonus || 0));
+    var speed = p.speed * (1 + (a.speed_bonus || 0)) *
+      (p.jetActive ? ((ZH.JETPACK && ZH.JETPACK.speed) || 1.5) : 1);
     if (len > 0.01) {
       p.x += mx * speed * dt;
       p.y += my * speed * dt;
@@ -1009,7 +1038,7 @@
         if (z.ranged) {
           enemyShoot(world, z, dist);
         } else if (dist < (z.range || 30)) {
-          if (!ZH.shielded(p)) {
+          if (!ZH.shielded(p) && !p.jetActive) {
             var a = attribsOf(p);
             var armor = Math.min(0.8, (a.defense || 0) / 100);
             p.hp -= z.dmg * (1 - armor);

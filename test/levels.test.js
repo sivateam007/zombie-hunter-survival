@@ -1,6 +1,5 @@
 'use strict';
-/* The campaign ships 12 stages with their wave tables, boss zones and the
-   18-weapon catalogue. */
+/* The campaign ships 12 stages with their wave tables, boss zones and the    20-weapon catalogue. */
 const assert = require('assert');
 const { ZH } = require('./_setup');
 
@@ -75,12 +74,12 @@ assert.strictEqual(ZH.STAGES[5].waves.filter((w) => w.bossZone)[0].bossZone.widt
   assert.ok(ZH.ENEMY_TYPES[t].hp > 0 && ZH.ENEMY_TYPES[t].name, t + ' has hp and a name');
 });
 
-/* ---------------- weapons: 14 base + 14 evolutions ---------------- */
-assert.strictEqual(ZH.WEAPON_ORDER.length, 18, 'the catalogue has 18 base weapons');
+/* ---------------- weapons: 20 base + 20 evolutions ---------------- */
+assert.strictEqual(ZH.WEAPON_ORDER.length, 20, 'the catalogue has 20 base weapons');
 assert.deepStrictEqual(ZH.WEAPON_ORDER, ['axe', 'crossbow', 'flamethrower', 'gun', 'sword', 'drill',
-  'bazooka', 'boomerang', 'circular', 'tesla', 'spikedball', 'forcefield', 'launcher', 'molotov',
-  'smg', 'grenade', 'sniper', 'katana'],
-'the 18 weapons, in catalogue order');
+  'bazooka', 'rocketlauncher', 'grenadelauncher', 'boomerang', 'circular', 'tesla', 'spikedball',
+  'forcefield', 'launcher', 'molotov', 'smg', 'grenade', 'sniper', 'katana'],
+'the 20 weapons, in catalogue order');
 
 const evolutions = [];
 ZH.WEAPON_ORDER.forEach((id) => {
@@ -95,7 +94,7 @@ ZH.WEAPON_ORDER.forEach((id) => {
     id + ' evolves at level 6 with the supply');
   evolutions.push(w.evo);
 });
-assert.strictEqual(new Set(evolutions).size, 18, 'every base weapon has its own evolution');
+assert.strictEqual(new Set(evolutions).size, 20, 'every base weapon has its own evolution');
 
 /* ---------------- supplies ---------------- */
 assert.strictEqual(ZH.SUPPLY_IDS.length, 14, '14 supplies incl. the two pickups');
@@ -121,4 +120,4 @@ assert.strictEqual(ZH.priceForSkill(1), 0, 'the first level is free');
 assert.strictEqual(ZH.priceForSkill(2), 1000, 'then 1,000');
 assert.strictEqual(ZH.priceForSkill(30), 435000, 'top price 435,000');
 
-console.log('levels.test.js ✓ twelve stages, 18 weapons, 14 supplies, six coin skills');
+console.log('levels.test.js ✓ twelve stages, 20 weapons, 14 supplies, six coin skills');

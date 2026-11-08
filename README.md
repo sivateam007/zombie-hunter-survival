@@ -13,7 +13,7 @@ card stagger, count-up and banner.
 ![chapters](https://img.shields.io/badge/chapters-7-ffb347)
 ![missions](https://img.shields.io/badge/missions-12-ffb347)
 ![boss types](https://img.shields.io/badge/boss%20types-6-e0492f)
-![weapons](https://img.shields.io/badge/weapons-18-9be15d)
+![weapons](https://img.shields.io/badge/weapons-20-9be15d)
 ![districts](https://img.shields.io/badge/districts-13-6da8ff)
 ![deps](https://img.shields.io/badge/npm%20dependencies-0-8d9793)
 
@@ -65,10 +65,15 @@ desktop browser. The buttons use pointer events, so they respond to touch, mouse
 | 11 | The Outskirts | Overgrown Park | Soldier, Spider |
 | 12 | The Outskirts | Greyfield Airstrip | Soldier, Tower, Spider, Reptile |
 
-**Eighteen weapons** across six families — sidearm, SMG, shotgun, rifle, marksman rifle and
-flamethrower — each with its own recoil, spread, pierce and sound. The M9 sidearm, Kestrel SMG,
-Marrow 12g, Vanguard AR, Longshot .338 and Cinderthrower (which sets zombies alight) are the
-first of each line. Weapons unlock through mission milestones *and* can be bought early.
+**Twenty weapons** across seven families — sidearm, SMG, shotgun, rifle, marksman rifle,
+flamethrower and heavy explosives — each with its own recoil, spread, pierce and sound. The M9
+sidearm, Kestrel SMG, Marrow 12g, Vanguard AR, Longshot .338, Rocket Launcher and Cinderthrower
+are the first of each line. Rocket and grenade launchers evolve into Doomsday and Siegebreaker;
+weapons unlock through mission milestones *and* can be bought early.
+
+**Jetpack** — hold the cyan JET button (or Space on a desktop) to fly. The fuel bar drains while
+airborne and recharges on the ground; bites pass underneath while the jets are lit, but ranged
+fire still connects.
 
 **Five zombie classes** plus bosses: walkers, sprinters, crawlers that drag themselves along the
 floor, acid-spitting spitters, and brutes that soak damage. The horde steers around props,

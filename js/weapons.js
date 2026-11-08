@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------
  * Zombie Hunter: Survival — weapons, supplies and coin skills
  *
- * Original implementation written for this project. The catalogue holds 18
+ * Original implementation written for this project. The catalogue holds 20
  * base weapons; each one evolves at level 6 once its matching supply is owned.
  * Supplies have five levels on our own bonus curves, and the six coin skills
  * use a price/value table tuned for this build. No code, art or data is
@@ -77,6 +77,20 @@
       mag: 6, reload: 2.2, ammo: true, range: 760, splash: 100,
       evo: 'nuke', supply: 'propane',
       desc: 'One rocket at the closest enemy, then a 100px explosion.'
+    }),
+    weapon({
+      id: 'rocketlauncher', name: 'Rocket Launcher', short: 'R.LAUNCH', behaviour: 'rocket',
+      cooldown: 2.3, dmg: 8, speed: 430, blast: 140,
+      mag: 5, reload: 2.5, ammo: true, range: 850, splash: 140,
+      evo: 'doomsday', supply: 'propane',
+      desc: 'Shoulder-fired rockets. Every hit leaves a 140px crater.'
+    }),
+    weapon({
+      id: 'grenadelauncher', name: 'Grenade Launcher', short: 'G.LAUNCH', behaviour: 'rocket',
+      cooldown: 2.8, dmg: 6, speed: 310, blast: 110,
+      mag: 6, reload: 2.4, ammo: true, range: 580, splash: 110,
+      evo: 'siegebreaker', supply: 'propane',
+      desc: 'Lobs heavy shells over the horde. A 110px blast each.'
     }),
     weapon({
       id: 'boomerang', name: 'Boomerang', short: 'BOOM', behaviour: 'boomerang',
@@ -206,6 +220,18 @@
       desc: 'Evolved Bazooka. One rocket flattens everything in 260px.'
     }),
     weapon({
+      id: 'doomsday', name: 'Doomsday', short: 'DOOM', behaviour: 'rocket',
+      cooldown: 5.0, dmg: 32, speed: 400, blast: 300,
+      mag: 2, reload: 4.5, ammo: true, range: 1000, splash: 300, evoOnly: true,
+      desc: 'Evolved Rocket Launcher. A 300px Doomsday strike.'
+    }),
+    weapon({
+      id: 'siegebreaker', name: 'Siegebreaker', short: 'SIEGE', behaviour: 'rocket',
+      cooldown: 4.2, dmg: 20, speed: 340, blast: 230,
+      mag: 3, reload: 3.6, ammo: true, range: 800, splash: 230, evoOnly: true,
+      desc: 'Evolved Grenade Launcher. Heavy shells and a 230px siege blast.'
+    }),
+    weapon({
       id: 'neckbreaker', name: 'Neckbreaker', short: 'NECK', behaviour: 'boomerang',
       cooldown: 3.0, dmg: 24, speed: 620, count: 2,
       mag: '∞', reload: 0, ammo: false, range: 780, splash: 0, evoOnly: true,
@@ -277,7 +303,7 @@
   var W = {};
   BASE_WEAPONS.concat(EVOLVED_WEAPONS).forEach(function (w) { W[w.id] = w; });
 
-  // the 18 base weapons, in catalogue order
+  // the 20 base weapons, in catalogue order
   var ORDER = BASE_WEAPONS.map(function (w) { return w.id; });
 
   /* ------------------------------ supplies ------------------------------
@@ -306,7 +332,7 @@
     },
     propane: {
       id: 'propane', name: 'Propane', attrib: 'shot_speed_bonus', pct: true,
-      evoWeapon: ['bazooka', 'grenade'], bonus: [0, .1, .2, .3, .4, .5],
+      evoWeapon: ['bazooka', 'grenade', 'rocketlauncher', 'grenadelauncher'], bonus: [0, .1, .2, .3, .4, .5],
       desc: 'Projectile speed +[x]%.'
     },
     magnet: {

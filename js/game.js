@@ -23,7 +23,7 @@ window.ZH = window.ZH || {};
     coins: 0, score: 0, exp: 0,
     levelUpPending: false, levelUpChoices: [],
     bossZoneActive: false,
-    input: { joyX: 0, joyY: 0 },
+    input: { joyX: 0, joyY: 0, jet: false },
     touch: { enabled: false },
     hudCache: {},
     quality: 1,
@@ -118,6 +118,7 @@ window.ZH = window.ZH || {};
       this.character = save.character;
     }
     if (ZH.applyCharacter) ZH.applyCharacter(this.player, this.character);
+    this.input.jet = false;
     this.traffic = [];
     this.trafficT = 0;
     this.camera.x = this.player.x;
@@ -597,6 +598,17 @@ window.ZH = window.ZH || {};
 
     /* the game itself parks the stick on pause and on level-up */
     self.releaseInput = release;
+
+    /* desktop convenience: Space is the same hold-to-fly jetpack */
+    window.addEventListener('keydown', function (e) {
+      if (e.code === 'Space' && self.state === 'playing') {
+        self.input.jet = true;
+        e.preventDefault();
+      }
+    });
+    window.addEventListener('keyup', function (e) {
+      if (e.code === 'Space') self.input.jet = false;
+    });
   };
 
   Game.applyInput = function () {
@@ -614,6 +626,22 @@ window.ZH = window.ZH || {};
     if (len > 0.01) {
       p.aimDir = Math.atan2(my, mx);
       p.facing = mx >= 0 ? 1 : -1;
+    }
+  };
+
+  /* hold-to-fly jetpack: burns fuel, lifts the rig and skims over bites */
+  Game.updateJetpack = function (dt) {
+    var p = this.player;
+    if (!p) return;
+    var held = !!(this.input && this.input.jet) && this.state === 'playing' && !p.dead;
+    if (ZH.tickJetpack) ZH.tickJetpack(p, dt, held);
+    if (p.jetActive && Math.random() < 0.45) {
+      this.particles.push({
+        x: p.x + rand(-7, 7), y: p.y + 9,
+        vx: rand(-35, 35), vy: rand(40, 110),
+        life: 0.34, max: 0.34, size: 2.4,
+        color: Math.random() < 0.5 ? 'rgba(255,180,70,0.85)' : 'rgba(150,230,255,0.8)'
+      });
     }
   };
 
@@ -664,6 +692,7 @@ window.ZH = window.ZH || {};
     /* drop the stick: otherwise the last drag vector survives the pause and
        the hunter walks off by itself the moment the game resumes */
     if (this.releaseInput) this.releaseInput();
+    if (this.input) this.input.jet = false;
     if (this.ui) this.ui.showPause();
   };
 
@@ -696,6 +725,7 @@ window.ZH = window.ZH || {};
 
     var p = this.player;
     this.applyInput();
+    this.updateJetpack(dt);
     this.updateTraffic(dt);
 
     // combat roll: hold the locked dash vector while it lasts
@@ -836,6 +866,9 @@ window.ZH = window.ZH || {};
       hp: Math.max(0, p.hp), maxHp: p.maxHp,
       dashCd: p.dashCd || 0, dashMax: p.dashMax || 2.2,
       shield: p.shieldT || 0, shieldMax: p.shieldMax || 3,
+      jet: p.jetFuel == null ? 100 : p.jetFuel,
+      jetMax: (ZH.JETPACK && ZH.JETPACK.max) || 100,
+      jetActive: !!p.jetActive,
       mag: magNow, weapon: w,
       reloading: relLeft > 0,
       reloadFrac: relLeft > 0 ? Math.min(1, 1 - relLeft / relTotal) : 0,
@@ -1052,8 +1085,30 @@ window.ZH = window.ZH || {};
           ctx.textAlign = 'left';
           ctx.restore();
         }
+        if (e.jetActive) {
+          /* twin jets: a short blue-core flame that flickers under the rig */
+          ctx.fillStyle = 'rgba(0,0,0,0.26)';
+          ctx.beginPath(); ctx.ellipse(e.x, e.y + 11, 18, 6, 0, 0, TAU); ctx.fill();
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          var flick = 8 + Math.sin((this.t || 0) * 40) * 4;
+          for (var js = -1; js <= 1; js += 2) {
+            var jx = e.x + js * 7, jy = e.y + 8;
+            var jg = ctx.createLinearGradient(jx, jy, jx, jy + 26 + flick);
+            jg.addColorStop(0, 'rgba(190,246,255,0.95)');
+            jg.addColorStop(0.4, 'rgba(255,194,80,0.78)');
+            jg.addColorStop(1, 'rgba(255,72,20,0)');
+            ctx.fillStyle = jg;
+            ctx.beginPath();
+            ctx.moveTo(jx - 5, jy);
+            ctx.lineTo(jx + 5, jy);
+            ctx.lineTo(jx, jy + 26 + flick);
+            ctx.closePath(); ctx.fill();
+          }
+          ctx.restore();
+        }
         ZH.Rig.draw(ctx, {
-          x: e.x, y: e.y, s: 1.15, kind: 'hunter', variant: 'hunter',
+          x: e.x, y: e.y - (e.jetLift || 0), s: 1.15, kind: 'hunter', variant: 'hunter',
           facing: e.facing, aim: e.aimDir || 0, weapon: e.primaryWeapon,
           alpha: blink,
           palette: ZH.Rig.paletteFor ? ZH.Rig.paletteFor(e.character || 'hunter') : null,
@@ -1183,6 +1238,8 @@ window.ZH = window.ZH || {};
     drill: '#7fe1ff', lasergun: '#b9f0ff',
     tesla: '#9ad4ff', thunderorb: '#c9b3ff',
     bazooka: '#ff9a5c', nuke: '#ff7a3d',
+    rocketlauncher: '#ffb15c', doomsday: '#ff6b3d',
+    grenadelauncher: '#c8e86a', siegebreaker: '#ffe06a',
     launcher: '#ff8a5c', airstrike: '#ffc46b',
     flamer: '#ffb066', plasmagun: '#8ef2d0',
     boomerang: '#f6c45a', neckbreaker: '#ffe08a',

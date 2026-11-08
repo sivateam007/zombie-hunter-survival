@@ -37,6 +37,9 @@ window.ZH = window.ZH || {};
         shieldRow: $('shield-row'),
         shieldFill: $('shield-fill'),
         shieldText: $('shield-text'),
+        jetRow: $('jet-row'),
+        jetFill: $('jet-fill'),
+        jetText: $('jet-text'),
         mag: $('hud-mag'),
         magMax: $('hud-magmax'),
         weaponName: $('hud-weapon-name'),
@@ -173,8 +176,8 @@ window.ZH = window.ZH || {};
       if (!list) return;
       list.innerHTML = '';
       var save = ZH.Save.get();
-      /* the original lets you pick any primary at deploy (DialogSelectPrimary),
-         so the whole 14-weapon arsenal is listed — picked guns stay unlocked */
+      /     * the original lets you pick any primary at deploy (DialogSelectPrimary),
+         so the whole 20-weapon arsenal is listed — picked guns stay unlocked */
       (ZH.WEAPON_ORDER || []).forEach(function (id) {
         var w = ZH.WEAPONS[id];
         if (!w || w.evoOnly) return;
@@ -820,6 +823,21 @@ window.ZH = window.ZH || {};
       e.dashFill.style.width = (dashReady ? 100 : (1 - d.dashCd / d.dashMax) * 100).toFixed(1) + '%';
       e.dashBar.classList.toggle('is-ready', dashReady);
 
+      /* jetpack fuel: always visible, cyan while flying, amber when low */
+      if (e.jetFill) {
+        var jetMax = d.jetMax || 100;
+        var jetNow = Math.max(0, Math.min(jetMax, d.jet == null ? jetMax : d.jet));
+        e.jetFill.style.width = (jetNow / jetMax * 100).toFixed(1) + '%';
+        e.jetText.textContent = Math.ceil(jetNow) + '%';
+        e.jetRow.classList.toggle('is-flying', !!d.jetActive);
+        e.jetRow.classList.toggle('is-low', jetNow < 25);
+        var jetBtn = $('btn-jet');
+        if (jetBtn) {
+          jetBtn.classList.toggle('is-held', !!d.jetActive);
+          jetBtn.classList.toggle('is-cooling', jetNow < ((ZH.JETPACK && ZH.JETPACK.min) || 12));
+        }
+      }
+
       /* defence shield: the original's 3 s TIME_INVINCIBLE after a bite or a
          revive, drawn as a draining timeline so the mercy window is readable */
       if (e.shieldRow) {
@@ -1150,6 +1168,21 @@ window.ZH = window.ZH || {};
           if (G && G.reload) G.reload();
         };
         reloadBtn.addEventListener('pointerdown', fireReload);
+      }
+      var jetBtn = $('btn-jet');
+      if (jetBtn) {
+        var jetDown = function (ev) {
+          ev.preventDefault();
+          if (G && G.input) G.input.jet = true;
+          jetBtn.classList.add('is-held');
+        };
+        var jetUp = function () {
+          if (G && G.input) G.input.jet = false;
+          jetBtn.classList.remove('is-held');
+        };
+        jetBtn.addEventListener('pointerdown', jetDown);
+        window.addEventListener('pointerup', jetUp);
+        window.addEventListener('pointercancel', jetUp);
       }
 
       /* any first interaction unlocks WebAudio */

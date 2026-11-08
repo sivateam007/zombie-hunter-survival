@@ -150,7 +150,7 @@ window.ZH = window.ZH || {};
   }
 
   /* ----------------------------- weapon art ----------------------------- */
-  /* one entry per gun in the 18-weapon catalogue + evolutions;
+  /* one entry per gun in the 20-weapon catalogue + evolutions;
      unknown ids fall back to the rifle silhouette. */
   var GUNS = {
     gun:        { len: 17, grip: 7, h: 3.6, rail: 0.6, scope: 0, stock: 0, mag: 3 },
@@ -160,7 +160,11 @@ window.ZH = window.ZH || {};
     drill:      { len: 24, grip: 8, h: 4.6, rail: 0.7, scope: 2, stock: 4, mag: 4 },
     lasergun:   { len: 30, grip: 8, h: 4.2, rail: 0.9, scope: 6, stock: 5, mag: 4 },
     bazooka:    { len: 32, grip: 9, h: 6.4, rail: 0.4, scope: 4, stock: 2, mag: 0 },
+    rocketlauncher: { len: 35, grip: 10, h: 7.6, rail: 0.5, scope: 5, stock: 3, mag: 0 },
+    grenadelauncher: { len: 29, grip: 9, h: 6.6, rail: 0.4, scope: 2, stock: 3, mag: 0 },
     nuke:       { len: 36, grip: 9, h: 7.4, rail: 0.4, scope: 5, stock: 2, mag: 0 },
+    doomsday:   { len: 40, grip: 10, h: 8.4, rail: 0.5, scope: 6, stock: 4, mag: 0 },
+    siegebreaker: { len: 34, grip: 10, h: 7.4, rail: 0.4, scope: 3, stock: 4, mag: 0 },
     launcher:   { len: 30, grip: 9, h: 6.8, rail: 0.4, scope: 3, stock: 2, mag: 2 },
     airstrike:  { len: 34, grip: 9, h: 7.0, rail: 0.4, scope: 4, stock: 2, mag: 2 },
     flamer:     { len: 22, grip: 8, h: 5.2, rail: 0.4, scope: 0, stock: 3, mag: 0 },

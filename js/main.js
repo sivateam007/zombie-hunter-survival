@@ -65,7 +65,7 @@
       console.log('%cZOMBIE HUNTER: SURVIVAL', 'color:#ffb347;font-weight:bold;letter-spacing:2px');
       console.log('Campaign: ' + (ZH.STAGES ? ZH.STAGES.length : 0) + ' stages · ' + ZH.WEAPON_ORDER.length + ' weapons · anime.js motion');
       console.log('%cDeveloped by SIVA', 'color:#9be15d;font-weight:bold;letter-spacing:1px');
-      console.log('Build 8 · survivor store, 60 s force field, redeem codes, live traffic');
+      console.log('Build 9 · jetpack, rocket launcher, grenade launcher, 20-weapon catalogue');
     }
   });
 })(window.ZH);
