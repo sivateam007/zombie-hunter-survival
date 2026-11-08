@@ -1203,10 +1203,12 @@
         }
       }
 
-      if (b.x < -200 || b.y < -200 || b.x > (world.arena ? world.arena.w + 200 : 99999) ||
-          b.y > (world.arena ? world.arena.h + 200 : 99999)) {
-        list.splice(i, 1);
-      }
+      /* The city is endless in every direction, negative coordinates
+         included. The old `b.x < -200 || b.y < -200` cull deleted every
+         round fired in the top-left quadrant before it could reach a zombie,
+         so the gun worked at spawn and appeared dead after walking up/left.
+         Moving rounds already expire on their own life clock, so no position
+         cull is needed for this open world. */
     }
   }
 

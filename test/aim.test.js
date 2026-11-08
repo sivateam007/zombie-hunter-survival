@@ -97,4 +97,25 @@ function makeWorld(extra) {
   assert.ok(p._locks && p._locks.gun === a, 'the lock is stored per weapon');
 }
 
+/* 7. the endless city has negative coordinates: rounds fired in the top-left
+   quadrant must travel, not be deleted at x/y = -200 (the old cull made the
+   gun work at spawn but appear dead after walking up/left) */
+{
+  const spots = [[-600, -600], [-600, 512], [512, -600]];
+  for (const [px, py] of spots) {
+    const w = makeWorld();
+    const p = w.player;
+    p.x = px; p.y = py; p._lock = null; p._locks = {};
+    const z = ZH.createEnemy('zombieA', px - 220, py - 40, 1);
+    z.speed = 0;
+    w.zombies.push(z);
+    ZH.fireWeapon('gun', 1, p, w);
+    assert.strictEqual(w.bullets.length, 1, 'round spawns at ' + px + ',' + py);
+    for (let i = 0; i < 30 && w.bullets.length; i++) {
+      ZH.updateProjectiles(w.bullets, 1 / 60, w);
+    }
+    assert.ok(z.dead, 'round reaches and kills at ' + px + ',' + py);
+  }
+}
+
 console.log('aim.test.js ✓ guns acquire visible zombies and never dry-fire');
