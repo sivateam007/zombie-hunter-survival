@@ -1,8 +1,8 @@
 /* ============================================================
  * Patch applied to the running build so startStage picks the
  * survivor primary weapon from a single unlockable choice, and
- * startStage auto-starts the level immediately (like the original
- * GameSnacks game, where you never pick a mission first).
+ * startStage auto-starts the level immediately, so a run never opens on a
+ * mission picker.
  * ============================================================ */
 (function () {
   'use strict';

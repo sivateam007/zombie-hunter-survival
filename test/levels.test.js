@@ -1,13 +1,13 @@
 'use strict';
-/* The campaign must be the real GameSnacks content: 8 stages, the extracted
-   wave tables, the real boss zones and the 14-weapon catalogue. */
+/* The campaign ships 12 stages with their wave tables, boss zones and the
+   18-weapon catalogue. */
 const assert = require('assert');
 const { ZH } = require('./_setup');
 
 const themes = Object.keys(ZH.Arena.THEMES);
-const MULTIPLIERS = [1, 1.5, 2.25, 3.5, 4.75, 7.61, 17.09, 11.42];
+const MULTIPLIERS = [1, 1.5, 2.25, 3.5, 4.75, 7.61, 17.09, 11.42, 13.5, 18.4, 24.6, 31.2];
 
-assert.strictEqual(ZH.STAGES.length, 8, 'the original campaign has eight stages');
+assert.strictEqual(ZH.STAGES.length, 12, 'the campaign has twelve stages');
 assert.strictEqual(ZH.LEVELS, ZH.STAGES, 'ZH.LEVELS aliases the stage table');
 assert.strictEqual(ZH.TIME_LEVEL_COMPLETED, 1200, 'a stage is won at 20 minutes');
 
@@ -33,8 +33,12 @@ assert.deepStrictEqual(ZH.STAGES.map((s) => s.rewards), [
   [5000, 7500, 12500],
   [6000, 9000, 15000],
   [8000, 12000, 20000],
-  [8000, 16000, 24000]
-], 'rewards match the originals');
+  [8000, 16000, 24000],
+  [9000, 18000, 30000],
+  [10000, 20000, 34000],
+  [12000, 24000, 40000],
+  [14000, 28000, 46000]
+], 'rewards scale with the campaign');
 
 /* every wave reference resolves, and the timings are seconds, not ms */
 ZH.STAGES.forEach((stage) => {
@@ -72,10 +76,11 @@ assert.strictEqual(ZH.STAGES[5].waves.filter((w) => w.bossZone)[0].bossZone.widt
 });
 
 /* ---------------- weapons: 14 base + 14 evolutions ---------------- */
-assert.strictEqual(ZH.WEAPON_ORDER.length, 14, 'the original catalogue has 14 weapons');
+assert.strictEqual(ZH.WEAPON_ORDER.length, 18, 'the catalogue has 18 base weapons');
 assert.deepStrictEqual(ZH.WEAPON_ORDER, ['axe', 'crossbow', 'flamethrower', 'gun', 'sword', 'drill',
-  'bazooka', 'boomerang', 'circular', 'tesla', 'spikedball', 'forcefield', 'launcher', 'molotov'],
-'the 14 weapons, in the original order');
+  'bazooka', 'boomerang', 'circular', 'tesla', 'spikedball', 'forcefield', 'launcher', 'molotov',
+  'smg', 'grenade', 'sniper', 'katana'],
+'the 18 weapons, in catalogue order');
 
 const evolutions = [];
 ZH.WEAPON_ORDER.forEach((id) => {
@@ -90,7 +95,7 @@ ZH.WEAPON_ORDER.forEach((id) => {
     id + ' evolves at level 6 with the supply');
   evolutions.push(w.evo);
 });
-assert.strictEqual(new Set(evolutions).size, 14, 'every base weapon has its own evolution');
+assert.strictEqual(new Set(evolutions).size, 18, 'every base weapon has its own evolution');
 
 /* ---------------- supplies ---------------- */
 assert.strictEqual(ZH.SUPPLY_IDS.length, 14, '14 supplies incl. the two pickups');
@@ -116,4 +121,4 @@ assert.strictEqual(ZH.priceForSkill(1), 0, 'the first level is free');
 assert.strictEqual(ZH.priceForSkill(2), 1000, 'then 1,000');
 assert.strictEqual(ZH.priceForSkill(30), 435000, 'top price 435,000');
 
-console.log('levels.test.js ✓ eight real stages, 14 weapons, 14 supplies, six coin skills');
+console.log('levels.test.js ✓ twelve stages, 18 weapons, 14 supplies, six coin skills');

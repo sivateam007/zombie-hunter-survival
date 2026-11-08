@@ -132,7 +132,7 @@ window.ZH = window.ZH || {};
   }
 
   /* ----------------------------- weapon art ----------------------------- */
-  /* one entry per gun in the original 14-weapon catalogue + evolutions;
+  /* one entry per gun in the 18-weapon catalogue + evolutions;
      unknown ids fall back to the rifle silhouette. */
   var GUNS = {
     gun:        { len: 17, grip: 7, h: 3.6, rail: 0.6, scope: 0, stock: 0, mag: 3 },
@@ -157,11 +157,17 @@ window.ZH = window.ZH || {};
     domain:     { len: 12, grip: 7, h: 3.2, rail: 0.3, scope: 0, stock: 0, mag: 0 },
     boomerang:  { len: 12, grip: 6, h: 3.0, rail: 0.2, scope: 0, stock: 0, mag: 0 },
     neckbreaker:{ len: 12, grip: 6, h: 3.0, rail: 0.2, scope: 0, stock: 0, mag: 0 },
+    smg:        { len: 21, grip: 8, h: 4.0, rail: 0.8, scope: 1, stock: 2, mag: 7 },
+    minigun:    { len: 28, grip: 9, h: 6.2, rail: 1.0, scope: 0, stock: 4, mag: 9 },
+    sniper:     { len: 34, grip: 8, h: 4.0, rail: 1.1, scope: 7, stock: 8, mag: 4 },
+    railgun:    { len: 38, grip: 8, h: 4.4, rail: 1.2, scope: 8, stock: 8, mag: 3 },
+    grenade:    { len: 13, grip: 7, h: 4.6, rail: 0.3, scope: 0, stock: 0, mag: 0 },
+    clusterbomb:{ len: 16, grip: 7, h: 5.0, rail: 0.3, scope: 1, stock: 0, mag: 0 },
     rifle:      { len: 29, grip: 8, h: 4.0, rail: 1.0, scope: 5, stock: 7, mag: 6 }
   };
 
   /* melee / throwing weapons are drawn as blades, not guns */
-  var BLADES = { axe: 1, battleaxe: 1, sword: 1, scimitars: 1, circular: 1, ripper: 1 };
+  var BLADES = { axe: 1, battleaxe: 1, sword: 1, scimitars: 1, circular: 1, ripper: 1, katana: 1, nodachi: 1 };
 
   /** Hand-space weapon: +x is the barrel, origin is the grip. */
   function drawWeapon(ctx, id, pal, s, flash, reloadDip) {
@@ -618,7 +624,8 @@ window.ZH = window.ZH || {};
       var main = ik(shX, shY, shX + aimX, shY + aimY, armLen, armLen, 1);
       /* support hand rides the foregrip (pistols: close to main hand) */
       var isLong = (o.weapon === 'rifle' || o.weapon === 'smg' || o.weapon === 'shotgun' ||
-        o.weapon === 'sniper' || o.weapon === 'flamer');
+        o.weapon === 'sniper' || o.weapon === 'flamer' || o.weapon === 'minigun' ||
+        o.weapon === 'railgun' || o.weapon === 'katana' || o.weapon === 'nodachi');
       var gripDist = isLong ? 12 : 5;
       var supX = shX + Math.cos(localAim) * (reach + gripDist - reload * 8);
       var supY = shY + Math.sin(localAim) * (reach + gripDist - reload * 8);

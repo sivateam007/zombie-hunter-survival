@@ -17,7 +17,7 @@
     ZH.Game.boot(canvas, ZH.UI);
 
     // Survivor primary-weapon picker on the menu: pick once, every run
-    // starts with that weapon (original GameSnacks model).
+    // starts with that weapon.
     var unblockedWeaponIds = (ZH.Save && ZH.Save.get && ZH.Save.get().weapons) ||
       ['gun'];
     ZH.UI.showMenu({ unblockedWeaponIds: unblockedWeaponIds });
@@ -64,6 +64,7 @@
     if (window.console) {
       console.log('%cZOMBIE HUNTER: SURVIVAL', 'color:#ffb347;font-weight:bold;letter-spacing:2px');
       console.log('Campaign: ' + (ZH.STAGES ? ZH.STAGES.length : 0) + ' stages · ' + ZH.WEAPON_ORDER.length + ' weapons · anime.js motion');
+      console.log('%cDeveloped by SIVA', 'color:#9be15d;font-weight:bold;letter-spacing:1px');
     }
   });
 })(window.ZH);

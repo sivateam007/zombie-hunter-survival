@@ -31,12 +31,16 @@ function makeWorld(opts) {
   const w = makeWorld();
   const z = ZH.createEnemy('zombieA', 3300, 3072, 1);
   w.zombies.push(z);
+  assert.strictEqual(w.player.shieldT, 3, 'a stage opens with the original 3 s defence shield');
+  w.player.invuln = 0;   // let the opening shield expire so the bite can land
+  w.player.shieldT = 0;
   const startDist = Math.hypot(z.x - w.player.x, z.y - w.player.y);
   for (let i = 0; i < 180; i++) ZH.updateEnemies(w.zombies, 1 / 60, w);
   const endDist = Math.hypot(z.x - w.player.x, z.y - w.player.y);
   assert.ok(endDist < startDist, 'the zombie closes the distance');
   assert.ok(w.player.hp < 100, 'it lands a bite');
   assert.strictEqual(w.player.invuln, 3.0, 'a hit grants the original 3 s invincibility');
+  assert.strictEqual(w.player.shieldT, 3.0, 'the defence shield timeline restarts on a hit');
 }
 
 /* ---------- 3. weapons kill, score and drop loot ---------- */
@@ -81,6 +85,8 @@ ZH.WEAPON_ORDER.forEach((id) => {
 /* ---------- 6. ranged enemies shoot and their shots hurt ---------- */
 {
   const w = makeWorld();
+  w.player.invuln = 0;   // past the opening defence shield
+  w.player.shieldT = 0;
   const cop = ZH.createEnemy('cop', 3160, 3072, 1);
   w.zombies.push(cop);
   for (let i = 0; i < 120 && !w.enemyBullets.length; i++) ZH.updateEnemies(w.zombies, 1 / 60, w);

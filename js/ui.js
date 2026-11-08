@@ -34,6 +34,9 @@ window.ZH = window.ZH || {};
         hpBar: document.querySelector('.bar.hp'),
         dashFill: $('dash-fill'),
         dashBar: $('dash-fill').parentElement,
+        shieldRow: $('shield-row'),
+        shieldFill: $('shield-fill'),
+        shieldText: $('shield-text'),
         mag: $('hud-mag'),
         magMax: $('hud-magmax'),
         weaponName: $('hud-weapon-name'),
@@ -726,6 +729,25 @@ window.ZH = window.ZH || {};
       var dashReady = d.dashCd <= 0.001;
       e.dashFill.style.width = (dashReady ? 100 : (1 - d.dashCd / d.dashMax) * 100).toFixed(1) + '%';
       e.dashBar.classList.toggle('is-ready', dashReady);
+
+      /* defence shield: the original's 3 s TIME_INVINCIBLE after a bite or a
+         revive, drawn as a draining timeline so the mercy window is readable */
+      if (e.shieldRow) {
+        var st = ZH.shieldTimeline
+          ? ZH.shieldTimeline(d.shield || 0, d.shieldMax || ZH.SHIELD.max)
+          : null;
+        if (!st) {
+          var span = d.shieldMax || 3, t0 = d.shield || 0;
+          st = { active: t0 > 0.001, remaining: t0, frac: Math.max(0, Math.min(1, t0 / span)), expiring: t0 > 0.001 && t0 <= 0.9 };
+        }
+        e.shieldRow.classList.toggle('is-active', st.active);
+        e.shieldRow.classList.toggle('is-expiring', !!st.expiring);
+        if (st.active) {
+          e.shieldFill.style.width = (st.frac * 100).toFixed(1) + '%';
+          e.shieldText.textContent = st.remaining.toFixed(1) + 's';
+          e.shieldText.title = 'Defence shield: ' + st.remaining.toFixed(1) + 's left';
+        }
+      }
 
       if (last.mag !== d.mag || last.weapon !== d.weapon.id) {
         e.mag.textContent = d.mag;

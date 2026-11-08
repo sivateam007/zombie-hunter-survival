@@ -374,6 +374,26 @@
     return p.aimDir || 0;
   }
 
+  /* Every weapon that throws something at the horde acquires the closest
+     body in range before it fires. Only the Gun used to re-aim; the fan,
+     stream, lobbed bombs and melee kept swinging along the last walk vector,
+     so in a crowded district (or when backing away) the hunter visibly fired
+     away from the zombies. This locks the arm, the muzzle and the shot to
+     the same target in every district. */
+  var AUTO_AIM = {
+    target: 1, burst: 1, rocket: 1, chain: 1, boomerang: 1, bounce: 1,
+    fan: 1, stream: 1, salvo: 1, firebomb: 1, melee: 1
+  };
+
+  function aimAtNearest(world, p, range, fallback) {
+    var z = nearestEnemy(world, p, range);
+    if (!z) return fallback == null ? (p.aimDir || 0) : fallback;
+    var ang = Math.atan2(z.y - p.y, z.x - p.x);
+    p.aimDir = ang;
+    if (Math.abs(z.x - p.x) > 6) p.facing = z.x >= p.x ? 1 : -1;
+    return ang;
+  }
+
   function pushShot(world, o) {
     o.px = o.x; o.py = o.y;
     /* the direction this round actually left in — the muzzle flash, the brass
@@ -416,6 +436,10 @@
     var cd = def.cooldown * (1 - Math.min(0.7, a.cooldown_bonus || 0));
     var aim = p.aimDir || 0;
     var i, ang;
+
+    /* acquire before switching so every ranged case fires at a body, not at
+       the direction the thumbstick happened to be pointing */
+    if (AUTO_AIM[def.behaviour]) aim = aimAtNearest(world, p, range, aim);
 
     switch (def.behaviour) {
       /* spinning axes / saw blades around the hunter */
@@ -815,7 +839,7 @@
     if (primSt && world.zombies && world.zombies.length) {
       var effId = ZH.effectiveWeapon ? ZH.effectiveWeapon(primId, primSt, p.supplies) : primId;
       var pdef = ZH.WEAPONS && ZH.WEAPONS[effId];
-      if (pdef && pdef.behaviour === 'target') {
+      if (pdef && AUTO_AIM[pdef.behaviour]) {
         var prange = (pdef.range || 400) * (1 + (a.shot_range_bonus || 0));
         var lock = nearestEnemy(world, p, prange);
         if (lock) {

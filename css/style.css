@@ -157,6 +157,24 @@ p { margin: 0; line-height: 1.5; }
   font-variant-numeric: tabular-nums;
 }
 
+/* in-run developer credit, kept small so it never fights the HUD */
+.credit-mark {
+  position: absolute;
+  left: 18px;
+  top: 50px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(233, 231, 220, 0.5);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+.credit-mark b { color: rgba(255, 179, 71, 0.88); font-weight: 800; }
+@media (max-width: 620px) {
+  .credit-mark { left: 14px; top: 48px; font-size: 8px; letter-spacing: 0.18em; }
+}
+
 .icon-btn {
   pointer-events: auto;
   width: 34px; height: 30px;
@@ -215,6 +233,34 @@ p { margin: 0; line-height: 1.5; }
 .dash-row .bar { flex: 1; height: 5px; }
 .bar.dash > i { background: var(--amber); }
 .bar.dash.is-ready > i { background: var(--green); box-shadow: 0 0 10px rgba(155, 225, 93, 0.6); }
+
+/* defence shield timeline — the original's TIME_INVINCIBLE countdown */
+.shield-row { display: none; }
+.shield-row.is-active { display: flex; }
+.bar.shield { border: 1px solid rgba(140, 205, 255, 0.35); box-shadow: 0 0 10px rgba(90, 169, 255, 0.25); }
+.bar.shield > i { background: linear-gradient(90deg, #4d8dff, #a8e0ff); }
+.shield-num { font-size: 13px; font-weight: 700; color: #a8e0ff; font-variant-numeric: tabular-nums; min-width: 36px; text-align: right; letter-spacing: 0.02em; }
+/* last second: the same timeline turns amber and pulses so a break is not a
+   surprise. Still driven by the one shieldT clock. */
+.shield-row.is-expiring .bar.shield > i {
+  background: linear-gradient(90deg, #ff6a45, #ffd166);
+  box-shadow: 0 0 12px rgba(255, 128, 74, 0.55);
+  animation: shield-break 0.5s ease-in-out infinite alternate;
+}
+.shield-row.is-expiring .shield-num { color: #ffb066; }
+@keyframes shield-break {
+  from { opacity: 0.55; }
+  to { opacity: 1; }
+}
+/* short windows (laptops, embeds): keep the whole timeline inside the frame
+   instead of letting the newest row fall below the fold */
+@media (max-height: 640px) {
+  .hud-bottom { padding: 8px 14px; }
+  .vitals { gap: 4px; }
+  .dash-row .bar { height: 4px; }
+  .shield-num { font-size: 12px; min-width: 32px; }
+  .hud-kicker { font-size: 9px; }
+}
 
 .weapon-card {
   min-width: 210px;
@@ -619,13 +665,32 @@ p { margin: 0; line-height: 1.5; }
   position: absolute;
   left: 0; right: 0; bottom: 0;
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: flex-start;
   padding: 12px clamp(16px, 4vw, 56px);
   font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: rgba(141, 151, 147, 0.6);
 }
+
+/* built-by line: the first thing under the title that is not a control */
+.menu-foot .credit { color: var(--amber); letter-spacing: 0.2em; }
+.menu-foot .credit b { color: var(--ink); font-weight: 800; letter-spacing: 0.28em; }
+.menu-foot .credit-sub { margin-left: 16px; padding-left: 16px; border-left: 1px solid var(--line); opacity: 0.75; }
+.menu-foot #btn-mute { margin-left: auto; }
+
+.panel-credit {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(141, 151, 147, 0.65);
+  text-align: center;
+}
+.panel-credit b { color: var(--amber); font-weight: 800; letter-spacing: 0.28em; }
 
 /* ---------------------------------------------------------
    Levels

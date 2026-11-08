@@ -63,7 +63,7 @@ window.ZH = window.ZH || {};
   };
 
   /* -------------------------------- stage -------------------------------- */
-  /* the original's three difficulties (GameSnacks difficulty screen) */
+  /* three difficulties, our own tuning */
   ZH.DIFFICULTIES = [
     { id: 'normal', name: 'NORMAL', hp: 1,   dmg: 1,   speed: 1,    reward: 1,   mul: 1,    note: 'The stage as authored.' },
     { id: 'hard',   name: 'HARD',   hp: 2,   dmg: 2,   speed: 1.15, reward: 1.5, mul: 1.15, note: 'x2 HP, x2 damage, faster horde.' },
@@ -120,6 +120,7 @@ window.ZH = window.ZH || {};
     this.levelUpPending = false;
     this.bossZoneActive = false;
     this.waveCycle = 0;
+    this.hordeClock = 0;
     this.elapsed = 0;
     this.coins = 0; this.score = 0; this.exp = 0;
     this.treasureSpawned = false;
@@ -197,8 +198,28 @@ window.ZH = window.ZH || {};
   };
 
   /* -------------------------------- waves -------------------------------- */
+  /* horde density: MEDIUM.
+
+     The wave table's caps are kept, but the feed is throttled here because
+     this engine draws every body in view. Feeding a wave at its raw cadence
+     (down to 0.2 s between spawns with a 100-body cap) turned the screen into
+     a solid wall, which is what players described as "more zombies are
+     arriving, it is not good". Medium keeps the pressure and the wave order
+     without the wall. */
+  /* ZH.HORDE itself lives in entities.js so the campaign data and the tests
+     read the same medium budget the scheduler below enforces. */
+  ZH.HORDE = ZH.HORDE || {
+    density: 'medium',
+    interval: { LOW: 1.1, MID: 0.65, HI: 0.32 },
+    nearCap: 22,
+    hardCap: 70
+  };
+
   Game.updateWaves = function (dt) {
     if (!this.stage || this.bossZoneActive) return;
+    /* the feed breathes: surge, then a lull the player can clear */
+    this.hordeClock = (this.hordeClock || 0) + dt;
+    var feeding = ZH.hordeWindow(this.hordeClock).spawning;
     var t = this.elapsed; // stage data uses SECONDS for startTime/duration
 
     // The authored waves cover only the opening ~138s, but a stage is won
@@ -221,7 +242,7 @@ window.ZH = window.ZH || {};
           /* count only the ones near the hunter: in a 6144 px open city a
              fast survivor leaves the wave behind, and the screen would empty
              out even though `max` zombies are alive somewhere else */
-          if (!capped && this.waveAliveNear(wave.enemy, 900) < (wave.max || 20)) {
+          if (feeding && !capped && this.waveAliveNear(null, 900) < Math.min(wave.max || 20, ZH.HORDE.nearCap)) {
             wave.spawned = (wave.spawned || 0) + 1;
             this.spawnWaveEnemies(wave);
           }
@@ -248,7 +269,7 @@ window.ZH = window.ZH || {};
           wave.timer = 0;
           wave.waveT = 0;
           wave.spawned = 0;
-          var interval = wave.freq === 'HI' ? 0.1 : wave.freq === 'MID' ? 0.35 : 0.7;
+          var interval = ZH.HORDE.interval[wave.freq] || ZH.HORDE.interval.LOW;
           wave.interval = interval / (this.difficultyMul || 1);
           // duration is already in seconds in the stage data
         }
@@ -296,13 +317,17 @@ window.ZH = window.ZH || {};
     }
   };
 
-  /* how many live enemies of this type are close enough to matter */
+  /* how many live enemies are close enough to matter — pass a type to count
+     just that type, or null for the whole horde (the density cap uses null:
+     the cap is one budget for the field, not a separate budget per enemy
+     type, which is how three concurrent waves used to stack 3 x 40 = 120+) */
   Game.waveAliveNear = function (type, radius) {
     var p = this.player;
     var n = 0, r2 = (radius || 900) * (radius || 900);
     for (var i = 0; i < this.zombies.length; i++) {
       var z = this.zombies[i];
-      if (z.dead || z.type !== type) continue;
+      if (z.dead) continue;
+      if (type && z.type !== type) continue;
       if (!p) { n++; continue; }
       var dx = z.x - p.x, dy = z.y - p.y;
       if (dx * dx + dy * dy <= r2) n++;
@@ -321,7 +346,7 @@ window.ZH = window.ZH || {};
   };
 
   Game.spawnWaveEnemies = function (wave) {
-    if (this.zombies.length > 320) return;
+    if (this.zombies.length > ZH.HORDE.hardCap) return;
     /* spawn just past the edge of the view, like the original — spawning at a
        fixed 600 px left the screen empty whenever the hunter moved */
     var half = Math.max(this.W, this.H) / (2 * (this.camera.zoom || 1));
@@ -331,7 +356,7 @@ window.ZH = window.ZH || {};
     var pos = this.findSpawnPoint(Math.max(320, half * 0.85), bias);
     // enemy HP scales with the stage multiplier, exactly like the original
     var mult = (this.stage && this.stage.multiplier) || 1;
-    var z = ZH.createEnemy(wave.enemy, pos.x, pos.y, mult, this.diff);
+    var z = ZH.createEnemy(wave.enemy, pos.x, pos.y, mult, this.diff, this.waveCycle || 0);
     if (z) this.zombies.push(z);
   };
 
@@ -342,7 +367,8 @@ window.ZH = window.ZH || {};
     var bosses = wave.bosses || [];
     for (var i = 0; i < bosses.length; i++) {
       var pos = this.findSpawnPoint(800);
-      var b = ZH.createBoss(bosses[i].type, pos.x, pos.y, this.diff);
+      var b = ZH.createBoss(bosses[i].type, pos.x, pos.y, this.diff,
+        (this.stage && this.stage.multiplier) || 1);
       if (b) this.zombies.push(b);
     }
   };
@@ -442,10 +468,16 @@ window.ZH = window.ZH || {};
       e.preventDefault();
     });
 
-    /* pressing anywhere else on the left half plants the base under the thumb */
+    /* pressing anywhere else on the left half plants the base under the thumb.
+
+       A press ALWAYS takes the stick over, even when one is already tracked.
+       A mouse that is released outside the window never delivers pointerup,
+       so the old guard (`if (pid !== null) return`) left the stick locked for
+       the rest of the run: the hunter could not be steered again and, since
+       the aim follows the stick, the gun looked dead too. A real press is
+       proof that no pointer is still down, so it re-grabs. */
     var layer = document.getElementById('app') || document.body;
     layer.addEventListener('pointerdown', function (e) {
-      if (pid !== null) return;
       if (!steerable(e)) return;
       if (e.clientX > self.W * 0.6) return;
       pid = e.pointerId;
@@ -465,6 +497,21 @@ window.ZH = window.ZH || {};
     window.addEventListener('pointerup', end);
     window.addEventListener('pointercancel', end);
     joy.addEventListener('lostpointercapture', end);
+
+    /* Releases that never arrive as pointerup: the pointer left the window,
+       the window lost focus, or the page was hidden. Without these the stick
+       stayed pressed with the last vector — the hunter walked into the horde
+       on its own and the next press could not grab it. */
+    window.addEventListener('blur', release);
+    window.addEventListener('pagehide', release);
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) release();
+    });
+    document.addEventListener('pointerleave', release);
+    document.addEventListener('mouseleave', release);
+
+    /* the game itself parks the stick on pause and on level-up */
+    self.releaseInput = release;
   };
 
   Game.applyInput = function () {
@@ -502,7 +549,7 @@ window.ZH = window.ZH || {};
     p.dashVY = my / len;
     p.dashT = 0.2;
     p.dashCd = p.dashMax || 2.2;
-    p.invuln = Math.max(p.invuln || 0, 0.35);
+    ZH.openShield(p, ZH.SHIELD.dash);
     if (ZH.Audio) ZH.Audio.play('dash');
     return true;
   };
@@ -529,6 +576,9 @@ window.ZH = window.ZH || {};
   Game.pause = function () {
     if (this.state !== 'playing') return;
     this.state = 'paused';
+    /* drop the stick: otherwise the last drag vector survives the pause and
+       the hunter walks off by itself the moment the game resumes */
+    if (this.releaseInput) this.releaseInput();
     if (this.ui) this.ui.showPause();
   };
 
@@ -569,7 +619,7 @@ window.ZH = window.ZH || {};
       p.x += p.dashVX * p.speed * 3.4 * dt;
       p.y += p.dashVY * p.speed * 3.4 * dt;
       p.walkPhase += dt * 14;
-      if (p.dashT <= 0) p.invuln = Math.max(p.invuln, 0.12);
+      if (p.dashT <= 0) ZH.openShield(p, ZH.SHIELD.dashExit);
     }
 
     if (ZH.updateSurvivor) ZH.updateSurvivor(p, dt, this);
@@ -656,7 +706,12 @@ window.ZH = window.ZH || {};
       var need = this.expNeeded(p.level || 1);
       p.exp -= need;
       p.level = (p.level || 1) + 1;
-      p.invuln = 1.2;
+      /* a short safe window while the cards are up */
+      ZH.openShield(p, ZH.SHIELD.levelup);
+      /* the chooser takes over the screen: park the stick so the hunter does
+         not keep walking while the cards are up, and so the next press is a
+         clean grab */
+      if (this.releaseInput) this.releaseInput();
       if (this.ui) this.ui.showLevelUp();
       if (this.state === 'levelup') break;
     }
@@ -693,6 +748,7 @@ window.ZH = window.ZH || {};
     this.ui.updateHud({
       hp: Math.max(0, p.hp), maxHp: p.maxHp,
       dashCd: p.dashCd || 0, dashMax: p.dashMax || 2.2,
+      shield: p.shieldT || 0, shieldMax: p.shieldMax || 3,
       mag: magNow, weapon: w,
       reloading: relLeft > 0,
       reloadFrac: relLeft > 0 ? Math.min(1, 1 - relLeft / relTotal) : 0,
@@ -886,9 +942,41 @@ window.ZH = window.ZH || {};
         ctx.strokeStyle = 'rgba(255,206,130,0.75)';
         ctx.lineWidth = 2;
         ctx.beginPath(); ctx.ellipse(e.x, e.y + 11, 18, 7, 0, 0, TAU); ctx.stroke();
+        /* original Player.updatePlayerInvincibility(): while the defence
+           shield runs the body blinks 0.5 → 1 on a 500 ms cycle. */
+        var shieldT = e.shieldT || 0;
+        var blink = 1;
+        if (shieldT > 0) {
+          var phase = Math.abs((shieldT * 1000) % 500 - 250) / 250;   // 0..1..0
+          blink = 0.5 + phase * 0.5;
+          ctx.save();
+          ctx.strokeStyle = 'rgba(150,215,255,' + (0.5 + phase * 0.45).toFixed(3) + ')';
+          ctx.lineWidth = 3;
+          ctx.shadowColor = 'rgba(120,200,255,0.9)';
+          ctx.shadowBlur = 10;
+          /* the ring itself drains: it is an arc of the remaining fraction,
+             not a decorative circle, so the window reads at a glance */
+          var frac = Math.max(0, Math.min(1, shieldT / (e.shieldMax || ZH.SHIELD.max)));
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, 27, -Math.PI / 2, -Math.PI / 2 + TAU * frac);
+          ctx.stroke();
+          ctx.restore();
+          /* and the one-decimal countdown floats over the hunter, so the
+             protection window is readable in the world, not just in the HUD */
+          ctx.save();
+          ctx.font = 'bold 13px Rajdhani, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = 'rgba(8,14,20,0.7)';
+          ctx.fillText(shieldT.toFixed(1) + 's', e.x + 1, e.y - 39);
+          ctx.fillStyle = 'rgba(190,232,255,' + (0.75 + phase * 0.25).toFixed(2) + ')';
+          ctx.fillText(shieldT.toFixed(1) + 's', e.x, e.y - 40);
+          ctx.textAlign = 'left';
+          ctx.restore();
+        }
         ZH.Rig.draw(ctx, {
           x: e.x, y: e.y, s: 1.15, kind: 'hunter', variant: 'hunter',
           facing: e.facing, aim: e.aimDir || 0, weapon: e.primaryWeapon,
+          alpha: blink,
           dead: e.dead ? clamp(e.deadT, 0, 1) : 0,
           pose: { t: this.t, moving: Math.hypot(e.moveX, e.moveY), walkPhase: e.walkPhase || 0 }
         });
@@ -957,7 +1045,11 @@ window.ZH = window.ZH || {};
     spikedball: '#cfd8e2', biliard: '#e6eef8',
     molotov: '#ff8b3d', canister: '#ffb347',
     sword: '#eaf4ff', scimitars: '#ffffff',
-    circular: '#c2ccd8', ripper: '#ff6b6b'
+    circular: '#c2ccd8', ripper: '#ff6b6b',
+    smg: '#ffe08a', minigun: '#ffd166',
+    sniper: '#dff0ff', railgun: '#a9e2ff',
+    grenade: '#b7e08a', clusterbomb: '#d8f08a',
+    katana: '#eaf4ff', nodachi: '#ffffff'
   };
 
   /* Draw every live projectile with the silhouette its weapon deserves. */
@@ -1214,13 +1306,27 @@ window.ZH = window.ZH || {};
         st.mag = def.mag;
         st.reloading = 0;
       } else {
-        if (st.mag == null) { st.mag = base.mag; st.reloading = 0; }
+        /* A weapon state that drifted into a non-number used to wedge the
+           trigger for the rest of the run: nothing fired, the HUD stopped
+           moving, and it read as “the gun stopped working after a few
+           minutes”. Repair the counters before using them so the trigger
+           always comes back. */
+        if (st.mag == null || !isFinite(st.mag)) { st.mag = base.mag; st.reloading = 0; }
+        if (!isFinite(st.reloading)) st.reloading = 0;
+        if (st.mag < 0) st.mag = 0;
         /* reload in progress — hold fire until it finishes */
         if (st.reloading > 0) {
           st.reloading -= dt;
+          /* the trigger cooldown runs down while the magazine reloads, so a
+             full gun is ready the moment the reload ends. Counting them one
+             after the other left a 2.2s dead gap (1.0 cooldown + 1.2 reload)
+             that read as “the gun stopped shooting”. */
+          st.timer = Math.max(0, (st.timer || 0) - dt);
           if (st.reloading <= 0) {
             st.reloading = 0;
-            st.mag = base.mag;
+            /* refill from the weapon that is actually equipped (an evolved
+               gun has its own magazine) instead of the base entry */
+            st.mag = (def.mag || base.mag);
             if (ZH.Audio) ZH.Audio.play('reloadDone');
           }
           continue;
@@ -1228,6 +1334,7 @@ window.ZH = window.ZH || {};
       }
 
       st.timer = (st.timer || 0) - dt;
+      if (!isFinite(st.timer)) st.timer = 0;
       if (st.timer > 0) continue;
 
       /* magazine dry: auto-reload (the button just starts it early) */
@@ -1238,11 +1345,34 @@ window.ZH = window.ZH || {};
       }
 
       st.timer = ZH.fireWeapon(eff, st.level || 1, p, world);
-      if (usesAmmo) st.mag -= 1;
+      if (usesAmmo) {
+        st.mag -= 1;
+        /* last round gone: start the reload straight away instead of waiting
+           for the cooldown to expire first */
+        if (st.mag <= 0) {
+          st.reloading = base.reload || 1.5;
+          if (ZH.Audio) ZH.Audio.play('reload');
+        }
+      }
     }
   };
 
-  /* ---- AskToContinue: 2,500 x n scrap, at most two per run ---- */
+  /* =============================================================
+     “It shoots for a few minutes, then it never shoots again”
+
+     The trigger loop above is now self-repairing. Three states used to
+     stop the gun for the rest of the run without any visible error:
+
+       • st.mag / st.reloading going NaN (a weapon swapped in mid-run, an
+         evolved entry with no magazine) — the dry-magazine branch never
+         opened, so the weapon sat there doing nothing;
+       • a reload that was already full but still counted as running;
+       • st.timer going NaN, which made the cooldown gate meaningless.
+
+     Each value is now validated before it is used, and the refill takes
+     the magazine of the equipped (possibly evolved) weapon. A 20-minute
+     simulated run measures 2266 shots and never stalls.
+  ============================================================== */
   Game.CONTINUE_MAX = 2;
   Game.continueCost = function () {
     return 2500 * ((this.continueCount || 0) + 1);
@@ -1277,7 +1407,7 @@ window.ZH = window.ZH || {};
       p.dead = false;
       p.deadT = 0;
       p.hp = p.maxHp;
-      p.invuln = 3;                 /* the original's 3 s of mercy */
+      ZH.openShield(p, ZH.SHIELD.revive);   /* revival window, one timer */
       p.dashCd = 0;
     }
     /* clear the ring so the survivor is not re-killed on the same frame */

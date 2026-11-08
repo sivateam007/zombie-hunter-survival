@@ -1,6 +1,6 @@
 # Zombie Hunter: Survival 🧟
 
-A complete top-down survival shooter in the spirit of GameSnacks' **Zombie Hunter: Survival**:
+A complete top-down survival shooter in the classic horde-survivor genre:
 four chapters, fifteen hand-authored missions, boss fights, endless night, a permanent upgrade
 economy and a persistent leaderboard.
 

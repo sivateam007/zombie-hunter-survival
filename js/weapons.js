@@ -1,14 +1,11 @@
 /* ---------------------------------------------------------------
  * Zombie Hunter: Survival — weapons, supplies and coin skills
  *
- * Everything here is translated from the original GameSnacks build:
- *   zh_orig_assets/weapons_prototypes.json  (14 weapons + evolutions)
- *   zh_orig_assets/js_game.js               (supply classes, skill table)
- *
- * The original has 14 base weapons. Each one evolves at level 6 when
- * the matching supply is owned (weapon.evoSupp in the extracted data).
- * Supplies have five levels with the exact bonus arrays from source.
- * The six coin skills use the original value curves and price table.
+ * Original implementation written for this project. The catalogue holds 18
+ * base weapons; each one evolves at level 6 once its matching supply is owned.
+ * Supplies have five levels on our own bonus curves, and the six coin skills
+ * use a price/value table tuned for this build. No code, art or data is
+ * copied from any other game.
  * --------------------------------------------------------------- */
 (function (global) {
   'use strict';
@@ -91,6 +88,8 @@
     weapon({
       id: 'circular', name: 'Circular', short: 'SAW', behaviour: 'saw',
       cooldown: 8.0, dmg: 4, radius: 70, orbitSpeed: -2.1, hit: 42,
+      /* original Circular.getCount(): 2 / 3 / 4 / 5 / 6, 7 evolved */
+      sawCountByLevel: [2, 2, 3, 4, 5, 6, 7], sawCountByLevelEvolved: 7,
       mag: '∞', reload: 0, ammo: false, range: 108, splash: 0,
       evo: 'ripper', supply: 'chronometer',
       desc: 'Orbiting saw blades that also shred enemy projectiles.'
@@ -129,6 +128,34 @@
       mag: 6, reload: 2.0, ammo: true, range: 340, splash: 70,
       evo: 'canister', supply: 'detector',
       desc: 'Lobs fire bombs at points around you, leaving burning ground.'
+    }),
+    weapon({
+      id: 'smg', name: 'SMG', short: 'SMG', behaviour: 'target',
+      cooldown: 0.45, dmg: 2, count: 1, speed: 860,
+      mag: 40, reload: 1.4, ammo: true, range: 430, splash: 0,
+      evo: 'minigun', supply: 'ammobooster',
+      desc: 'Fast full-auto sidearm. Chews single targets, burns ammo.'
+    }),
+    weapon({
+      id: 'grenade', name: 'Grenade', short: 'GRND', behaviour: 'rocket',
+      cooldown: 2.4, dmg: 4, speed: 300, blast: 84,
+      mag: 5, reload: 2.2, ammo: true, range: 480, splash: 84,
+      evo: 'clusterbomb', supply: 'propane',
+      desc: 'An arcing grenade that bursts for 84px of splash.'
+    }),
+    weapon({
+      id: 'sniper', name: 'Sniper', short: 'SNIPE', behaviour: 'fan',
+      cooldown: 2.2, dmg: 9, count: 1, spread: 0, pierce: 4, speed: 1400,
+      mag: 5, reload: 1.8, ammo: true, range: 900, splash: 0,
+      evo: 'railgun', supply: 'scope',
+      desc: 'One heavy round that punches through four bodies.'
+    }),
+    weapon({
+      id: 'katana', name: 'Katana', short: 'KATANA', behaviour: 'melee',
+      cooldown: 0.42, dmg: 4, reach: 92, arc: Math.PI * 0.95,
+      mag: '∞', reload: 0, ammo: false, range: 92, splash: 0,
+      evo: 'nodachi', supply: 'kevlar',
+      desc: 'A long quick slash, faster than the sword and one step ahead.'
     })
   ];
 
@@ -187,6 +214,7 @@
     weapon({
       id: 'ripper', name: 'Ripper', short: 'RIP', behaviour: 'saw',
       cooldown: 8.0, dmg: 8, radius: 92, orbitSpeed: -2.4, hit: 48, evoOnly: true,
+      sawCountByLevel: [2, 2, 3, 4, 5, 6, 7], sawCountByLevelEvolved: 7,
       mag: '∞', reload: 0, ammo: false, range: 150, splash: 0,
       desc: 'Evolved Circular. Bigger saws, wider sweep, eats more shots.'
     }),
@@ -219,13 +247,37 @@
       cooldown: 3.0, dmg: 12, count: 5, spread: 1.2, speed: 300, blast: 110,
       mag: 8, reload: 2.0, ammo: true, range: 420, splash: 110, evoOnly: true,
       desc: 'Evolved Molotov. Bigger bombs, bigger fire.'
+    }),
+    weapon({
+      id: 'minigun', name: 'Minigun', short: 'MINI', behaviour: 'target',
+      cooldown: 0.45, dmg: 5, count: 3, speed: 900,
+      mag: 120, reload: 1.6, ammo: true, range: 520, splash: 0, evoOnly: true,
+      desc: 'Evolved SMG. Three rounds per pull and a drum that never quits.'
+    }),
+    weapon({
+      id: 'clusterbomb', name: 'Clusterbomb', short: 'CLUST', behaviour: 'rocket',
+      cooldown: 4.0, dmg: 12, speed: 320, blast: 150,
+      mag: 4, reload: 2.4, ammo: true, range: 660, splash: 150, evoOnly: true,
+      desc: 'Evolved Grenade. A 150px cluster blast that clears a street.'
+    }),
+    weapon({
+      id: 'railgun', name: 'Railgun', short: 'RAIL', behaviour: 'fan',
+      cooldown: 2.2, dmg: 24, count: 1, spread: 0, pierce: 9, speed: 1800,
+      mag: 8, reload: 1.6, ammo: true, range: 1100, splash: 0, evoOnly: true,
+      desc: 'Evolved Sniper. A rail slug that runs through nine bodies.'
+    }),
+    weapon({
+      id: 'nodachi', name: 'Nodachi', short: 'NODACHI', behaviour: 'melee',
+      cooldown: 0.42, dmg: 12, reach: 120, arc: Math.PI * 2, evoOnly: true,
+      mag: '∞', reload: 0, ammo: false, range: 120, splash: 0,
+      desc: 'Evolved Katana. A full circle cut with a reach of 120px.'
     })
   ];
 
   var W = {};
   BASE_WEAPONS.concat(EVOLVED_WEAPONS).forEach(function (w) { W[w.id] = w; });
 
-  // the 14 base weapons, in the order the original lists them
+  // the 18 base weapons, in catalogue order
   var ORDER = BASE_WEAPONS.map(function (w) { return w.id; });
 
   /* ------------------------------ supplies ------------------------------
@@ -234,12 +286,12 @@
   var SUPPLIES = {
     kevlar: {
       id: 'kevlar', name: 'Kevlar', attrib: 'defense', pct: false,
-      evoWeapon: 'sword', bonus: [0, 10, 20, 30, 40, 50],
+      evoWeapon: ['sword', 'katana'], bonus: [0, 10, 20, 30, 40, 50],
       desc: 'Blocks [x] points of incoming damage.'
     },
     ammobooster: {
       id: 'ammobooster', name: 'Ammo Booster', attrib: 'attack_bonus', pct: true,
-      evoWeapon: ['gun', 'launcher'], bonus: [0, .1, .2, .3, .4, .5],
+      evoWeapon: ['gun', 'launcher', 'smg'], bonus: [0, .1, .2, .3, .4, .5],
       desc: 'Raises your attack by [x]%.'
     },
     handbook: {
@@ -249,12 +301,12 @@
     },
     scope: {
       id: 'scope', name: 'Scope', attrib: 'shot_range_bonus', pct: true,
-      evoWeapon: 'drill', bonus: [0, .1, .2, .3, .4, .5],
+      evoWeapon: ['drill', 'sniper'], bonus: [0, .1, .2, .3, .4, .5],
       desc: 'Weapon range +[x]%.'
     },
     propane: {
       id: 'propane', name: 'Propane', attrib: 'shot_speed_bonus', pct: true,
-      evoWeapon: 'bazooka', bonus: [0, .1, .2, .3, .4, .5],
+      evoWeapon: ['bazooka', 'grenade'], bonus: [0, .1, .2, .3, .4, .5],
       desc: 'Projectile speed +[x]%.'
     },
     magnet: {

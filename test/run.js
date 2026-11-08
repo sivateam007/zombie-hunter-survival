@@ -4,7 +4,10 @@ const path = require('path');
 
 const FILES = [
   'levels.test.js',
+  'parity.test.js',
   'sim.test.js',
+  'density.test.js',
+  'shield.test.js',
   'storage.test.js',
   'ledger.test.js',
   'server.test.js'

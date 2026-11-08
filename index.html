@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0b0f10">
+<meta name="author" content="SIVA">
 <meta name="description" content="Zombie Hunter: Survival — a top-down survival shooter. Eight stages of twenty minutes each, endless night, and a lot of things that used to be people.">
 <title>Zombie Hunter: Survival</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e1415'/%3E%3Ccircle cx='32' cy='30' r='15' fill='%2387975f'/%3E%3Ccircle cx='26' cy='27' r='3.4' fill='%23e9ff72'/%3E%3Ccircle cx='39' cy='27' r='3.4' fill='%23e9ff72'/%3E%3Cpath d='M24 44h16l-2 9H26z' fill='%23cfc7ae'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/style.css?v=5">
+<link rel="stylesheet" href="css/style.css?v=6">
 </head>
 <body>
 <div id="app">
@@ -48,6 +49,11 @@
           <span class="hud-kicker">DASH</span>
           <div class="bar dash"><i id="dash-fill"></i></div>
         </div>
+        <div class="dash-row shield-row" id="shield-row">
+          <span class="hud-kicker">SHIELD</span>
+          <div class="bar shield"><i id="shield-fill"></i></div>
+          <span class="shield-num" id="shield-text">3.0</span>
+        </div>
       </div>
 
       <div class="weapon-card">
@@ -65,6 +71,7 @@
     <div id="weapon-slots" class="weapon-slots"></div>
     <div id="hud-items" class="hud-items"></div>
     <div class="enemy-count"><span class="pip hostile"></span><span id="hud-left">0</span> LEFT</div>
+    <div class="credit-mark">DEVELOPED BY <b>SIVA</b></div>
   </div>
 
   <!-- --------------------------- touch controls --------------------------- -->
@@ -119,7 +126,8 @@
       </div>
     </div>
     <div class="menu-foot">
-      <span>Original procedural art · built with anime.js</span>
+      <span class="credit">Developed by <b>SIVA</b></span>
+      <span class="credit-sub">Original procedural art · built with anime.js</span>
       <button class="linkish" id="btn-mute">SOUND: ON</button>
     </div>
   </section>
@@ -209,6 +217,7 @@
         <button class="btn ghost" id="btn-pause-mute"><span>SOUND: ON</span></button>
         <button class="btn ghost" id="btn-quit"><span>ABANDON</span></button>
       </div>
+      <div class="panel-credit">Developed by <b>SIVA</b></div>
     </div>
   </section>
 
@@ -239,6 +248,7 @@
         <button class="btn" id="btn-retry"><span>RETRY</span></button>
         <button class="btn ghost" id="btn-res-menu"><span>MENU</span></button>
       </div>
+      <div class="panel-credit">Developed by <b>SIVA</b></div>
     </div>
   </section>
 
@@ -302,7 +312,7 @@
 <script src="js/arena.js?v=8"></script>
 <script src="js/weapons.js?v=3"></script>
 <script src="js/levels.js?v=3"></script>
-<script src="js/entities.js?v=11"></script>
+<script src="js/entities.js?v=12"></script>
 <script src="js/audio.js?v=1"></script>
 <script src="js/storage.js?v=6"></script>
 <script src="js/anim.js?v=1"></script>

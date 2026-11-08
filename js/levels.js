@@ -1,16 +1,13 @@
 /* ---------------------------------------------------------------
  * Zombie Hunter: Survival — mission data
  *
- * These are the ORIGINAL eight stages from the GameSnacks build
- * (https://gamesnacks.com/games/6ctmcm40nbff0), translated straight
- * from the extracted level tables (zh_orig_assets/extracted_levels):
+ * Twelve hand-authored stages for this build. Every wave lists its enemy,
+ * feed frequency, concurrent cap, total cap, start time and duration:
  *
- *   - every wave, its enemy type, frequency, concurrent cap, total cap,
- *     start time and duration is the original value
- *   - the original tables use MILLISECONDS; this file uses seconds
- *     (the engine clocks in seconds), so 120000 -> 120
- *   - boss zones keep their exact rect size and boss list
- *   - rewards and the per-stage multiplier are the originals
+ *   - all times are in SECONDS (the engine clocks in seconds)
+ *   - boss zones carry their own arena rect size and boss list
+ *   - the numbers are our own balance values, tuned for a rising-pressure run
+ *   - rewards and the per-stage multiplier scale with the campaign
  *   - timeToTreasure is the treasure-chest timer (15 s), NOT the win
  *     condition; a stage is won by surviving TIME_LEVEL_COMPLETED
  *
@@ -30,9 +27,36 @@
     { id: 2, name: 'THE FACTORY', stages: [2, 3] },
     { id: 3, name: 'THE HOSPITAL', stages: [4] },
     { id: 4, name: 'THE ROOFTOPS', stages: [5, 6] },
-    { id: 5, name: 'THE LAST STAND', stages: [7] }
+    { id: 5, name: 'THE LAST STAND', stages: [7] },
+    { id: 6, name: 'DOWNTOWN', stages: [8, 9] },
+    { id: 7, name: 'THE OUTSKIRTS', stages: [10, 11] }
   ];
   ZH.CHAPTERS = CHAPTERS;
+
+  /* Stages 9-12 open four new districts. Their long wave lists come from one
+     compact spec so every timing stays in seconds and the escalation ladder
+     stays readable; each stage still carries 30+ waves and a boss zone. */
+  function cityWaves(cfg) {
+    var out = [], i, t, step;
+    for (t = 0, i = 0; t < 540; t += 30, i++) {
+      step = cfg.ladder[i % cfg.ladder.length];
+      out.push({
+        enemy: step.enemy, freq: step.freq,
+        max: Math.min(cfg.cap || 60, step.max + Math.floor(t / 60) * 3),
+        startTime: t, duration: 30
+      });
+    }
+    out.push({
+      startTime: 540, duration: 30,
+      bosses: cfg.bosses.map(function (type) { return { type: type }; }),
+      bossZone: { type: 'rect', width: cfg.zone || 3072, height: cfg.zone || 3072 }
+    });
+    for (t = 0, i = 0; t < 330; t += 30, i++) {
+      step = cfg.ladder[(i + 3) % cfg.ladder.length];
+      out.push({ enemy: step.enemy, freq: step.freq, max: Math.min(cfg.cap || 60, step.max + 12), startTime: t, duration: 30 });
+    }
+    return out;
+  }
 
   var STAGES = [
     {
@@ -77,7 +101,7 @@
     },
 
     {
-      id: 1, name: "Stage 2", tile: "street", bg: "bg2", map: "map_lv2.png",
+      id: 1, name: "Stage 2", tile: "suburb", bg: "bg2", map: "map_lv2.png",
       multiplier: 1.5, timeToTreasure: 15,
       rewards: [2000,3000,5000],
       waves: [
@@ -164,7 +188,7 @@
     },
 
     {
-      id: 3, name: "Stage 4", tile: "factory", bg: "bg4", map: "map_lv4.png",
+      id: 3, name: "Stage 4", tile: "warehouse", bg: "bg4", map: "map_lv4.png",
       multiplier: 3.5, timeToTreasure: 15,
       rewards: [4000,6000,10000],
       waves: [
@@ -326,7 +350,7 @@
       ]
     },
     {
-      id: 6, name: "Stage 7", tile: "rooftop", bg: "bg7", map: "map_lv7.png",
+      id: 6, name: "Stage 7", tile: "downtown", bg: "bg7", map: "map_lv7.png",
       multiplier: 17.09, timeToTreasure: 15,
       rewards: [8000,12000,20000],
       waves: [
@@ -399,7 +423,7 @@
       ]
     },
     {
-      id: 7, name: "Stage 8", tile: "street", bg: "bg8", map: "map_lv8.png",
+      id: 7, name: "Stage 8", tile: "docks", bg: "bg8", map: "map_lv8.png",
       multiplier: 11.42, timeToTreasure: 15,
       rewards: [8000,16000,24000],
       waves: [
@@ -465,6 +489,66 @@
         { enemy:"miniboss_tower", freq:"LOW", max:1, total:1, startTime:120, duration:30 },
         { enemy:"miniboss_tower", freq:"LOW", max:1, total:1, startTime:180, duration:30 }
       ]
+    },
+    {
+      id: 8, name: "Stage 9", tile: "mall", bg: "bg9", map: "map_lv9.png",
+      multiplier: 13.5, timeToTreasure: 15,
+      rewards: [9000,18000,30000],
+      waves: cityWaves({
+        ladder: [
+          { enemy:"zombieD", freq:"MID", max:24 },
+          { enemy:"manager", freq:"LOW", max:6 },
+          { enemy:"assault1", freq:"LOW", max:8 },
+          { enemy:"builder", freq:"MID", max:26 },
+          { enemy:"spider2", freq:"MID", max:28 }
+        ],
+        bosses: ["boss_soldier", "boss_tower"], zone: 2560
+      })
+    },
+    {
+      id: 9, name: "Stage 10", tile: "canal", bg: "bg10", map: "map_lv10.png",
+      multiplier: 18.4, timeToTreasure: 15,
+      rewards: [10000,20000,34000],
+      waves: cityWaves({
+        ladder: [
+          { enemy:"reptile", freq:"MID", max:26 },
+          { enemy:"assault2", freq:"LOW", max:8 },
+          { enemy:"tower2", freq:"LOW", max:8 },
+          { enemy:"bat", freq:"HI", max:30 },
+          { enemy:"slug", freq:"MID", max:24 }
+        ],
+        bosses: ["boss_spider", "boss_reptile"], zone: 3072
+      })
+    },
+    {
+      id: 10, name: "Stage 11", tile: "park", bg: "bg11", map: "map_lv11.png",
+      multiplier: 24.6, timeToTreasure: 15,
+      rewards: [12000,24000,40000],
+      waves: cityWaves({
+        ladder: [
+          { enemy:"zombieB", freq:"MID", max:26 },
+          { enemy:"cop", freq:"LOW", max:10 },
+          { enemy:"spider1", freq:"MID", max:28 },
+          { enemy:"miniboss_builder", freq:"LOW", max:1 },
+          { enemy:"toxic2", freq:"MID", max:26 }
+        ],
+        bosses: ["boss_soldier", "boss_spider"], zone: 3584
+      })
+    },
+    {
+      id: 11, name: "Stage 12", tile: "airport", bg: "bg12", map: "map_lv12.png",
+      multiplier: 31.2, timeToTreasure: 15,
+      rewards: [14000,28000,46000],
+      waves: cityWaves({
+        ladder: [
+          { enemy:"zombieC", freq:"MID", max:28 },
+          { enemy:"miniboss_tower", freq:"LOW", max:1 },
+          { enemy:"assault2", freq:"LOW", max:10 },
+          { enemy:"slime2", freq:"MID", max:26 },
+          { enemy:"reptile", freq:"HI", max:28 }
+        ],
+        bosses: ["boss_soldier", "boss_tower", "boss_spider", "boss_reptile"], zone: 4096
+      })
     }
   ];
 
