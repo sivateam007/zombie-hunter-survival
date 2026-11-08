@@ -658,7 +658,7 @@ window.ZH = window.ZH || {};
       var coins = save.coins || 0;
       if ($('shop-coins')) $('shop-coins').textContent = coins.toLocaleString();
       var ug = $('upgrade-grid');
-      if (!ug) return;
+      if (!ug) { this.renderCharacters(save); return; }
 
       ug.innerHTML = '';
       (ZH.SKILLS || []).forEach(function (sk) {
@@ -689,6 +689,90 @@ window.ZH = window.ZH || {};
         }
         ug.appendChild(div);
       });
+      this.renderCharacters(save);
+    },
+
+    /* safehouse survivor cards: buy, then equip. Palettes come from rig.js. */
+    renderCharacters: function (save) {
+      var grid = $('character-grid');
+      if (!grid) return;
+      save = save || (ZH.Save.get ? ZH.Save.get() : { coins: 0, characters: ['hunter'], character: 'hunter' });
+      var owned = save.characters || ['hunter'];
+      var selected = save.character || 'hunter';
+      grid.innerHTML = '';
+      (ZH.CHARACTERS || []).forEach(function (ch) {
+        var has = owned.indexOf(ch.id) !== -1;
+        var isOn = selected === ch.id;
+        var div = document.createElement('div');
+        div.className = 'character-card' + (has ? ' is-owned' : '') + (isOn ? ' is-selected' : '');
+        div.innerHTML = '<div class="char-swatch" style="--char-accent:' + ch.accent + ';--char-coat:' + ch.coat + '"></div>' +
+          '<div class="char-info"><div class="char-name">' + ch.name + '</div>' +
+          '<div class="char-tag">' + ch.tag + '</div>' +
+          '<div class="char-desc">' + ch.desc + '</div></div>';
+        var btn = document.createElement('button');
+        btn.className = 'btn small' + (has ? ' ghost' : '');
+        btn.textContent = isOn ? 'EQUIPPED' : has ? 'EQUIP' : ch.price.toLocaleString();
+        btn.disabled = isOn;
+        btn.addEventListener('click', function () {
+          ZH.Audio.play && ZH.Audio.play('click');
+          if (!has) {
+            var r = ZH.Save.buyCharacter(ch.id);
+            if (!r.ok) {
+              ZH.Anim.toast && ZH.Anim.toast(r.reason === 'coins' ? 'Not enough scrap' : 'Locked', 'error');
+              ZH.Audio.play && ZH.Audio.play('error');
+              return;
+            }
+            ZH.Anim.toast && ZH.Anim.toast(ch.name + ' UNLOCKED', 'good');
+          } else {
+            ZH.Save.selectCharacter(ch.id);
+            ZH.Anim.toast && ZH.Anim.toast(ch.name + ' EQUIPPED', 'good');
+          }
+          UI.renderShop();
+        });
+        div.appendChild(btn);
+        grid.appendChild(div);
+      });
+
+      var daily = $('daily-reward');
+      if (daily) {
+        var avail = ZH.Save.dailyAvailable ? ZH.Save.dailyAvailable() : false;
+        daily.disabled = !avail;
+        daily.textContent = avail ? 'CLAIM DAILY +350' : 'CLAIMED TODAY';
+      }
+    },
+
+    redeemCode: function () {
+      var input = $('redeem-input');
+      var msg = $('redeem-msg');
+      var r = ZH.Save.redeem(input ? input.value : '');
+      if (!r.ok) {
+        if (msg) msg.textContent = r.reason === 'used' ? 'THAT CODE HAS ALREADY BEEN USED' : 'INVALID CODE';
+        ZH.Audio.play && ZH.Audio.play('error');
+        return;
+      }
+      if (input) input.value = '';
+      if (msg) {
+        msg.textContent = '+' + r.coins + ' SCRAP' +
+          (r.character ? ' · ' + ((ZH.CHARACTER_BY_ID[r.character] || {}).name || 'SURVIVOR') + ' UNLOCKED' : '') +
+          ' · ' + r.label;
+      }
+      ZH.Audio.play && ZH.Audio.play('buy');
+      ZH.Anim.toast && ZH.Anim.toast(r.label + ' REDEEMED', 'good');
+      UI.renderShop();
+    },
+
+    claimDaily: function () {
+      var r = ZH.Save.claimDaily();
+      var msg = $('redeem-msg');
+      if (!r.ok) {
+        if (msg) msg.textContent = 'DAILY DROP ALREADY CLAIMED — COME BACK TOMORROW';
+        ZH.Audio.play && ZH.Audio.play('error');
+        return;
+      }
+      if (msg) msg.textContent = '+350 SCRAP · DAILY DROP CLAIMED';
+      ZH.Audio.play && ZH.Audio.play('buy');
+      ZH.Anim.toast && ZH.Anim.toast('+350 SCRAP', 'good');
+      UI.renderShop();
     },
 
     refreshWeapons: function () {
@@ -719,12 +803,18 @@ window.ZH = window.ZH || {};
     updateHud: function (d) {
       if (!d) return;
       var e = this.el;
-      var hpFrac = d.hp / d.maxHp;
-      if (last.hp !== Math.round(d.hp)) {
+      /* vitals always read as one clean current/max pair, clamped so a
+         floating-point heal can never print 100.0000001/100 */
+      var maxHp = Math.max(1, Math.round(d.maxHp || 100));
+      var hpNow = Math.max(0, Math.min(maxHp, d.hp == null ? 0 : d.hp));
+      var hpShown = Math.max(0, Math.min(maxHp, Math.ceil(hpNow)));
+      var hpFrac = hpNow / maxHp;
+      if (last.hp !== hpShown || last.maxHp !== maxHp) {
         e.hpFill.style.width = (hpFrac * 100).toFixed(1) + '%';
-        e.hpText.textContent = Math.ceil(d.hp) + ' / ' + Math.round(d.maxHp);
+        e.hpText.textContent = hpShown + '/' + maxHp;
         e.hpBar.classList.toggle('is-low', hpFrac < 0.35);
-        last.hp = Math.round(d.hp);
+        last.hp = hpShown;
+        last.maxHp = maxHp;
       }
       var dashReady = d.dashCd <= 0.001;
       e.dashFill.style.width = (dashReady ? 100 : (1 - d.dashCd / d.dashMax) * 100).toFixed(1) + '%';
@@ -744,8 +834,12 @@ window.ZH = window.ZH || {};
         e.shieldRow.classList.toggle('is-expiring', !!st.expiring);
         if (st.active) {
           e.shieldFill.style.width = (st.frac * 100).toFixed(1) + '%';
-          e.shieldText.textContent = st.remaining.toFixed(1) + 's';
-          e.shieldText.title = 'Defence shield: ' + st.remaining.toFixed(1) + 's left';
+          /* long force-field windows read as whole seconds; the final 10 s
+             keeps the tenths so the break is still readable */
+          e.shieldText.textContent = st.remaining >= 10
+            ? Math.ceil(st.remaining) + 's'
+            : st.remaining.toFixed(1) + 's';
+          e.shieldText.title = 'Force field: ' + st.remaining.toFixed(1) + 's left';
         }
       }
 
@@ -973,6 +1067,12 @@ window.ZH = window.ZH || {};
       on('btn-board', 'click', function () { ZH.Audio.play('click'); self.showLeaderboard('endless'); });
       on('btn-help', 'click', function () { ZH.Audio.play('click'); self.showHelp(); });
       on('btn-mute', 'click', function () { self.toggleMute(); });
+      on('redeem-btn', 'click', function () { self.redeemCode(); });
+      on('daily-reward', 'click', function () { self.claimDaily(); });
+      on('redeem-input', 'keydown', function (e) {
+        e.stopPropagation();
+        if (e.key === 'Enter') self.redeemCode();
+      });
 
       document.querySelectorAll('[data-back]').forEach(function (b) {
         b.addEventListener('click', function () {

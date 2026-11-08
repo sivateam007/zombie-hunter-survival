@@ -63,6 +63,43 @@ assert.strictEqual(Save.get().name, 'siva', 'name is trimmed');
 Save.setSetting('muted', true);
 assert.strictEqual(Save.get().settings.muted, true, 'settings persist');
 
+/* survivor roster: buy, equip and stat perks */
+Save.addCoins(12000);
+assert.ok((ZH.CHARACTERS || []).length >= 6, 'the store has a real roster');
+const ranger = Save.buyCharacter('ranger');
+assert.strictEqual(ranger.ok, true, 'buys a survivor');
+assert.strictEqual(Save.get().character, 'ranger', 'a new survivor is equipped');
+assert.strictEqual(Save.hasCharacter('ranger'), true);
+assert.strictEqual(Save.buyCharacter('ranger').reason, 'owned', 'cannot buy twice');
+assert.strictEqual(Save.selectCharacter('medic').reason, 'locked', 'cannot equip an unowned survivor');
+
+const medicBuy = Save.buyCharacter('medic');
+assert.strictEqual(medicBuy.ok, true, 'buys the medic');
+const medic = ZH.createSurvivor({ weapon: 'gun' });
+medic.attack = 10;
+ZH.applyCharacter(medic, 'medic');
+assert.strictEqual(medic.maxHp, 125, 'medic adds 25% max vitals');
+assert.strictEqual(medic.hp, 125, 'the run starts at the raised cap');
+assert.strictEqual(ZH.applyCharacter(medic, 'hunter').maxHp, 125, 'unknown ids fall back safely');
+
+/* one-time redeem codes */
+const beforeRedeem = Save.get().coins;
+const redeemed = Save.redeem('siva1000');
+assert.strictEqual(redeemed.ok, true, 'valid code redeems');
+assert.strictEqual(Save.get().coins, beforeRedeem + 1000, 'code coins are banked');
+assert.strictEqual(Save.redeem('SIVA1000').reason, 'used', 'codes are one-time');
+assert.strictEqual(Save.redeem('NOTACODE').reason, 'invalid', 'unknown codes are rejected');
+const snack = Save.redeem('gamesnacks');
+assert.strictEqual(snack.ok, true, 'second code redeems');
+assert.strictEqual(Save.hasCharacter('ranger'), true, 'code character is unlocked');
+
+/* daily drop */
+assert.strictEqual(Save.dailyAvailable(), true, 'daily drop is available');
+const daily = Save.claimDaily();
+assert.strictEqual(daily.ok, true, 'claims the daily drop');
+assert.strictEqual(Save.dailyAvailable(), false, 'only once a day');
+assert.strictEqual(Save.claimDaily().reason, 'claimed');
+
 /* persistence round-trip */
 Save.persist();
 const raw = global.window.localStorage.getItem('zhs.save.v1');

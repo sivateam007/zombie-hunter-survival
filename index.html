@@ -8,7 +8,7 @@
 <meta name="description" content="Zombie Hunter: Survival — a top-down survival shooter. Twelve missions of twenty minutes each, endless night, and a lot of things that used to be people.">
 <title>Zombie Hunter: Survival</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e1415'/%3E%3Ccircle cx='32' cy='30' r='15' fill='%2387975f'/%3E%3Ccircle cx='26' cy='27' r='3.4' fill='%23e9ff72'/%3E%3Ccircle cx='39' cy='27' r='3.4' fill='%23e9ff72'/%3E%3Cpath d='M24 44h16l-2 9H26z' fill='%23cfc7ae'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/style.css?v=7">
+<link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body>
 <div id="app">
@@ -43,7 +43,7 @@
       <div class="vitals">
         <div class="vitals-row">
           <span class="hud-kicker">VITALS</span>
-          <span class="hp-num" id="hp-text">100 / 100</span>
+          <span class="hp-num" id="hp-text">100/100</span>
         </div>
         <div class="bar hp"><i id="hp-fill"></i></div>
         <div class="dash-row">
@@ -51,9 +51,9 @@
           <div class="bar dash"><i id="dash-fill"></i></div>
         </div>
         <div class="dash-row shield-row" id="shield-row">
-          <span class="hud-kicker">SHIELD</span>
+          <span class="hud-kicker">FORCE FIELD</span>
           <div class="bar shield"><i id="shield-fill"></i></div>
-          <span class="shield-num" id="shield-text">3.0</span>
+          <span class="shield-num" id="shield-text">0.0s</span>
         </div>
       </div>
 
@@ -72,7 +72,7 @@
     <div id="weapon-slots" class="weapon-slots"></div>
     <div id="hud-items" class="hud-items"></div>
     <div class="enemy-count"><span class="pip hostile"></span><span id="hud-left">0</span> LEFT</div>
-    <div class="credit-mark">DEVELOPED BY <b>SIVA</b><span class="build"> · BUILD 7</span></div>
+    <div class="credit-mark">DEVELOPED BY <b>SIVA</b><span class="build"> · BUILD 8</span></div>
   </div>
 
   <!-- --------------------------- touch controls --------------------------- -->
@@ -156,7 +156,7 @@
       <header class="panel-head">
         <div>
           <span class="kicker">SAFEHOUSE</span>
-          <h2>SURVIVOR SKILLS</h2>
+          <h2>SURVIVOR STORE</h2>
         </div>
         <div class="head-right">
           <div class="coin-chip"><span class="pip coin"></span><span id="shop-coins">0</span></div>
@@ -167,6 +167,19 @@
         <h3 class="section-title">PERMANENT SKILLS</h3>
         <p class="shop-note">Weapons come from the level-up cards mid-run. Scrap buys the six permanent skills — 30 levels each.</p>
         <div id="upgrade-grid" class="upgrade-grid"></div>
+
+        <h3 class="section-title">SURVIVOR CHARACTERS</h3>
+        <p class="shop-note">Six survivors share one save. Each one brings a different palette and a small stat perk to every run.</p>
+        <div id="character-grid" class="character-grid"></div>
+
+        <h3 class="section-title">REWARDS &amp; REDEEM CODES</h3>
+        <p class="shop-note">Claim one daily drop, or enter a one-time code. Each code works once per save. Try <b>SIVA1000</b>.</p>
+        <div class="redeem-row">
+          <button class="btn small ghost" id="daily-reward">CLAIM DAILY +350</button>
+          <input id="redeem-input" maxlength="24" autocomplete="off" spellcheck="false" placeholder="REDEEM CODE">
+          <button class="btn small primary" id="redeem-btn"><span>REDEEM</span></button>
+        </div>
+        <p class="shop-note redeem-msg" id="redeem-msg">Codes: SIVA1000 · ZOMBIEBUFF · GAMESNACKS · FORCEFIELD</p>
       </div>
     </div>
   </section>
@@ -299,6 +312,7 @@
             <li><b>Supplies</b> stack five levels and let a level-6 weapon evolve into its real form.</li>
             <li><b>Scrap</b> is dropped by the dead. Spend it on the six permanent skills in the safehouse.</li>
             <li><b>Rolling</b> makes you briefly untouchable — use it to slip out of a bite.</li>
+            <li><b>Force field</b> cells arm a 60-second shield. The HUD counts it down.</li>
             <li><b>Ranged</b> enemies (cops, turrets, assaults) shoot back. Break line or close in fast.</li>
           </ul>
         </div>
@@ -309,18 +323,18 @@
 </div>
 
 <script src="js/vendor/anime.min.js?v=1"></script>
-<script src="js/rig.js?v=2"></script>
-<script src="js/arena.js?v=10"></script>
+<script src="js/rig.js?v=3"></script>
+<script src="js/arena.js?v=11"></script>
 <script src="js/weapons.js?v=4"></script>
 <script src="js/levels.js?v=3"></script>
-<script src="js/entities.js?v=19"></script>
+<script src="js/entities.js?v=20"></script>
 <script src="js/audio.js?v=1"></script>
-<script src="js/storage.js?v=6"></script>
+<script src="js/storage.js?v=7"></script>
 <script src="js/anim.js?v=3"></script>
 <script src="js/net.js?v=1"></script>
-<script src="js/game.js?v=24"></script>
+<script src="js/game.js?v=25"></script>
 <script src="js/game-patch.js?v=2"></script>
-<script src="js/ui.js?v=10"></script>
-<script src="js/main.js?v=5"></script>
+<script src="js/ui.js?v=11"></script>
+<script src="js/main.js?v=6"></script>
 </body>
 </html>

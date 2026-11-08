@@ -58,7 +58,8 @@
      window: it gates damage, feeds the HUD countdown, paints the hunter ring
      and drives the body blink. player.invuln is only a legacy mirror. */
   ZH.SHIELD = ZH.SHIELD || {
-    max: 3,          /* longest window; also the HUD bar width               */
+    max: 60,         /* force-field window; also the HUD bar width            */
+    force: 60,       /* a shield cell arms the full 60 s force field          */
     hit: 3.0,        /* after a bite or an enemy round                       */
     revive: 3.0,     /* after spending scrap to get back up                  */
     levelup: 1.2,    /* while the level-up cards are on screen               */
@@ -72,7 +73,9 @@
     var t = seconds == null ? ZH.SHIELD.hit : seconds;
     if (!isFinite(t) || t <= 0) return p.shieldT || 0;
     p.shieldT = Math.max(p.shieldT || 0, t);
-    p.shieldMax = Math.max(p.shieldMax || 0, t);
+    /* the HUD/ring span follows the window that is actually running: after
+       the 60 s force field a fresh 3 s bite shield must fill the bar again */
+    p.shieldMax = p.shieldT;
     p.invuln = p.shieldT;
     return p.shieldT;
   };
@@ -339,7 +342,7 @@
       /* a spent shield cell: grabbing it re-arms the same protection window,
          so the timeline can be topped up mid-fight */
       if (z.boss || Math.random() < 0.06) {
-        world.pickups.push({ type: 'shield', x: z.x + rand(-10, 10), y: z.y - 6, life: 20, value: ZH.SHIELD.hit });
+        world.pickups.push({ type: 'shield', x: z.x + rand(-10, 10), y: z.y - 6, life: 20, value: ZH.SHIELD.force });
       }
       /* supplies drop into the world as real items, so the catalogue (kevlar,
          sneakers, supplements, axe upgrades…) shows up on the ground and not
@@ -1239,7 +1242,10 @@
           world.coins = (world.coins || 0) + 500;
           if (world.ui && world.ui.showLevelUp) world.ui.showLevelUp();
         } else if (pk.type === 'shield') {
-          ZH.openShield(p, pk.value || ZH.SHIELD.hit);
+          var armed = ZH.openShield(p, pk.value || ZH.SHIELD.force);
+          if (armed >= 10 && ZH.Anim && ZH.Anim.toast) {
+            ZH.Anim.toast('FORCE FIELD · ' + Math.round(armed) + 's', 'good');
+          }
         } else if (pk.type === 'medikit') {
           p.hp = Math.min(p.maxHp, p.hp + (pk.value || 50));
         } else if (pk.type === 'item') {

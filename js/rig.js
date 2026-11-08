@@ -50,6 +50,24 @@ window.ZH = window.ZH || {};
     pack: '#4a3b28', strap: '#2a241d', glove: '#232a26'
   };
 
+  /* player-selectable survivor palettes, layered over HUNTER */
+  var CHARACTER_PALETTES = {
+    ranger:  { coat: '#3d4a2a', coatLit: '#5c6d3e', coatDark: '#242d18', vest: '#6b5a36', accent: '#d7a13a', accentDark: '#8f6a1e' },
+    medic:   { coat: '#2b4548', coatLit: '#406064', coatDark: '#172829', vest: '#3d5c5c', accent: '#58d6c0', accentDark: '#2f8c7c' },
+    scrapper:{ coat: '#4a3a2c', coatLit: '#66513d', coatDark: '#2a2118', vest: '#6a5138', accent: '#c78cff', accentDark: '#7a4fa3' },
+    berserk: { coat: '#4a2626', coatLit: '#673838', coatDark: '#2a1414', vest: '#654030', accent: '#ff6b4a', accentDark: '#a63b26' },
+    ghost:   { coat: '#2c3446', coatLit: '#414d63', coatDark: '#171d27', vest: '#48546b', accent: '#8fd6ff', accentDark: '#4b7e9e' }
+  };
+
+  function paletteFor(id) {
+    var over = CHARACTER_PALETTES[id];
+    if (!over) return HUNTER;
+    var out = {};
+    for (var k in HUNTER) if (Object.prototype.hasOwnProperty.call(HUNTER, k)) out[k] = HUNTER[k];
+    for (var j in over) if (Object.prototype.hasOwnProperty.call(over, j)) out[j] = over[j];
+    return out;
+  }
+
   var ZOMBIE_BASE = {
     skin: '#87975f', skinShade: '#5f6c42', skinLit: '#a4b47a',
     coat: '#4b4038', coatLit: '#5f5147', coatDark: '#332c27',
@@ -749,6 +767,8 @@ window.ZH = window.ZH || {};
     draw: draw,
     portrait: portrait,
     HUNTER: HUNTER,
+    CHARACTERS: CHARACTER_PALETTES,
+    paletteFor: paletteFor,
     ZOMBIES: ZOMBIES,
     GUNS: GUNS,
     shade: shade,

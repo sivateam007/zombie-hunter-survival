@@ -440,6 +440,12 @@ window.ZH = window.ZH || {};
     ctx.strokeStyle = 'rgba(200,200,180,0.12)'; ctx.lineWidth = 2;
     ctx.setLineDash([14, 14]); ctx.beginPath(); ctx.moveTo(ox, cy - 70); ctx.lineTo(ox + w, cy - 70); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(ox, cy + 70); ctx.lineTo(ox + w, cy + 70); ctx.stroke(); ctx.setLineDash([]);
+    /* several footbridges cross the canal in every chunk: walkable-looking
+       landmarks that break up the long water band */
+    for (var b = 0; b < 3; b++) {
+      var bx = ox + 92 + b * 146 + rr(rnd, -16, 16);
+      drawBridge(ctx, bx, cy, 62, 214);
+    }
   }
 
   /* ------- props (drawn in chunk local space; caller translates first) */
@@ -469,6 +475,43 @@ window.ZH = window.ZH || {};
     ctx.fillStyle = '#141518'; ctx.fillRect(-w / 2 + 4, -h / 2 - 3, 20, 6);
     ctx.fillRect(-w / 2 + 4, h / 2 - 3, 20, 6); ctx.fillRect(w / 2 - 24, -h / 2 - 3, 20, 6);
     ctx.fillRect(w / 2 - 24, h / 2 - 3, 20, 6);
+    ctx.restore();
+  }
+
+  /* A footbridge / overpass deck. `w` is the walkway width, `h` the span. */
+  function drawBridge(ctx, x, y, w, h) {
+    ctx.save(); ctx.translate(x, y);
+    /* support shadow in the water */
+    ctx.fillStyle = 'rgba(0,0,0,0.38)';
+    ctx.fillRect(-w / 2 + 7, -h / 2 + 10, w, h);
+    /* stone / steel deck */
+    var g = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+    g.addColorStop(0, '#5a5c58'); g.addColorStop(0.45, '#8a877c'); g.addColorStop(1, '#4c4f4c');
+    ctx.fillStyle = g; ctx.fillRect(-w / 2, -h / 2, w, h);
+    ctx.strokeStyle = 'rgba(20,22,22,0.7)'; ctx.lineWidth = 2;
+    ctx.strokeRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2);
+    /* planks */
+    ctx.strokeStyle = 'rgba(40,36,30,0.42)'; ctx.lineWidth = 1.5;
+    for (var py = -h / 2 + 10; py < h / 2; py += 14) {
+      ctx.beginPath(); ctx.moveTo(-w / 2 + 5, py); ctx.lineTo(w / 2 - 5, py); ctx.stroke();
+    }
+    /* rails */
+    ctx.strokeStyle = '#2f3536'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(-w / 2 + 4, -h / 2); ctx.lineTo(-w / 2 + 4, h / 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(w / 2 - 4, -h / 2); ctx.lineTo(w / 2 - 4, h / 2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(190,198,192,0.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(-w / 2 + 4, -h / 2); ctx.lineTo(-w / 2 + 4, h / 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(w / 2 - 4, -h / 2); ctx.lineTo(w / 2 - 4, h / 2); ctx.stroke();
+    /* rail posts */
+    ctx.fillStyle = '#272c2d';
+    for (var ry = -h / 2 + 8; ry < h / 2; ry += 34) {
+      ctx.fillRect(-w / 2 + 1, ry, 7, 6);
+      ctx.fillRect(w / 2 - 8, ry, 7, 6);
+    }
+    /* end caps */
+    ctx.fillStyle = '#3b3f3e';
+    ctx.fillRect(-w / 2, -h / 2, w, 5);
+    ctx.fillRect(-w / 2, h / 2 - 5, w, 5);
     ctx.restore();
   }
 
@@ -917,7 +960,7 @@ window.ZH = window.ZH || {};
       }
     }
 
-    var propCount = (kind < 2 ? 1 : 2) + (kind === 2 ? 1 : 0);
+    var propCount = (kind < 2 ? 3 : 4) + (kind === 2 ? 2 : 0);
     for (var p = 0; p < propCount; p++) {
       var px = bx0c + 40 + cellRnd() * (bw - 80);
       var py = by0c + 40 + cellRnd() * (bh - 80);
@@ -925,8 +968,15 @@ window.ZH = window.ZH || {};
       _PROP_DRAW[(hash(world._seed, bi * 19 + bj * 23 + p * 11) % PROP_DRAW_COUNT)](
         ctx, px, py, rng(hash(world._seed, bi * 19 + bj * 23 + p * 11 + 3)));
     }
+    /* extra roadside clutter: barricades and wrecks around the block edge */
+    for (var rb = 0; rb < 2; rb++) {
+      var rbx = bx0c + 26 + cellRnd() * Math.max(10, bw - 70);
+      var rby = by0c + 22 + cellRnd() * Math.max(10, bh - 50);
+      if (rbx + 30 > bx1c || rby + 8 > by1c) continue;
+      drawBarricade(ctx, rbx, rby, cellRnd() * TAU, rng(hash(world._seed, bi * 31 + bj * 37 + rb)));
+    }
     if (kind === 2) {
-      for (var p = 0; p < 2; p++) {
+      for (var p = 0; p < 4; p++) {
         var pcx = bx0c + 40 + cellRnd() * (bw - 100);
         var pcy = by0c + 40 + cellRnd() * (bh - 100);
         if (pcx + 60 > bx1c || pcy + 50 > by1c) continue;
@@ -998,7 +1048,7 @@ window.ZH = window.ZH || {};
               ctx.strokeRect(sbx + 2, sby + 2, sw - 4, sh - 4);
               ctx.fillStyle = 'rgba(190,60,30,0.5)'; ctx.fillRect(sbx + 8, sby + 8, 10, 6);
             }
-            for (var p = 0; p < 3; p++) {
+            for (var p = 0; p < 5; p++) {
               var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
               _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
             }
@@ -1012,7 +1062,7 @@ window.ZH = window.ZH || {};
               ctx.fillStyle = sg; ctx.fillRect(sbx, sby, sw, sh);
               ctx.fillStyle = 'rgba(200,235,235,0.16)'; ctx.fillRect(sbx + 6, sby + 6, sw - 12, 6);
             }
-            for (var p = 0; p < 3; p++) {
+            for (var p = 0; p < 5; p++) {
               var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
               _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
             }
@@ -1029,7 +1079,7 @@ window.ZH = window.ZH || {};
               ctx.fillStyle = nc; ctx.fillRect(sbx + 8, sby + 8, Math.min(sw - 16, 50), 8);
               for (var w = 0; w < 4; w++) { ctx.fillStyle = w % 2 ? 'rgba(255,230,180,0.35)' : 'rgba(30,40,60,0.5)'; ctx.fillRect(sbx + 10 + w * 18, sby + 22, 12, 10); }
             }
-            for (var p = 0; p < 4; p++) {
+            for (var p = 0; p < 6; p++) {
               var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
               _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
             }
@@ -1045,7 +1095,7 @@ window.ZH = window.ZH || {};
               ctx.fillStyle = 'rgba(200,255,240,0.18)'; ctx.fillRect(sbx + 6, sby + sh - 10, sw - 12, 4);
               ctx.strokeStyle = 'rgba(200,255,240,0.25)'; ctx.lineWidth = 2; ctx.strokeRect(sbx + 2, sby + 2, sw - 4, sh - 4);
             }
-            for (var p = 0; p < 3; p++) {
+            for (var p = 0; p < 5; p++) {
               var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
               _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
             }
@@ -1060,7 +1110,7 @@ window.ZH = window.ZH || {};
               ctx.strokeStyle = 'rgba(24,20,16,0.7)'; ctx.lineWidth = 2; ctx.strokeRect(sbx + 2, sby + 2, sw - 4, sh - 4);
               ctx.fillStyle = 'rgba(255,190,90,0.22)'; ctx.fillRect(sbx + sw / 2 - 12, sby + sh - 20, 24, 18);
             }
-            for (var p = 0; p < 3; p++) {
+            for (var p = 0; p < 5; p++) {
               var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
               if (p === 0) drawContainer(ctx, px, py, cellRnd() * TAU, rng(hash(world._seed, i * 19 + j * 23 + 3)));
               else _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
@@ -1078,7 +1128,7 @@ window.ZH = window.ZH || {};
               sg.addColorStop(0, '#8a7a60'); sg.addColorStop(1, '#5a4e3e');
               ctx.fillStyle = sg; ctx.fillRect(sbx, sby, sw, sh);
             }
-            for (var p = 0; p < 2; p++) {
+            for (var p = 0; p < 4; p++) {
               var px = bx0 + 30 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 30 + cellRnd() * (by1 - by0 - 60);
               drawBench(ctx, px, py, cellRnd() * TAU, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
             }
@@ -1093,7 +1143,7 @@ window.ZH = window.ZH || {};
               ctx.fillStyle = 'rgba(120,190,220,0.12)'; ctx.fillRect(sbx + 6, sby + 8, sw - 12, 6);
               ctx.strokeStyle = 'rgba(20,26,30,0.65)'; ctx.lineWidth = 2; ctx.strokeRect(sbx + 2, sby + 2, sw - 4, sh - 4);
             }
-            for (var p = 0; p < 3; p++) {
+            for (var p = 0; p < 5; p++) {
               var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
               _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
             }
@@ -1112,7 +1162,7 @@ window.ZH = window.ZH || {};
                 ctx.beginPath(); ctx.arc(sbx + sw / 2, sby + sh / 2, Math.min(sw, sh) * 0.3, 0, TAU); ctx.stroke();
               }
             }
-            for (var p = 0; p < 3; p++) {
+            for (var p = 0; p < 5; p++) {
               var px = bx0 + 20 + cellRnd() * (bx1 - bx0 - 60), py = by0 + 20 + cellRnd() * (by1 - by0 - 60);
               _PROP_DRAW[(hash(world._seed, i * 19 + j * 23 + p * 11) % PROP_DRAW_COUNT)](ctx, px, py, rng(hash(world._seed, i * 19 + j * 23 + p * 11 + 3)));
             }
@@ -1138,7 +1188,9 @@ window.ZH = window.ZH || {};
   ZH.Arena = {
     get: get,
     build: build,
-    THEMES: THEMES
+    THEMES: THEMES,
+    drawCar: drawCar,
+    drawBridge: drawBridge
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = ZH.Arena;
 })(typeof window !== 'undefined' ? window.ZH || (window.ZH = {}) : {});

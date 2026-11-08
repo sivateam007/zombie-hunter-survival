@@ -22,7 +22,49 @@ window.ZH = window.ZH || {};
     upgrades: {},
     stats: { kills: 0, shots: 0, deaths: 0, bestEndless: 0, endlessKills: 0, playTime: 0, levelsCleared: 0 },
     settings: { muted: false, shake: true, quality: 'high' },
+    /* safehouse roster: the first survivor is free, the rest are bought */
+    characters: ['hunter'],
+    character: 'hunter',
+    redeemed: [],
+    lastDaily: '',
     seenIntro: false
+  };
+
+  /* ---------------------------- survivors ----------------------------
+     The rig already knows how to draw a hunter; these are colour palettes
+     plus small stat perks. `hp`, `speed`, `damage` and `scrap` are
+     multipliers applied once at the start of a run. */
+  ZH.CHARACTERS = ZH.CHARACTERS || [
+    { id: 'hunter',  name: 'ASH HUNTER',  tag: 'BALANCED',           desc: 'The last ranger. No bonus, no penalty.', price: 0,    hp: 1,    speed: 1,    damage: 1,    scrap: 1,    coat: '#33402f', accent: '#c0472f' },
+    { id: 'ranger',  name: 'DUNE RANGER', tag: '+12% MOVE SPEED',    desc: 'Long strides. Slips through alleys fast.', price: 1500, hp: 1,    speed: 1.12, damage: 1,    scrap: 1,    coat: '#3d4a2a', accent: '#d7a13a' },
+    { id: 'medic',   name: 'FIELD MEDIC', tag: '+25% MAX VITALS',    desc: 'A bigger health pool for the long waves.', price: 2600, hp: 1.25, speed: 1,    damage: 1,    scrap: 1,    coat: '#2b4548', accent: '#58d6c0' },
+    { id: 'scrapper',name: 'SCRAP BARON', tag: '+25% SCRAP',         desc: 'Every corpse pays a little better.', price: 3600, hp: 1,    speed: 1,    damage: 1,    scrap: 1.25, coat: '#4a3a2c', accent: '#c78cff' },
+    { id: 'berserk', name: 'BERSERKER',   tag: '+15% DAMAGE',        desc: 'Hit first. Ask questions never.', price: 5200, hp: 1,    speed: 1,    damage: 1.15, scrap: 1,    coat: '#4a2626', accent: '#ff6b4a' },
+    { id: 'ghost',   name: 'NIGHT GHOST', tag: '+8% SPEED / +10% HP',desc: 'Quiet boots and a stubborn pulse.', price: 7000, hp: 1.10, speed: 1.08, damage: 1,    scrap: 1,    coat: '#2c3446', accent: '#8fd6ff' }
+  ];
+  ZH.CHARACTER_BY_ID = ZH.CHARACTER_BY_ID || {};
+  ZH.CHARACTERS.forEach(function (ch) { ZH.CHARACTER_BY_ID[ch.id] = ch; });
+
+  /* one-time reward codes: local to the save, no server needed */
+  ZH.REDEEM_CODES = ZH.REDEEM_CODES || {
+    SIVA1000:   { coins: 1000, label: 'SIVA DROP' },
+    ZOMBIEBUFF: { coins: 1500, label: 'ZOMBIE BUFF' },
+    GAMESNACKS: { coins: 2000, character: 'ranger', label: 'GAME SNACKS PACK' },
+    FORCEFIELD: { coins: 600,  label: 'FORCE FIELD SUPPLY' }
+  };
+
+  /** apply the selected survivor once, after the six skills have been set */
+  ZH.applyCharacter = function (p, id) {
+    var ch = ZH.CHARACTER_BY_ID[id] || ZH.CHARACTER_BY_ID.hunter;
+    if (!p || !ch) return p;
+    p.character = ch.id;
+    p.char = ch;
+    p.maxHp = Math.max(1, Math.round((p.maxHp || 100) * (ch.hp || 1)));
+    p.hp = p.maxHp;
+    p.speed = Math.round((p.speed || 300) * (ch.speed || 1));
+    if (p.attack) p.attack = Math.round(p.attack * (ch.damage || 1) * 100) / 100;
+    p.fortune = Math.round((p.fortune || 0) * (ch.scrap || 1) * 100) / 100;
+    return p;
   };
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -118,6 +160,53 @@ window.ZH = window.ZH || {};
      cards. Kept so old call sites fail gracefully instead of throwing. */
   function buyWeapon() { return { ok: false, reason: 'shop' }; }
 
+  /* ------------------------- survivor roster ------------------------- */
+  function hasCharacter(id) { return save.characters.indexOf(id) !== -1; }
+
+  function buyCharacter(id) {
+    var ch = ZH.CHARACTER_BY_ID[id];
+    if (!ch) return { ok: false, reason: 'unknown' };
+    if (hasCharacter(id)) return { ok: false, reason: 'owned', character: id };
+    if (save.coins < ch.price) return { ok: false, reason: 'coins', price: ch.price };
+    save.coins -= ch.price;
+    save.characters.push(id);
+    save.character = id;
+    persist();
+    return { ok: true, character: id, price: ch.price };
+  }
+
+  function selectCharacter(id) {
+    if (!ZH.CHARACTER_BY_ID[id]) return { ok: false, reason: 'unknown' };
+    if (!hasCharacter(id)) return { ok: false, reason: 'locked' };
+    save.character = id;
+    persist();
+    return { ok: true, character: id };
+  }
+
+  /* ---------------------------- rewards ------------------------------ */
+  function today() { return new Date().toISOString().slice(0, 10); }
+  function dailyAvailable() { return save.lastDaily !== today(); }
+
+  function claimDaily() {
+    if (!dailyAvailable()) return { ok: false, reason: 'claimed' };
+    save.lastDaily = today();
+    save.coins += 350;
+    persist();
+    return { ok: true, coins: 350 };
+  }
+
+  function redeem(code) {
+    code = String(code || '').trim().toUpperCase();
+    var def = ZH.REDEEM_CODES[code];
+    if (!def) return { ok: false, reason: 'invalid' };
+    if (save.redeemed.indexOf(code) !== -1) return { ok: false, reason: 'used' };
+    save.redeemed.push(code);
+    if (def.coins) save.coins += def.coins;
+    if (def.character && !hasCharacter(def.character)) save.characters.push(def.character);
+    persist();
+    return { ok: true, code: code, coins: def.coins || 0, character: def.character || null, label: def.label || code };
+  }
+
   function recordRun(result) {
     var s = save.stats;
     if (result.mode === 'endless') {
@@ -169,6 +258,12 @@ window.ZH = window.ZH || {};
     skillLevel: skillLevel,
     buySkill: buySkill,
     buyWeapon: buyWeapon,
+    hasCharacter: hasCharacter,
+    buyCharacter: buyCharacter,
+    selectCharacter: selectCharacter,
+    dailyAvailable: dailyAvailable,
+    claimDaily: claimDaily,
+    redeem: redeem,
     recordRun: recordRun,
     setDifficulty: setDifficulty,
     setName: setName,

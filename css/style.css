@@ -250,7 +250,7 @@ p { margin: 0; line-height: 1.5; }
 .shield-row.is-active { display: flex; }
 .bar.shield { border: 1px solid rgba(140, 205, 255, 0.35); box-shadow: 0 0 10px rgba(90, 169, 255, 0.25); }
 .bar.shield > i { background: linear-gradient(90deg, #4d8dff, #a8e0ff); }
-.shield-num { font-size: 13px; font-weight: 700; color: #a8e0ff; font-variant-numeric: tabular-nums; min-width: 36px; text-align: right; letter-spacing: 0.02em; }
+.shield-num { font-size: 13px; font-weight: 700; color: #a8e0ff; font-variant-numeric: tabular-nums; min-width: 48px; text-align: right; letter-spacing: 0.02em; }
 /* last second: the same timeline turns amber and pulses so a break is not a
    surprise. Still driven by the one shieldT clock. */
 .shield-row.is-expiring .bar.shield > i {
@@ -832,6 +832,55 @@ p { margin: 0; line-height: 1.5; }
 .upgrade .u-action { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .upgrade .u-price { font-size: 12px; font-weight: 800; color: #ffd166; }
 .upgrade.is-max { opacity: 0.75; }
+
+/* survivor roster + redeem codes */
+.character-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 10px;
+}
+.character-card {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 11px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+}
+.character-card.is-owned { border-color: rgba(155, 225, 93, 0.3); }
+.character-card.is-selected { border-color: var(--amber); box-shadow: inset 0 0 0 1px rgba(255, 179, 71, 0.28); }
+.character-card .btn { width: auto; padding: 7px 10px; font-size: 12px; }
+.character-card .btn:disabled { opacity: 1; cursor: default; }
+.char-swatch {
+  width: 48px; height: 56px;
+  border: 2px solid var(--char-accent);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 27%, #c08b64 0 8px, transparent 9px),
+    linear-gradient(160deg, var(--char-coat), #10161a);
+  box-shadow: inset 0 -10px 16px rgba(0, 0, 0, 0.45);
+}
+.char-info { min-width: 0; }
+.char-name { font-size: 13px; font-weight: 800; letter-spacing: 0.05em; }
+.char-tag { font-size: 10px; letter-spacing: 0.1em; color: var(--amber); margin-top: 1px; }
+.char-desc { font-size: 11px; color: var(--dim); margin-top: 3px; line-height: 1.25; }
+.redeem-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: stretch; }
+.redeem-row .btn { width: auto; }
+.redeem-row input {
+  flex: 1; min-width: 170px;
+  padding: 9px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--line-2);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.redeem-row input:focus { outline: none; border-color: var(--amber); box-shadow: 0 0 0 1px rgba(255, 179, 71, 0.25); }
+.redeem-msg { min-height: 16px; color: #ffd166; }
+.redeem-msg b { color: #fff; }
 
 /* ---------------------------------------------------------
    Briefing

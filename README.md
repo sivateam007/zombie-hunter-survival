@@ -78,6 +78,20 @@ separates from itself so it never turns into a single blob, and telegraphs every
 bought with scrap in the safehouse Arsenal. Prices escalate per level and each skill has a
 visible pip track.
 
+**Six survivors** — buy and equip a roster of hunters from the safehouse. Each has its own
+palette and a small stat perk: speed, max vitals, scrap, damage, or a mix. The selected survivor
+is applied to every new run after the permanent skills.
+
+**Daily drops and redeem codes** — one scrap drop per day plus one-time codes (`SIVA1000`,
+`ZOMBIEBUFF`, `GAMESNACKS`, `FORCEFIELD`) entered in the store. Codes can also unlock survivors.
+
+**A living city** — multi-lane ambient traffic with headlights cruises the road districts, canal
+chunks are crossed by several footbridges, and blocks carry more barricades, wrecks, crates,
+containers and other roadside obstacles. Traffic and props are decorative and never alter zombie AI.
+
+**60-second force field** — shield cells arm a full 60-second protection window, shown in the HUD
+as a whole-second countdown with a draining timeline and the same ring around the hunter.
+
 **Endless Night** — an endless escalating wave curve where every fifth wave is a boss. Your best
 wave is submitted to the server leaderboard.
 

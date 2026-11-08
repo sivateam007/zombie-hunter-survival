@@ -110,6 +110,16 @@ window.ZH = window.ZH || {};
     this.player.primaryWeapon = this.player.weapon;
     this.player.supplies = {};
     this.applySkills();
+    /* the safehouse survivor adds its palette + small stat perk after the
+       permanent skills have set the run's base values */
+    this.character = 'hunter';
+    if (save.character && ZH.CHARACTER_BY_ID && ZH.CHARACTER_BY_ID[save.character] &&
+        (save.character === 'hunter' || (save.characters || []).indexOf(save.character) !== -1)) {
+      this.character = save.character;
+    }
+    if (ZH.applyCharacter) ZH.applyCharacter(this.player, this.character);
+    this.traffic = [];
+    this.trafficT = 0;
     this.camera.x = this.player.x;
     this.camera.y = this.player.y;
     this.camera.zoom = 0.8;
@@ -154,6 +164,80 @@ window.ZH = window.ZH || {};
     var a = ZH.attribsFrom ? ZH.attribsFrom(p.supplies) : {};
     a.defense = (a.defense || 0) + (this.skillDefense || 0);
     p.attribs = a;
+  };
+
+  /* --------------------------- ambient traffic ---------------------------
+     Decorative cars cruise the road network near the hunter. They never
+     collide and never enter the zombie AI: this is city life, not a hazard. */
+  Game.makeTrafficCar = function () {
+    var p = this.player;
+    var horizontal = Math.random() < 0.5;
+    var side = Math.random() < 0.5 ? -1 : 1;
+    var dist = 620 + Math.random() * 900;
+    var speed = 150 + Math.random() * 170;
+    var carCols = ['#4c5d63', '#6a4a3c', '#3f4b32', '#5a5a63', '#6d3f3a', '#7b6a3e'];
+    var car = {
+      color: carCols[(Math.random() * carCols.length) | 0],
+      vx: 0, vy: 0, rot: 0
+    };
+    if (horizontal) {
+      car.x = p.x + side * dist;
+      car.y = p.y + (Math.random() * 2 - 1) * 760;
+      car.vx = -side * speed;
+      car.rot = side > 0 ? Math.PI : 0;
+    } else {
+      car.x = p.x + (Math.random() * 2 - 1) * 760;
+      car.y = p.y + side * dist;
+      car.vy = -side * speed;
+      car.rot = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+    }
+    return car;
+  };
+
+  Game.updateTraffic = function (dt) {
+    if (!this.traffic) this.traffic = [];
+    var theme = this._district || (this.arena && this.arena._fn) || 'street';
+    var busy = { street: 1, downtown: 1, airport: 1, docks: 1, canal: 1, suburb: 1, warehouse: 1 };
+    if (!busy[theme]) {
+      if (this.traffic.length) this.traffic.length = 0;
+      return;
+    }
+    this.trafficT = (this.trafficT || 0) + dt;
+    var cap = 8;
+    if (this.traffic.length < cap && this.trafficT > 0.3) {
+      this.trafficT = 0;
+      this.traffic.push(this.makeTrafficCar());
+    }
+    var p = this.player;
+    for (var i = this.traffic.length - 1; i >= 0; i--) {
+      var c = this.traffic[i];
+      c.x += c.vx * dt;
+      c.y += c.vy * dt;
+      var dx = c.x - p.x, dy = c.y - p.y;
+      if (dx * dx + dy * dy > 1800 * 1800) this.traffic.splice(i, 1);
+    }
+  };
+
+  Game.drawTraffic = function (ctx) {
+    if (!this.traffic || !this.traffic.length || !ZH.Arena || !ZH.Arena.drawCar) return;
+    var z = this.camera.zoom || 1;
+    var x0 = this.camera.x - this.W / 2 / z - 120;
+    var x1 = this.camera.x + this.W / 2 / z + 120;
+    var y0 = this.camera.y - this.H / 2 / z - 120;
+    var y1 = this.camera.y + this.H / 2 / z + 120;
+    for (var i = 0; i < this.traffic.length; i++) {
+      var c = this.traffic[i];
+      if (c.x < x0 || c.x > x1 || c.y < y0 || c.y > y1) continue;
+      /* headlight pool under the car */
+      var fx = c.x + Math.cos(c.rot) * 58;
+      var fy = c.y + Math.sin(c.rot) * 58;
+      var beam = ctx.createRadialGradient(fx, fy, 3, fx, fy, 48);
+      beam.addColorStop(0, 'rgba(255,224,160,0.20)');
+      beam.addColorStop(1, 'rgba(255,224,160,0)');
+      ctx.fillStyle = beam;
+      ctx.beginPath(); ctx.arc(fx, fy, 48, 0, Math.PI * 2); ctx.fill();
+      ZH.Arena.drawCar(ctx, c.x, c.y, c.rot, c.color, function () { return 0.5; });
+    }
   };
 
   Game.startCampaign = function (id) {
@@ -612,6 +696,7 @@ window.ZH = window.ZH || {};
 
     var p = this.player;
     this.applyInput();
+    this.updateTraffic(dt);
 
     // combat roll: hold the locked dash vector while it lasts
     if (p.dashCd > 0) p.dashCd = Math.max(0, p.dashCd - dt);
@@ -830,6 +915,7 @@ window.ZH = window.ZH || {};
       var vy1 = this.camera.y + this.H / 2 / z;
       this.arena.draw(ctx, vx0, vy0, vx1, vy1);
     }
+    this.drawTraffic(ctx);
 
     // decals
     for (var d = 0; d < this.decals.length; d++) {
@@ -970,6 +1056,7 @@ window.ZH = window.ZH || {};
           x: e.x, y: e.y, s: 1.15, kind: 'hunter', variant: 'hunter',
           facing: e.facing, aim: e.aimDir || 0, weapon: e.primaryWeapon,
           alpha: blink,
+          palette: ZH.Rig.paletteFor ? ZH.Rig.paletteFor(e.character || 'hunter') : null,
           dead: e.dead ? clamp(e.deadT, 0, 1) : 0,
           pose: { t: this.t, moving: Math.hypot(e.moveX, e.moveY), walkPhase: e.walkPhase || 0 }
         });
