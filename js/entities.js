@@ -416,7 +416,9 @@
   function targetRange(def, world, range) {
     if (!def || def.behaviour !== 'target') return range;
     var seen = viewRange(world);
-    return Math.max(range, Math.min(1100, seen + 80));
+    /* cover the whole visible screen: a zombie the player can see is a zombie
+       the sidearm may answer, even on an ultrawide monitor */
+    return Math.max(range, Math.min(2200, seen + 100));
   }
 
   function pushShot(world, o) {
@@ -1197,6 +1199,7 @@
   ZH.fireWeapon = fireWeapon;
   ZH.targetRange = targetRange;
   ZH.viewRange = viewRange;
+  ZH.nearestEnemy = nearestEnemy;
   /* every damage path (bullets, melee, splash, burn ticks, auras) funnels
      through damageEnemy; exposing it lets the harness measure applied damage
      instead of guessing from health deltas between frames */

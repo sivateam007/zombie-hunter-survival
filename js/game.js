@@ -1007,6 +1007,9 @@ window.ZH = window.ZH || {};
     // bullets — every weapon gets its own projectile silhouette
     drawShots(ctx, this);
 
+    // a faint lock line so the auto-aim target is readable on screen
+    drawAimLock(ctx, this);
+
     for (var eb = 0; eb < this.enemyBullets.length; eb++) {
       var ebl = this.enemyBullets[eb];
       var eg = ctx.createRadialGradient(ebl.x, ebl.y, 1, ebl.x, ebl.y, 12);
@@ -1112,6 +1115,33 @@ window.ZH = window.ZH || {};
     grenade: '#b7e08a', clusterbomb: '#d8f08a',
     katana: '#eaf4ff', nodachi: '#ffffff'
   };
+
+  /* The Gun family auto-aims; a thin dashed line and a ring around the body
+     it has acquired make that legible even in a busy district. */
+  function drawAimLock(ctx, g) {
+    var p = g.player;
+    if (!p || !p.weapons) return;
+    var wid = p.primaryWeapon;
+    var st = wid && p.weapons[wid];
+    var def = st && ZH.WEAPONS[wid];
+    if (!def || def.behaviour !== 'target') return;
+    if (ZH.effectiveWeapon) def = ZH.WEAPONS[ZH.effectiveWeapon(wid, st, p.supplies)] || def;
+    var range = (def.range || 400) * (1 + ((p.attribs && p.attribs.shot_range_bonus) || 0));
+    range = ZH.targetRange ? ZH.targetRange(def, g, range) : range;
+    var z = ZH.nearestEnemy ? ZH.nearestEnemy(g, p, range) : null;
+    if (!z) return;
+    var aim = p.aimDir || 0;
+    var ax = p.x + Math.cos(aim) * 24, ay = p.y + Math.sin(aim) * 24;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,209,102,0.16)';
+    ctx.lineWidth = 1.3;
+    ctx.setLineDash([7, 9]);
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(z.x, z.y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeStyle = 'rgba(255,209,102,0.45)';
+    ctx.beginPath(); ctx.arc(z.x, z.y, (z.r || 12) + 7, 0, TAU); ctx.stroke();
+    ctx.restore();
+  }
 
   /* Draw every live projectile with the silhouette its weapon deserves. */
   function drawShots(ctx, g) {

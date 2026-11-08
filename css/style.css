@@ -171,6 +171,7 @@ p { margin: 0; line-height: 1.5; }
   pointer-events: none;
 }
 .credit-mark b { color: rgba(255, 179, 71, 0.88); font-weight: 800; }
+.credit-mark .build { color: rgba(233, 231, 220, 0.32); font-weight: 600; }
 @media (max-width: 620px) {
   .credit-mark { left: 14px; top: 48px; font-size: 8px; letter-spacing: 0.18em; }
 }
