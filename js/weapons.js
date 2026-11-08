@@ -53,7 +53,7 @@
     weapon({
       id: 'gun', name: 'Gun', short: 'GUN', behaviour: 'target',
       cooldown: 1.0, dmg: 4, count: 1, speed: 780,
-      mag: 30, reload: 1.2, ammo: true, range: 460, splash: 0,
+      mag: 30, reload: 1.2, ammo: true, range: 600, splash: 0,
       evo: 'uzi', supply: 'ammobooster',
       desc: 'Reliable sidearm. Auto-targets the closest enemy in range.'
     }),

@@ -5,6 +5,7 @@ const path = require('path');
 const FILES = [
   'levels.test.js',
   'parity.test.js',
+  'aim.test.js',
   'sim.test.js',
   'density.test.js',
   'shield.test.js',

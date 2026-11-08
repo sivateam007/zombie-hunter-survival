@@ -312,6 +312,14 @@
       world.score = (world.score || 0) + 10;
       // exp gems are the main drop; big enemies always leave scrap too
       world.pickups.push({ type: 'exp', x: z.x, y: z.y, life: 12, value: z.boss ? 40 : 10 });
+      /* a dark pool under the body: the street remembers the fight */
+      if (world.decals && world.decals.length < 140) {
+        world.decals.push({
+          x: z.x + rand(-4, 4), y: z.y + rand(-2, 6),
+          r: rand(7, 14) * (z.boss ? 2.2 : 1),
+          rot: rand(0, TAU), alpha: 0.42
+        });
+      }
       if (z.coins || z.boss) {
         world.pickups.push({ type: 'coin', x: z.x + rand(-8, 8), y: z.y + rand(-8, 8), life: 12, value: z.coins || 5 });
       }
@@ -394,6 +402,23 @@
     return ang;
   }
 
+  /* how far the hunter can actually see, in world pixels */
+  function viewRange(world) {
+    if (!world || !world.W || !world.H) return 0;
+    var zoom = (world.camera && world.camera.zoom) || 1;
+    return Math.hypot(world.W, world.H) / (2 * zoom);
+  }
+
+  /* The Gun family must answer the zombies the player can see, not only the
+     ones inside its authored 460px circle. Acquisition is the larger of the
+     weapon range and the visible radius (capped so a 4K window cannot turn
+     the sidearm into a sniper). */
+  function targetRange(def, world, range) {
+    if (!def || def.behaviour !== 'target') return range;
+    var seen = viewRange(world);
+    return Math.max(range, Math.min(1100, seen + 80));
+  }
+
   function pushShot(world, o) {
     o.px = o.x; o.py = o.y;
     /* the direction this round actually left in — the muzzle flash, the brass
@@ -436,10 +461,12 @@
     var cd = def.cooldown * (1 - Math.min(0.7, a.cooldown_bonus || 0));
     var aim = p.aimDir || 0;
     var i, ang;
+    var acquire = targetRange(def, world, range);
+    if (world) world._shotFired = true;
 
     /* acquire before switching so every ranged case fires at a body, not at
        the direction the thumbstick happened to be pointing */
-    if (AUTO_AIM[def.behaviour]) aim = aimAtNearest(world, p, range, aim);
+    if (AUTO_AIM[def.behaviour]) aim = aimAtNearest(world, p, acquire, aim);
 
     switch (def.behaviour) {
       /* spinning axes / saw blades around the hunter */
@@ -520,15 +547,23 @@
            game.js stores this function's return value in st.timer, so
            returning the shot gap plays the burst out and returning cd ends it. */
         var GAP = 0.150, UZI_GAP = 0.160;
-        var tgt = nearestEnemy(world, p, range);
-        ang = tgt ? Math.atan2(tgt.y - p.y, tgt.x - p.x) : aim;
-        if (tgt) { p.aimDir = ang; p.facing = Math.cos(ang) >= 0 ? 1 : -1; }
+        var tgt = nearestEnemy(world, p, acquire);
+        /* the original Gun checks the distance and does not fire at all when
+           no body is in range. Firing into empty street made it look broken
+           (and burned the magazine) whenever the horde was still approaching. */
+        if (!tgt) {
+          world._shotFired = false;
+          return 0.12;
+        }
+        ang = Math.atan2(tgt.y - p.y, tgt.x - p.x);
+        p.aimDir = ang;
+        p.facing = Math.cos(ang) >= 0 ? 1 : -1;
 
         if (level > 5) {
           pushShot(world, {
             x: p.x + Math.cos(ang) * 20, y: p.y + Math.sin(ang) * 20,
             vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
-            dmg: dmg, life: Math.max(0.4, range / speed), r: 4,
+            dmg: dmg, life: Math.max(0.4, acquire / speed), r: 4,
             splash: 0, enemy: false
           });
           return UZI_GAP;
@@ -539,7 +574,7 @@
           pushShot(world, {
             x: p.x + Math.cos(ang) * 20, y: p.y + Math.sin(ang) * 20,
             vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
-            dmg: dmg, life: Math.max(0.4, range / speed), r: 4,
+            dmg: dmg, life: Math.max(0.4, acquire / speed), r: 4,
             splash: 0, enemy: false
           });
           return cd;
@@ -551,7 +586,7 @@
         pushShot(world, {
           x: p.x + Math.cos(ang) * 20, y: p.y + Math.sin(ang) * 20,
           vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
-          dmg: dmg, life: Math.max(0.4, range / speed), r: 4,
+          dmg: dmg, life: Math.max(0.4, acquire / speed), r: 4,
           splash: 0, enemy: false
         });
         gw.gunBurst--;
@@ -781,9 +816,10 @@
     if (!def) return 1;
     world._wid = id;
     world._shotAng = null;
+    world._shotFired = true;
     var cd = fireWeaponCore(id, level, p, world, def);
 
-    if (MUZZLE[def.behaviour]) {
+    if (MUZZLE[def.behaviour] && world._shotFired !== false) {
       /* fire from the barrel that is actually pointing at the target, not from
          wherever the hunter last walked */
       var aim = world._shotAng == null ? (p.aimDir || 0) : world._shotAng;
@@ -839,8 +875,9 @@
     if (primSt && world.zombies && world.zombies.length) {
       var effId = ZH.effectiveWeapon ? ZH.effectiveWeapon(primId, primSt, p.supplies) : primId;
       var pdef = ZH.WEAPONS && ZH.WEAPONS[effId];
-      if (pdef && AUTO_AIM[pdef.behaviour]) {
-        var prange = (pdef.range || 400) * (1 + (a.shot_range_bonus || 0));
+      if (pdef && AUTO_AIM[pdef.behaviour]) {        var prange = (pdef.range || 400) * (1 + (a.shot_range_bonus || 0));
+        prange = targetRange(pdef, world, prange);
+
         var lock = nearestEnemy(world, p, prange);
         if (lock) {
           p.aimDir = Math.atan2(lock.y - p.y, lock.x - p.x);
@@ -1158,6 +1195,8 @@
   ZH.updateProjectiles = updateProjectiles;
   ZH.updatePickups = updatePickups;
   ZH.fireWeapon = fireWeapon;
+  ZH.targetRange = targetRange;
+  ZH.viewRange = viewRange;
   /* every damage path (bullets, melee, splash, burn ticks, auras) funnels
      through damageEnemy; exposing it lets the harness measure applied damage
      instead of guessing from health deltas between frames */

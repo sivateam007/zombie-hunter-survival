@@ -1029,7 +1029,68 @@ window.ZH = window.ZH || {};
 
     ctx.restore();
 
+    /* district atmosphere + lens focus, painted over the world but under the
+       DOM HUD so the readouts stay crisp */
+    this.drawAtmosphere(ctx);
+
     // HUD lives in the DOM (ui.updateHud); no canvas duplicate
+  };
+
+  /* Each district already owns a fog tint and a weather mood. Painting them
+     over the world (instead of baking them into every chunk) gives the city
+     depth, hides chunk seams and makes walking into a new place read at once. */
+  Game.drawAtmosphere = function (ctx) {
+    if (!this.player || !this.arena) return;
+    var key = this.arena.themeAt
+      ? this.arena.themeAt(Math.floor(this.player.x / 512), Math.floor(this.player.y / 512))
+      : this.arena._fn;
+    var cfg = ZH.Arena.THEMES && ZH.Arena.THEMES[key];
+    if (!cfg) return;
+    var t = this.t || 0;
+
+    /* colour grade: the district's own fog, kept light */
+    if (!this._fogFill || this._fogKey !== key) {
+      this._fogFill = String(cfg.fog || 'rgba(30,40,50,0.5)')
+        .replace(/[\d.]+\s*\)\s*$/, '0.13)');
+      this._fogKey = key;
+    }
+    ctx.fillStyle = this._fogFill;
+    ctx.fillRect(0, 0, this.W, this.H);
+
+    /* weather: rain streaks, drifting ash or warm dust */
+    var mode = cfg.ambient || 'dust';
+    var count = mode === 'rain' ? 90 : 46;
+    ctx.save();
+    ctx.lineCap = 'round';
+    for (var i = 0; i < count; i++) {
+      var sx = (i * 173.7 + (mode === 'rain' ? t * 140 : t * 22)) % (this.W + 60) - 30;
+      var sy = (i * 311.3 + (mode === 'rain' ? t * 760 : t * 34)) % (this.H + 60) - 30;
+      if (mode === 'rain') {
+        ctx.strokeStyle = 'rgba(170,205,235,0.22)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx - 3, sy + 16); ctx.stroke();
+      } else if (mode === 'ash') {
+        ctx.fillStyle = 'rgba(226,222,210,0.20)';
+        ctx.beginPath(); ctx.arc(sx, sy, 1.5, 0, TAU); ctx.fill();
+      } else {
+        ctx.fillStyle = 'rgba(255,214,150,0.13)';
+        ctx.beginPath(); ctx.arc(sx, sy, 1.9, 0, TAU); ctx.fill();
+      }
+    }
+    ctx.restore();
+
+    /* vignette: focus the fight and soften the edges of the frame */
+    if (!this._vig || this._vigW !== this.W || this._vigH !== this.H) {
+      var g = ctx.createRadialGradient(
+        this.W / 2, this.H / 2, Math.min(this.W, this.H) * 0.30,
+        this.W / 2, this.H / 2, Math.max(this.W, this.H) * 0.72);
+      g.addColorStop(0, 'rgba(0,0,0,0)');
+      g.addColorStop(0.65, 'rgba(0,0,0,0.10)');
+      g.addColorStop(1, 'rgba(0,0,0,0.52)');
+      this._vig = g; this._vigW = this.W; this._vigH = this.H;
+    }
+    ctx.fillStyle = this._vig;
+    ctx.fillRect(0, 0, this.W, this.H);
   };
 
   /* tints per weapon family: a shotgun blast should not look like a laser */
@@ -1345,7 +1406,9 @@ window.ZH = window.ZH || {};
       }
 
       st.timer = ZH.fireWeapon(eff, st.level || 1, p, world);
-      if (usesAmmo) {
+      /* a target weapon with nothing in range returns _shotFired = false:
+         no round left the barrel, so no magazine round is spent */
+      if (usesAmmo && world._shotFired !== false) {
         st.mag -= 1;
         /* last round gone: start the reload straight away instead of waiting
            for the cooldown to expire first */
