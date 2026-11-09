@@ -214,6 +214,9 @@
         z._burnAcc = 0;
         z._dotHit = true;
         ZH.damageEnemy(world, z, (z.burnDps || 0) * 0.25);
+        /* clear even if the hit was absorbed, so the next real shot still
+           runs its burn / splash / chain effects */
+        z._dotHit = false;
         if (world.particles && world.particles.length < 220) {
           world.particles.push({
             x: z.x + (Math.random() * 8 - 4), y: z.y - 18,
