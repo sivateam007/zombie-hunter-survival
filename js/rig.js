@@ -642,7 +642,15 @@ window.ZH = window.ZH || {};
       roundRect(ctx, -2.6 * bulk, -1.4, 6.2 * bulk, 3.4 * bulk, 1.4);
       ctx.fillStyle = boots;
       ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+      ctx.lineWidth = 0.9;
+      ctx.stroke();
       ctx.restore();
+      /* knee pad: gear, not a stick figure */
+      ctx.fillStyle = pal.pad || '#232a2e';
+      ctx.beginPath(); ctx.arc(r.jx, r.jy, 2.5 * bulk, 0, TAU); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = 0.9;
+      ctx.beginPath(); ctx.arc(r.jx, r.jy, 2.5 * bulk, 0, TAU); ctx.stroke();
       return { x: r.ex, y: r.ey, thigh: th };
     }
 
@@ -679,8 +687,8 @@ window.ZH = window.ZH || {};
       offHand = { x: sup.ex, y: sup.ey, angle: localAim };
 
       /* back arm (drawn first) */
-      capsule(ctx, -shoulderX + 1, shY + 1, sup.jx, sup.jy, 4.9 * bulk, shade(coat, -0.12));
-      capsule(ctx, sup.jx, sup.jy, sup.ex, sup.ey, 4.0 * bulk, coatLit);
+      capsule(ctx, -shoulderX + 1, shY + 1, sup.jx, sup.jy, 4.9 * bulk, shade(coat, -0.12), 'rgba(0,0,0,0.45)');
+      capsule(ctx, sup.jx, sup.jy, sup.ex, sup.ey, 4.0 * bulk, coatLit, 'rgba(0,0,0,0.35)');
       circle(ctx, sup.ex, sup.ey, 2.5 * bulk, pal.glove || '#232a26');
 
       /* drawTorso after back arm */
@@ -688,9 +696,29 @@ window.ZH = window.ZH || {};
         strap: pal.strap, pack: pal.pack, metal: pal.metal },
         { bulk: bulk, hunch: hunch }, kind);
 
+      /* --- kit: belt, pouches, chest rig and shoulder pad --- */
+      ctx.save();
+      ctx.fillStyle = shade(coatDark, -0.16);
+      roundRect(ctx, -7 * bulk, -26, 14 * bulk, 3.2, 1.4); ctx.fill();
+      ctx.fillStyle = pal.accent;
+      roundRect(ctx, -1.5, -26.2, 3, 3.6, 1); ctx.fill();
+      ctx.fillStyle = shade(pal.vest || coat, -0.14);
+      roundRect(ctx, -8.6 * bulk, -25, 3.4, 5, 1.2); ctx.fill();
+      roundRect(ctx, 5.2 * bulk, -25, 3.4, 5, 1.2); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.38)';
+      ctx.lineWidth = 2.1; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-5, -42.5); ctx.lineTo(4.6 * bulk, -30); ctx.stroke();
+      ctx.fillStyle = shade(coatLit, -0.05);
+      ctx.beginPath();
+      ctx.ellipse(5.6 * bulk, -42.6, 4.4 * bulk, 3.1 * bulk, -0.25, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.42)'; ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+
       /* front arm holds the gun */
-      capsule(ctx, shoulderX, shY, main.jx, main.jy, 5.4 * bulk, coat);
-      capsule(ctx, main.jx, main.jy, main.ex, main.ey, 4.2 * bulk, coatLit);
+      capsule(ctx, shoulderX, shY, main.jx, main.jy, 5.4 * bulk, coat, 'rgba(0,0,0,0.5)');
+      capsule(ctx, main.jx, main.jy, main.ex, main.ey, 4.2 * bulk, coatLit, 'rgba(0,0,0,0.35)');
       circle(ctx, main.ex, main.ey, 2.6 * bulk, pal.glove || '#232a26');
 
       /* head */

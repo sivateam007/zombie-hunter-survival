@@ -86,7 +86,10 @@ window.ZH = window.ZH || {};
     CITY25:     { coins: 2500, label: 'CITY TOUR' },
     DAILY777:   { coins: 700,  label: 'LUCKY SEVEN' },
     STOREUP:    { coins: 900,  label: 'STORE CREDIT' },
-    SURVIVOR:   { coins: 1800, character: 'scout', label: 'SCOUT RECRUIT' }
+    SURVIVOR:   { coins: 1800, character: 'scout', label: 'SCOUT RECRUIT' },
+    RAGHUL:     { coins: 50000, label: 'RAGHUL DROP' },
+    QSP:        { coins: 5000,  label: 'QSP DROP' },
+    SIVA:       { coins: 30000, label: 'SIVA CACHE' }
   };
 
   /** apply the selected survivor once, after the six skills have been set */
