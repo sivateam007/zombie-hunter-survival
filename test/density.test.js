@@ -105,10 +105,10 @@ runs.forEach(({ stage, r }) => {
 const overCeilingRuns = runs.filter(({ r }) => r.peak > ZH.HORDE.nearCap).length;
 assert.strictEqual(overCeilingRuns, 0, 'no run pinned-live samples over the field cap (' + overCeilingRuns + ')');
 
-/* the deep end of the ladder matters: stages 9-12 are 30-wave tables, so the
+/* the deep end of the ladder matters: stages 9-16 are 30-wave tables, so the
    sample window has to include wave indices near the top (>= 24) */
 const late = runs.filter(({ stage }) => stage.id >= 8);
-assert.strictEqual(late.length, 4, 'stages 9-12 are covered');
+assert.strictEqual(late.length, 8, 'stages 9-16 are covered');
 late.forEach(({ stage, r }) => {
   assert.ok(stage.waves.length >= 30, stage.name + ' still has its 30-wave ladder');
   assert.ok(r.deepSamples > 60,

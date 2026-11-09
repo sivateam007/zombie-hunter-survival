@@ -1,7 +1,7 @@
 # Zombie Hunter: Survival 🧟
 
 A complete top-down survival shooter in the classic horde-survivor genre:
-seven chapters, twelve hand-authored missions, boss fights, endless night, a permanent upgrade
+nine chapters, sixteen hand-authored missions, boss fights, endless night, a permanent upgrade
 economy and a persistent leaderboard.
 
 Everything you see is drawn at runtime — **no sprite sheets, no image downloads, no licensed art**.
@@ -10,8 +10,8 @@ kinematics each frame, so walking, aiming, reloading, reeling from a hit and dyi
 animation rather than frame swaps. [anime.js](js/vendor/anime.min.js) drives every screen change,
 card stagger, count-up and banner.
 
-![chapters](https://img.shields.io/badge/chapters-7-ffb347)
-![missions](https://img.shields.io/badge/missions-12-ffb347)
+![chapters](https://img.shields.io/badge/chapters-9-ffb347)
+![missions](https://img.shields.io/badge/missions-16-ffb347)
 ![boss types](https://img.shields.io/badge/boss%20types-6-e0492f)
 ![weapons](https://img.shields.io/badge/weapons-20-9be15d)
 ![districts](https://img.shields.io/badge/districts-13-6da8ff)
@@ -31,24 +31,28 @@ playable offline once loaded.
 
 ### Controls
 
-Touch-first, no keyboard needed. Everything is driven on screen:
+Touch, keyboard or gamepad — whichever is in your hands:
 
 | Input | Action |
 | --- | --- |
 | Thumbstick (bottom-left) | Move — the gun auto-aims at the nearest visible zombie |
+| `WASD` / arrows | Move on a keyboard |
+| Mouse | Aim — the pointer is the crosshair |
+| Gamepad | Left stick moves, right stick aims, A flies, B rolls |
 | — | Weapons fire automatically |
-| `ROLL` (bottom-right) | Combat roll (i-frames) |
-| `RELOAD` (bottom-right) | Reload early; it also auto-reloads on an empty magazine |
-| `II` (top-right) | Pause |
+| `ROLL` / `Shift` | Combat roll (i-frames) |
+| `RELOAD` / `R` | Reload early; it also auto-reloads on an empty magazine |
+| `II` / `Esc` / `P` | Pause |
 
 The thumbstick works with a finger or a mouse drag, so it plays the same on a phone and on a
-desktop browser. The buttons use pointer events, so they respond to touch, mouse and pen alike.
+desktop browser. The buttons use pointer events, so they respond to touch, mouse and pen alike,
+and every input source can be blended mid-run without switching modes.
 
 ---
 
 ## What is in the game
 
-**Seven chapters, twelve missions, six boss types**
+**Nine chapters, sixteen missions, six boss types**
 
 | # | Chapter | District | Boss zone |
 | --- | --- | --- | --- |
@@ -64,6 +68,10 @@ desktop browser. The buttons use pointer events, so they respond to touch, mouse
 | 10 | Downtown | Canal Quarter | Spider, Reptile |
 | 11 | The Outskirts | Overgrown Park | Soldier, Spider |
 | 12 | The Outskirts | Greyfield Airstrip | Soldier, Tower, Spider, Reptile |
+| 13 | The Undercity | Metro Interchange | Soldier, Mutant, Tower |
+| 14 | The Undercity | Freight Yards | Dragon, Spider, Reptile |
+| 15 | The Last Mile | Overgrown Park | Tower, Soldier, Spider, Dragon |
+| 16 | The Last Mile | Canal Quarter | Soldier, Mutant, Dragon, Tower, Spider, Reptile |
 
 **Twenty weapons** across seven families — sidearm, SMG, shotgun, rifle, marksman rifle,
 flamethrower and heavy explosives — each with its own recoil, spread, pierce and sound. The M9

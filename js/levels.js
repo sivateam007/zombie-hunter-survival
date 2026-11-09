@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------
  * Zombie Hunter: Survival — mission data
  *
- * Twelve hand-authored stages for this build. Every wave lists its enemy,
+ * Sixteen hand-authored stages for this build. Every wave lists its enemy,
  * feed frequency, concurrent cap, total cap, start time and duration:
  *
  *   - all times are in SECONDS (the engine clocks in seconds)
@@ -29,7 +29,9 @@
     { id: 4, name: 'THE ROOFTOPS', stages: [5, 6] },
     { id: 5, name: 'THE LAST STAND', stages: [7] },
     { id: 6, name: 'DOWNTOWN', stages: [8, 9] },
-    { id: 7, name: 'THE OUTSKIRTS', stages: [10, 11] }
+    { id: 7, name: 'THE OUTSKIRTS', stages: [10, 11] },
+    { id: 8, name: 'THE UNDERCITY', stages: [12, 13] },
+    { id: 9, name: 'THE LAST MILE', stages: [14, 15] }
   ];
   ZH.CHAPTERS = CHAPTERS;
 
@@ -548,6 +550,66 @@
           { enemy:"reptile", freq:"HI", max:28 }
         ],
         bosses: ["boss_soldier", "boss_tower", "boss_spider", "boss_reptile"], zone: 4096
+      })
+    },
+    {
+      id: 12, name: "Stage 13", tile: "subway", bg: "bg13", map: "map_lv13.png",
+      multiplier: 38.5, timeToTreasure: 15,
+      rewards: [16000,32000,52000],
+      waves: cityWaves({
+        ladder: [
+          { enemy:"zombieD", freq:"MID", max:30 },
+          { enemy:"assault2", freq:"LOW", max:12 },
+          { enemy:"miniboss_fighter", freq:"LOW", max:1 },
+          { enemy:"reptile", freq:"MID", max:30 },
+          { enemy:"spider2", freq:"MID", max:30 }
+        ],
+        bosses: ["boss_soldier", "boss_mutant", "boss_tower"], zone: 4096
+      })
+    },
+    {
+      id: 13, name: "Stage 14", tile: "warehouse", bg: "bg14", map: "map_lv14.png",
+      multiplier: 46.0, timeToTreasure: 15,
+      rewards: [18000,36000,58000],
+      waves: cityWaves({
+        ladder: [
+          { enemy:"slug", freq:"MID", max:22 },
+          { enemy:"builder", freq:"MID", max:30 },
+          { enemy:"tower2", freq:"LOW", max:10 },
+          { enemy:"toxic2", freq:"MID", max:28 },
+          { enemy:"miniboss_toxic2", freq:"LOW", max:1 }
+        ],
+        bosses: ["boss_dragon", "boss_spider", "boss_reptile"], zone: 4608
+      })
+    },
+    {
+      id: 14, name: "Stage 15", tile: "park", bg: "bg15", map: "map_lv15.png",
+      multiplier: 55.0, timeToTreasure: 15,
+      rewards: [20000,40000,65000],
+      waves: cityWaves({
+        ladder: [
+          { enemy:"bat", freq:"HI", max:34 },
+          { enemy:"spider1", freq:"MID", max:32 },
+          { enemy:"assault1", freq:"LOW", max:12 },
+          { enemy:"manager", freq:"LOW", max:12 },
+          { enemy:"miniboss_soldier", freq:"LOW", max:1 }
+        ],
+        bosses: ["boss_tower", "boss_soldier", "boss_spider", "boss_dragon"], zone: 5120
+      })
+    },
+    {
+      id: 15, name: "Stage 16", tile: "canal", bg: "bg16", map: "map_lv16.png",
+      multiplier: 66.0, timeToTreasure: 15,
+      rewards: [24000,48000,78000],
+      waves: cityWaves({
+        ladder: [
+          { enemy:"reptile", freq:"HI", max:34 },
+          { enemy:"zombieA", freq:"MID", max:34 },
+          { enemy:"tower1", freq:"LOW", max:12 },
+          { enemy:"toxic1", freq:"MID", max:30 },
+          { enemy:"miniboss_tower", freq:"LOW", max:1 }
+        ],
+        bosses: ["boss_soldier", "boss_mutant", "boss_dragon", "boss_tower", "boss_spider", "boss_reptile"], zone: 6144
       })
     }
   ];

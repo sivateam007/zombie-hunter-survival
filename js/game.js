@@ -23,7 +23,11 @@ window.ZH = window.ZH || {};
     coins: 0, score: 0, exp: 0,
     levelUpPending: false, levelUpChoices: [],
     bossZoneActive: false,
-    input: { joyX: 0, joyY: 0, jet: false },
+    input: {
+      joyX: 0, joyY: 0, jet: false,
+      keys: {}, padX: 0, padY: 0, padAimX: 0, padAimY: 0, padAimLen: 0,
+      padJet: false, aimX: null, aimY: null, aimMode: false
+    },
     touch: { enabled: false },
     hudCache: {},
     quality: 1,
@@ -599,41 +603,162 @@ window.ZH = window.ZH || {};
     /* the game itself parks the stick on pause and on level-up */
     self.releaseInput = release;
 
-    /* desktop convenience: Space is the same hold-to-fly jetpack */
+    /* ---- desktop steering: WASD / arrows, mouse aim, Space-to-fly ----
+       The touch stick stays the primary control on a phone, but a desktop
+       player should never have to drag a thumbstick with a mouse. */
+    var MOVE_CODES = {
+      KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down',
+      KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right'
+    };
     window.addEventListener('keydown', function (e) {
-      if (e.code === 'Space' && self.state === 'playing') {
-        self.input.jet = true;
+      var k = self.input.keys || (self.input.keys = {});
+      var dir = MOVE_CODES[e.code];
+      if (dir) {
+        k[dir] = true;
+        document.body.classList.add('kb');
         e.preventDefault();
+        return;
+      }
+      if (e.code === 'Space') {
+        self.input.jet = true;
+        if (self.state === 'playing') e.preventDefault();
+      } else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+        if (self.dash) self.dash();
+      } else if (e.code === 'KeyR') {
+        if (self.reload) self.reload();
+      } else if (e.code === 'Escape' || e.code === 'KeyP') {
+        if (self.state === 'playing') self.pause();
+        else if (self.state === 'paused') self.resume();
       }
     });
     window.addEventListener('keyup', function (e) {
+      var k = self.input.keys || {};
+      var dir = MOVE_CODES[e.code];
+      if (dir) { k[dir] = false; return; }
       if (e.code === 'Space') self.input.jet = false;
     });
+
+    /* mouse aim: the pointer is the crosshair, the gun answers it */
+    function aimAtPointer(e) {
+      if (!canvas || !self.camera || !self.player) return;
+      var r = canvas.getBoundingClientRect();
+      var z = self.camera.zoom || 1;
+      self.input.aimX = self.camera.x + (e.clientX - r.left - self.W / 2) / z;
+      self.input.aimY = self.camera.y + (e.clientY - r.top - self.H / 2) / z;
+      self.input.aimMode = e.pointerType !== 'touch';
+      if (e.pointerType === 'mouse') document.body.classList.add('kb');
+    }
+    if (canvas) {
+      canvas.addEventListener('pointermove', aimAtPointer);
+      canvas.addEventListener('pointerdown', aimAtPointer);
+    }
+  };
+
+  /* Gamepad: left stick moves, right stick aims, A flies, B rolls, X reloads.
+     Polled once a frame; a missing pad is a no-op. */
+  Game.pollGamepad = function () {
+    var inp = this.input;
+    var pads = navigator.getGamepads ? navigator.getGamepads() : null;
+    var gp = null;
+    if (pads) {
+      for (var i = 0; i < pads.length; i++) {
+        if (pads[i] && pads[i].connected) { gp = pads[i]; break; }
+      }
+    }
+    if (!gp) {
+      inp.padX = 0; inp.padY = 0;
+      inp.padAimX = 0; inp.padAimY = 0; inp.padAimLen = 0;
+      inp.padJet = false;
+      return;
+    }
+    function axis(v) { return Math.abs(v) < 0.18 ? 0 : v; }
+    var b = gp.buttons || [];
+    inp.padX = axis(gp.axes[0] || 0);
+    inp.padY = axis(gp.axes[1] || 0);
+    inp.padAimX = axis(gp.axes[2] || 0);
+    inp.padAimY = axis(gp.axes[3] || 0);
+    inp.padAimLen = Math.hypot(inp.padAimX, inp.padAimY);
+    inp.padJet = !!(b[0] && b[0].pressed);
+    if (b[1] && b[1].pressed && !this._padDash) {
+      this._padDash = true;
+      if (this.dash) this.dash();
+    }
+    if (b[1] && !b[1].pressed) this._padDash = false;
+    if (b[2] && b[2].pressed && !this._padReload) {
+      this._padReload = true;
+      if (this.reload) this.reload();
+    }
+    if (b[2] && !b[2].pressed) this._padReload = false;
+    if (inp.padX || inp.padY) document.body.classList.add('kb');
+  };
+
+  /* the flash at the muzzle, the kick, and a casing: a shot reads as a shot */
+  Game.muzzleFlash = function (id, p) {
+    var def = ZH.WEAPONS && ZH.WEAPONS[id];
+    if (!def || def.behaviour === 'orbit' || def.behaviour === 'saw' ||
+        def.behaviour === 'aura' || def.behaviour === 'melee') return;
+    var a = p.aimDir || 0;
+    var tipX = p.x + Math.cos(a) * 26;
+    var tipY = p.y - 6 + Math.sin(a) * 26;
+    if (this.particles.length < 260) {
+      this.particles.push({
+        x: tipX, y: tipY, vx: Math.cos(a) * 40, vy: Math.sin(a) * 40,
+        life: 0.07, max: 0.07, size: 6, color: 'rgba(255,236,170,0.92)'
+      });
+      this.particles.push({
+        x: tipX, y: tipY, vx: rand(-30, 30), vy: rand(-40, 10),
+        life: 0.28, max: 0.28, size: 1.7, color: 'rgba(230,180,90,0.8)'
+      });
+      /* brass, thrown sideways and pulled down by gravity */
+      this.particles.push({
+        x: tipX, y: tipY,
+        vx: Math.cos(a + 1.9) * 90, vy: Math.sin(a + 1.9) * 90 - 40,
+        grav: 340, life: 0.38, max: 0.38, size: 1.5, color: 'rgba(214,168,84,0.95)'
+      });
+    }
+    p.recoil = 0.08;
+    if ((def.dmg || 0) > 60 || def.behaviour === 'rocket') this.shake = Math.max(this.shake, 3.2);
+    else this.shake = Math.max(this.shake, 0.9);
   };
 
   Game.applyInput = function () {
     var p = this.player;
     if (!p) return;
-    var mx = this.input.joyX || 0;
-    var my = this.input.joyY || 0;
+    var inp = this.input;
+
+    /* three steering sources blend together: thumbstick, WASD/arrows and a
+       gamepad's left stick, so the hunter answers whichever is being used */
+    var k = inp.keys || {};
+    var kx = (k.right ? 1 : 0) - (k.left ? 1 : 0);
+    var ky = (k.down ? 1 : 0) - (k.up ? 1 : 0);
+    var mx = (inp.joyX || 0) + kx + (inp.padX || 0);
+    var my = (inp.joyY || 0) + ky + (inp.padY || 0);
 
     var len = Math.hypot(mx, my);
     if (len > 1) { var i = 1 / len; mx *= i; my *= i; }
 
     p.moveX = mx; p.moveY = my;
 
-    // Move direction IS the aim direction (original model)
-    if (len > 0.01) {
-      p.aimDir = Math.atan2(my, mx);
-      p.facing = mx >= 0 ? 1 : -1;
+    /* Aim: right stick or mouse first, otherwise the walk direction
+       (the original Survivors model). */
+    var aimed = false;
+    if (inp.padAimLen > 0.35) {
+      p.aimDir = Math.atan2(inp.padAimY, inp.padAimX);
+      aimed = true;
+    } else if (inp.aimMode && inp.aimX != null && inp.aimY != null) {
+      p.aimDir = Math.atan2(inp.aimY - p.y, inp.aimX - p.x);
+      aimed = true;
     }
+    if (!aimed && len > 0.01) p.aimDir = Math.atan2(my, mx);
+    if (aimed || len > 0.01) p.facing = Math.cos(p.aimDir) >= 0 ? 1 : -1;
   };
 
   /* hold-to-fly jetpack: burns fuel, lifts the rig and skims over bites */
   Game.updateJetpack = function (dt) {
     var p = this.player;
     if (!p) return;
-    var held = !!(this.input && this.input.jet) && this.state === 'playing' && !p.dead;
+    var held = !!(this.input && (this.input.jet || this.input.padJet)) &&
+      this.state === 'playing' && !p.dead;
     if (ZH.tickJetpack) ZH.tickJetpack(p, dt, held);
     if (p.jetActive && Math.random() < 0.45) {
       this.particles.push({
@@ -724,6 +849,7 @@ window.ZH = window.ZH || {};
     if (!this.bossZoneActive) this.elapsed += dt;
 
     var p = this.player;
+    this.pollGamepad();
     this.applyInput();
     this.updateJetpack(dt);
     this.updateTraffic(dt);
@@ -1165,6 +1291,22 @@ window.ZH = window.ZH || {};
     }
     ctx.globalAlpha = 1;
 
+    /* floating combat text: damage numbers and pickup words, so every hit
+       reads on screen even in a packed horde */
+    for (var fi = 0; fi < this.floaters.length; fi++) {
+      var fo = this.floaters[fi];
+      var fa = Math.max(0, Math.min(1, fo.life / (fo.max || 0.8)));
+      ctx.globalAlpha = fa;
+      ctx.font = 'bold ' + (fo.size || 14) + 'px Rajdhani, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(6,10,12,0.72)';
+      ctx.fillText(fo.text, fo.x + 1, fo.y + 1);
+      ctx.fillStyle = fo.color || '#ffe9a8';
+      ctx.fillText(fo.text, fo.x, fo.y);
+    }
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'left';
+
     ctx.restore();
 
     /* district atmosphere + lens focus, painted over the world but under the
@@ -1216,6 +1358,16 @@ window.ZH = window.ZH || {};
       }
     }
     ctx.restore();
+
+    /* distant lightning on the rainy districts: a quiet sky read that makes
+       the wet map feel alive without touching gameplay */
+    if (mode === 'rain') {
+      var cyc = t % 11;
+      if (cyc < 0.2) {
+        ctx.fillStyle = 'rgba(205,228,255,' + (0.14 * (1 - cyc / 0.2)).toFixed(3) + ')';
+        ctx.fillRect(0, 0, this.W, this.H);
+      }
+    }
 
     /* vignette: focus the fight and soften the edges of the frame */
     if (!this._vig || this._vigW !== this.W || this._vigH !== this.H) {
@@ -1603,6 +1755,7 @@ window.ZH = window.ZH || {};
       }
 
       st.timer = ZH.fireWeapon(eff, st.level || 1, p, world);
+      if (world._shotFired !== false) this.muzzleFlash(eff, p);
       /* a target weapon with nothing in range returns _shotFired = false:
          no round left the barrel, so no magazine round is spent */
       if (usesAmmo && world._shotFired !== false) {

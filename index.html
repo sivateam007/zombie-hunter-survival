@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0b0f10">
 <meta name="author" content="SIVA">
-<meta name="description" content="Zombie Hunter: Survival — a top-down survival shooter. Twelve missions of twenty minutes each, endless night, and a lot of things that used to be people.">
+<meta name="description" content="Zombie Hunter: Survival — a top-down survival shooter. Sixteen missions of twenty minutes each, endless night, and a lot of things that used to be people.">
 <title>Zombie Hunter: Survival</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e1415'/%3E%3Ccircle cx='32' cy='30' r='15' fill='%2387975f'/%3E%3Ccircle cx='26' cy='27' r='3.4' fill='%23e9ff72'/%3E%3Ccircle cx='39' cy='27' r='3.4' fill='%23e9ff72'/%3E%3Cpath d='M24 44h16l-2 9H26z' fill='%23cfc7ae'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/style.css?v=9">
+<link rel="stylesheet" href="css/style.css?v=10">
 </head>
 <body>
 <div id="app">
@@ -77,7 +77,7 @@
     <div id="weapon-slots" class="weapon-slots"></div>
     <div id="hud-items" class="hud-items"></div>
     <div class="enemy-count"><span class="pip hostile"></span><span id="hud-left">0</span> LEFT</div>
-    <div class="credit-mark">DEVELOPED BY <b>SIVA</b><span class="build"> · BUILD 9</span></div>
+    <div class="credit-mark">DEVELOPED BY <b>SIVA</b><span class="build"> · BUILD 10</span></div>
   </div>
 
   <!-- --------------------------- touch controls --------------------------- -->
@@ -104,10 +104,10 @@
           <div class="logo-kicker">SURVIVAL</div>
           <h1 class="logo">ZOMBIE<br><span>HUNTER</span></h1>
           <div class="logo-rule"></div>
-          <p class="logo-sub">Eight stages. Twenty minutes each. One night that never ends.</p>
+          <p class="logo-sub">Sixteen stages. Twenty minutes each. One night that never ends.</p>
         </div>
         <div class="menu-actions" data-anim>
-          <button class="btn primary" id="btn-campaign"><span>CAMPAIGN</span><em>8 stages · 20 minutes each</em></button>
+          <button class="btn primary" id="btn-campaign"><span>CAMPAIGN</span><em>16 stages · 20 minutes each</em></button>
           <button class="btn" id="btn-endless"><span>ENDLESS NIGHT</span><em>How long can you last?</em></button>
           <div class="menu-row">
             <button class="btn ghost" id="btn-shop">ARSENAL</button>
@@ -303,10 +303,12 @@
           <h3>CONTROLS</h3>
           <ul class="keys">
             <li><b>Thumbstick</b><span>Move — your hunter aims where they walk</span></li>
+            <li><b>WASD / Arrows</b><span>Move on a keyboard; the mouse is the crosshair</span></li>
+            <li><b>Gamepad</b><span>Left stick moves, right stick aims, A flies, B rolls</span></li>
             <li><b>Auto-fire</b><span>Weapons shoot on their own</span></li>
-            <li><b>ROLL</b><span>Combat roll (i-frames)</span></li>
-            <li><b>RELOAD</b><span>Reload early — or wait for the click</span></li>
-            <li><b>II</b><span>Pause</span></li>
+            <li><b>ROLL / Shift</b><span>Combat roll (i-frames)</span></li>
+            <li><b>RELOAD / R</b><span>Reload early — or wait for the click</span></li>
+            <li><b>II / Esc / P</b><span>Pause</span></li>
           </ul>
           <p class="help-note">Drag the thumbstick on the left to move. ROLL and RELOAD sit on the right, under your thumb.</p>
         </div>
@@ -333,15 +335,15 @@
 <script src="js/rig.js?v=4"></script>
 <script src="js/arena.js?v=11"></script>
 <script src="js/weapons.js?v=5"></script>
-<script src="js/levels.js?v=3"></script>
-<script src="js/entities.js?v=21"></script>
+<script src="js/levels.js?v=4"></script>
+<script src="js/entities.js?v=22"></script>
 <script src="js/audio.js?v=1"></script>
 <script src="js/storage.js?v=7"></script>
 <script src="js/anim.js?v=3"></script>
 <script src="js/net.js?v=1"></script>
-<script src="js/game.js?v=26"></script>
+<script src="js/game.js?v=27"></script>
 <script src="js/game-patch.js?v=2"></script>
-<script src="js/ui.js?v=12"></script>
-<script src="js/main.js?v=7"></script>
+<script src="js/ui.js?v=13"></script>
+<script src="js/main.js?v=8"></script>
 </body>
 </html>

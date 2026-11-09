@@ -337,6 +337,16 @@
     if (ZH.onDamage) ZH.onDamage(world, z, dmg);
     z.hp -= dmg;
     z.hurtFlash = 0.2;
+    /* damage number: the hit proves itself in the world, not only on the bar */
+    if (world.floaters && world.floaters.length < 70) {
+      world.floaters.push({
+        text: String(Math.max(1, Math.round(dmg))),
+        x: z.x + rand(-6, 6), y: z.y - (z.boss ? 62 : 34),
+        vy: -46, life: 0.62, max: 0.62,
+        size: z.boss ? 20 : 14,
+        color: z.boss || z.miniboss ? '#ffd166' : '#ffe9a8'
+      });
+    }
     /* impact sparks: on pale hospital tile, blue canal stone and rainy
        rooftops a tracer alone can vanish. A short bright burst at the body
        proves the round connected in every district. */
@@ -363,6 +373,18 @@
           r: rand(7, 14) * (z.boss ? 2.2 : 1),
           rot: rand(0, TAU), alpha: 0.42
         });
+      }
+      /* blood spray on death: a corpse should not simply pop out of view */
+      if (world.particles && world.particles.length < 220) {
+        var bursts = z.boss ? 14 : 6;
+        for (var bp = 0; bp < bursts; bp++) {
+          world.particles.push({
+            x: z.x + rand(-5, 5), y: z.y + rand(-10, 2),
+            vx: rand(-140, 140), vy: rand(-180, -20), grav: 260,
+            life: rand(0.24, 0.48), max: 0.48, size: rand(1.6, 3.4),
+            color: 'rgba(150,26,20,0.85)'
+          });
+        }
       }
       if (z.coins || z.boss) {
         world.pickups.push({ type: 'coin', x: z.x + rand(-8, 8), y: z.y + rand(-8, 8), life: 12, value: z.coins || 5 });
