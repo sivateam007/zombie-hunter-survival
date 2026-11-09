@@ -1,5 +1,5 @@
 /*
- * Zombie Hunter: Survival — character rig
+ * Meow Zombie Hunter — character rig
  * ------------------------------------------------------------
  * Every human character in the game is drawn from a small bone rig.
  * Limbs are solved with two-bone inverse kinematics every frame, so the
@@ -52,6 +52,7 @@ window.ZH = window.ZH || {};
 
   /* player-selectable survivor palettes, layered over HUNTER */
   var CHARACTER_PALETTES = {
+    meow:    { coat: '#3a3348', coatLit: '#524a68', coatDark: '#211d2c', vest: '#5c4a63', accent: '#ff8fd0', accentDark: '#b0577f' },
     ranger:  { coat: '#3d4a2a', coatLit: '#5c6d3e', coatDark: '#242d18', vest: '#6b5a36', accent: '#d7a13a', accentDark: '#8f6a1e' },
     medic:   { coat: '#2b4548', coatLit: '#406064', coatDark: '#172829', vest: '#3d5c5c', accent: '#58d6c0', accentDark: '#2f8c7c' },
     scrapper:{ coat: '#4a3a2c', coatLit: '#66513d', coatDark: '#2a2118', vest: '#6a5138', accent: '#c78cff', accentDark: '#7a4fa3' },

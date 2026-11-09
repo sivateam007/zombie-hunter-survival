@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------
- * Zombie Hunter: Survival — weapons, supplies and coin skills
+ * Meow Zombie Hunter — weapons, supplies and coin skills
  *
  * Original implementation written for this project. The catalogue holds 20
  * base weapons; each one evolves at level 6 once its matching supply is owned.

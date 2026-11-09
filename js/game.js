@@ -1,5 +1,5 @@
 /*
- * Zombie Hunter: Survival — Vampire Survivors style engine
+ * Meow Zombie Hunter — Vampire Survivors style engine
  * Move = aim direction, all weapons auto-fire
  */
 window.ZH = window.ZH || {};
@@ -118,7 +118,8 @@ window.ZH = window.ZH || {};
        permanent skills have set the run's base values */
     this.character = 'hunter';
     if (save.character && ZH.CHARACTER_BY_ID && ZH.CHARACTER_BY_ID[save.character] &&
-        (save.character === 'hunter' || (save.characters || []).indexOf(save.character) !== -1)) {
+        (save.character === 'hunter' || ZH.CHARACTER_BY_ID[save.character].free ||
+         (save.characters || []).indexOf(save.character) !== -1)) {
       this.character = save.character;
     }
     if (ZH.applyCharacter) ZH.applyCharacter(this.player, this.character);
@@ -218,6 +219,36 @@ window.ZH = window.ZH || {};
       var c = this.traffic[i];
       c.x += c.vx * dt;
       c.y += c.vy * dt;
+      /* running cars plough through the horde; every roadkill discharges a
+         little life back into the hunter, and the splash is visible */
+      if (this.zombies && this.zombies.length) {
+        for (var zi = this.zombies.length - 1; zi >= 0; zi--) {
+          var zz = this.zombies[zi];
+          if (zz.dead || zz.boss) continue;
+          var cdx = zz.x - c.x, cdy = zz.y - c.y;
+          if (cdx * cdx + cdy * cdy > 46 * 46) continue;
+          if (zz._roadT != null && this.t - zz._roadT < 0.5) continue;
+          zz._roadT = this.t;
+          if (ZH.damageEnemy) ZH.damageEnemy(this, zz, (zz.maxHp || 50) * 1.4);
+          if (this.particles.length < 240) {
+            for (var ci = 0; ci < 5; ci++) {
+              this.particles.push({
+                x: zz.x, y: zz.y, vx: rand(-160, 160), vy: rand(-180, -30),
+                grav: 300, life: rand(0.2, 0.45), max: 0.45, size: rand(1.5, 3),
+                color: 'rgba(160,28,22,0.9)'
+              });
+            }
+          }
+          var lh = this.player;
+          if (lh && !lh.dead && lh.hp < lh.maxHp) {
+            lh.hp = Math.min(lh.maxHp, lh.hp + 2);
+            this.floaters.push({
+              text: '+2', x: zz.x, y: zz.y - 26, vy: -40,
+              life: 0.7, max: 0.7, size: 13, color: '#ff9ad5'
+            });
+          }
+        }
+      }
       var dx = c.x - p.x, dy = c.y - p.y;
       if (dx * dx + dy * dy > 1800 * 1800) this.traffic.splice(i, 1);
     }
@@ -1232,6 +1263,30 @@ window.ZH = window.ZH || {};
             ctx.lineTo(jx, jy + 26 + flick);
             ctx.closePath(); ctx.fill();
           }
+          ctx.restore();
+        }
+        /* MEOW hunter: cat ears and a swishing tail over the rig */
+        if (e.character === 'meow') {
+          var earF = e.facing || 1;
+          ctx.save();
+          ctx.translate(e.x, e.y - (e.jetLift || 0));
+          ctx.fillStyle = '#3a3348';
+          ctx.strokeStyle = 'rgba(255,143,208,0.8)';
+          ctx.lineWidth = 1.3;
+          for (var ear = -1; ear <= 1; ear += 2) {
+            ctx.beginPath();
+            ctx.moveTo(ear * 4.4, -44);
+            ctx.lineTo(ear * 9.4, -57);
+            ctx.lineTo(ear * 11.6, -42);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+          }
+          var swish = Math.sin((this.t || 0) * 6) * 7;
+          ctx.strokeStyle = '#4a4160';
+          ctx.lineWidth = 4.4; ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(-earF * 7, -14);
+          ctx.quadraticCurveTo(-earF * 26, -16 + swish, -earF * 30, -34 + swish);
+          ctx.stroke();
           ctx.restore();
         }
         ZH.Rig.draw(ctx, {

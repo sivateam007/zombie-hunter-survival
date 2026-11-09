@@ -1,5 +1,5 @@
 /*
- * Zombie Hunter: Survival — leaderboard client
+ * Meow Zombie Hunter — leaderboard client
  * Talks to the little Node service in /server. Every call degrades to an
  * offline answer so the game is fully playable on a flat file host.
  */

@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------
- * Zombie Hunter: Survival — arena art
+ * Meow Zombie Hunter — arena art
  *
  * A large open-world city built from a grid of city blocks and
  * streets. The base surface + decorations are pre-baked into screen
@@ -63,26 +63,38 @@ window.ZH = window.ZH || {};
     subway:  { name: 'Metro Interchange',   base: '#2c3036', fog: 'rgba(34,40,48,0.58)', ambient: 'ash',   lamp: '#c8fff0' },
     warehouse:{name: 'Freight Yards',       base: '#312f2a', fog: 'rgba(48,42,34,0.52)', ambient: 'dust',  lamp: '#ffd080' },
     park:    { name: 'Overgrown Park',      base: '#283428', fog: 'rgba(30,42,34,0.48)', ambient: 'ash',   lamp: '#e8ffb0' },
-    canal:   { name: 'Canal Quarter',       base: '#263034', fog: 'rgba(30,46,52,0.55)', ambient: 'rain',  lamp: '#b8e8ff' }
+    canal:   { name: 'Canal Quarter',       base: '#263034', fog: 'rgba(30,46,52,0.55)', ambient: 'rain',  lamp: '#b8e8ff' },
+    arcade:  { name: 'Neon Arcade',         base: '#302a3a', fog: 'rgba(48,32,58,0.52)', ambient: 'dust',  lamp: '#ff9ad5' },
+    foundry: { name: 'Iron Foundry',        base: '#362b22', fog: 'rgba(62,38,22,0.55)', ambient: 'ash',   lamp: '#ffb070' },
+    cathedral:{name: 'Old Cathedral',       base: '#2e2b36', fog: 'rgba(42,38,56,0.55)', ambient: 'dust',  lamp: '#dcd0ff' },
+    skyline: { name: 'Skyline Heights',     base: '#232838', fog: 'rgba(26,34,52,0.58)', ambient: 'rain',  lamp: '#9ec8ff' },
+    greenhouse:{name:'Glass Gardens',       base: '#293528', fog: 'rgba(32,48,36,0.5)',  ambient: 'dust',  lamp: '#c8ffb0' },
+    boneyard:{ name: 'The Boneyard',        base: '#2f2c27', fog: 'rgba(48,42,32,0.55)', ambient: 'ash',   lamp: '#ffe9c0' }
   };
 
   /* Districts that can border one another. A mall may flow into downtown or
      a metro station, never into a street with parked cars, so walking out of
      a district changes the scenery without breaking it. */
   var NEIGHBORS = {
-    street: ['downtown', 'suburb', 'docks'],
-    factory: ['warehouse', 'docks', 'street'],
-    hospital: ['downtown', 'subway', 'mall'],
-    downtown: ['street', 'mall', 'subway', 'rooftop'],
-    docks: ['warehouse', 'canal', 'street'],
-    suburb: ['park', 'street', 'canal'],
+    street: ['downtown', 'suburb', 'docks', 'boneyard'],
+    factory: ['warehouse', 'docks', 'street', 'foundry'],
+    hospital: ['downtown', 'subway', 'mall', 'cathedral'],
+    downtown: ['street', 'mall', 'subway', 'rooftop', 'skyline', 'arcade'],
+    docks: ['warehouse', 'canal', 'street', 'boneyard'],
+    suburb: ['park', 'street', 'canal', 'greenhouse'],
     airport: ['warehouse', 'downtown', 'street'],
-    rooftop: ['downtown', 'hospital'],
-    mall: ['downtown', 'subway', 'hospital'],
-    subway: ['downtown', 'mall', 'hospital'],
-    warehouse: ['factory', 'docks', 'airport'],
-    park: ['suburb', 'canal'],
-    canal: ['docks', 'park', 'suburb']
+    rooftop: ['downtown', 'hospital', 'skyline'],
+    mall: ['downtown', 'subway', 'hospital', 'arcade'],
+    subway: ['downtown', 'mall', 'hospital', 'cathedral'],
+    warehouse: ['factory', 'docks', 'airport', 'foundry'],
+    park: ['suburb', 'canal', 'greenhouse'],
+    canal: ['docks', 'park', 'suburb', 'greenhouse'],
+    arcade: ['mall', 'downtown', 'subway'],
+    foundry: ['factory', 'warehouse', 'docks'],
+    cathedral: ['hospital', 'subway', 'downtown'],
+    skyline: ['downtown', 'rooftop', 'mall'],
+    greenhouse: ['park', 'suburb', 'canal'],
+    boneyard: ['docks', 'warehouse', 'street']
   };
 
   /* world dimensions + tile constants */
@@ -1002,7 +1014,11 @@ window.ZH = window.ZH || {};
     var BASE = {
       street: streetBase, factory: concreteBase, hospital: hospitalBase, rooftop: roofBase,
       downtown: downtownBase, docks: docksBase, suburb: suburbBase, airport: airportBase,
-      mall: mallBase, subway: subwayBase, warehouse: warehouseBase, park: parkBase, canal: canalBase
+      mall: mallBase, subway: subwayBase, warehouse: warehouseBase, park: parkBase, canal: canalBase,
+      /* six new districts reuse the proven surface painters, so they keep the
+         same density and props while reading as different places */
+      arcade: mallBase, foundry: concreteBase, cathedral: hospitalBase,
+      skyline: downtownBase, greenhouse: parkBase, boneyard: streetBase
     };
     (BASE[fn] || roofBase)(ctx, CHUNK, CHUNK, ox, oy, rnd);
 

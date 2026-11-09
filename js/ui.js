@@ -1,5 +1,5 @@
 /*
- * Zombie Hunter: Survival — interface
+ * Meow Zombie Hunter — interface
  * DOM panels + anime.js motion. The canvas owns the world; everything here
  * is chrome: menus, shop, briefing, results, leaderboard and the live HUD.
  */
@@ -99,6 +99,12 @@ window.ZH = window.ZH || {};
       this.updateMenuStats();
       this.renderShop();
       ZH.Anim.staggerIn($('screen-menu'), '[data-anim]');
+      /* anime.js: the title settles, then breathes gently behind the menu */
+      if (window.anime) {
+        anime.remove('.logo, .logo span');
+        anime({ targets: '.logo', translateY: [12, 0], opacity: [0, 1], duration: 620, easing: 'easeOutCubic' });
+        anime({ targets: '.logo span', scale: [1.05, 1], duration: 1600, direction: 'alternate', loop: true, easing: 'easeInOutSine' });
+      }
       this.bindMenuButtons(opts);
       this.renderMenuWeaponPick(opts);
     },
@@ -706,7 +712,7 @@ window.ZH = window.ZH || {};
       var selected = save.character || 'hunter';
       grid.innerHTML = '';
       (ZH.CHARACTERS || []).forEach(function (ch) {
-        var has = owned.indexOf(ch.id) !== -1;
+        var has = owned.indexOf(ch.id) !== -1 || !!ch.free;
         var isOn = selected === ch.id;
         var div = document.createElement('div');
         div.className = 'character-card' + (has ? ' is-owned' : '') + (isOn ? ' is-selected' : '');

@@ -1,5 +1,5 @@
 /*
- * Zombie Hunter: Survival — enemy roster + simulation
+ * Meow Zombie Hunter — enemy roster + simulation
  *
  * The enemy roster is this project's own table, tuned for the same genre
  * feel (walkers, runners, brutes, ranged, minibosses). Every number below is
@@ -337,6 +337,34 @@
     if (ZH.onDamage) ZH.onDamage(world, z, dmg);
     z.hp -= dmg;
     z.hurtFlash = 0.2;
+    /* life discharge: a share of every hit flows back into the hunter, with
+       a pink siphon burst once enough has accumulated to be worth showing */
+    var sip = world.player;
+    if (sip && !sip.dead && sip.hp != null && sip.maxHp) {
+      var frac = (ZH.LIFESTEAL && ZH.LIFESTEAL.frac) || 0.03;
+      var gain = Math.min((ZH.LIFESTEAL && ZH.LIFESTEAL.max) || 2.5, dmg * frac);
+      if (gain > 0.02 && sip.hp < sip.maxHp) {
+        sip.hp = Math.min(sip.maxHp, sip.hp + gain);
+        world._siphon = (world._siphon || 0) + gain;
+        if (world._siphon >= 1.5 && world.floaters && world.floaters.length < 70) {
+          world.floaters.push({
+            text: '+' + Math.round(world._siphon), x: sip.x + rand(-5, 5),
+            y: sip.y - 44, vy: -40, life: 0.7, max: 0.7, size: 13,
+            color: '#ff9ad5'
+          });
+          if (world.particles && world.particles.length < 240) {
+            for (var lf = 0; lf < 3; lf++) {
+              world.particles.push({
+                x: sip.x + rand(-8, 8), y: sip.y + rand(-20, 4),
+                vx: rand(-40, 40), vy: rand(-70, -20), life: 0.4, max: 0.4,
+                size: rand(1.4, 2.6), color: 'rgba(255,150,205,0.9)'
+              });
+            }
+          }
+          world._siphon = 0;
+        }
+      }
+    }
     /* damage number: the hit proves itself in the world, not only on the bar */
     if (world.floaters && world.floaters.length < 70) {
       world.floaters.push({

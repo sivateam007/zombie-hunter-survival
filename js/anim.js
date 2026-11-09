@@ -1,5 +1,5 @@
 /*
- * Zombie Hunter: Survival — motion
+ * Meow Zombie Hunter — motion
  * anime.js drives every screen change, card stagger, count-up, banner and
  * button response. Canvas effects keep their own light tweening because
  * they run at world scale, but all UI motion funnels through here.

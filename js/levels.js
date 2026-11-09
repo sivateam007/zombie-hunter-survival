@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------
- * Zombie Hunter: Survival — mission data
+ * Meow Zombie Hunter — mission data
  *
  * Sixteen hand-authored stages for this build. Every wave lists its enemy,
  * feed frequency, concurrent cap, total cap, start time and duration:

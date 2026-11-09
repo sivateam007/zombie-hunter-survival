@@ -1,5 +1,5 @@
 /*
- * Zombie Hunter: Survival — audio
+ * Meow Zombie Hunter — audio
  * Everything is synthesised at runtime with WebAudio: no sound files,
  * no licences. A low drone + wind bed plays underneath the action.
  */

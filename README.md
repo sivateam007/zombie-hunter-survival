@@ -1,6 +1,6 @@
-# Zombie Hunter: Survival 🧟
+# Meow Zombie Hunter 🐱
 
-A complete top-down survival shooter in the classic horde-survivor genre:
+A cat-eared top-down survival shooter in the classic horde-survivor genre:
 nine chapters, sixteen hand-authored missions, boss fights, endless night, a permanent upgrade
 economy and a persistent leaderboard.
 
@@ -14,7 +14,7 @@ card stagger, count-up and banner.
 ![missions](https://img.shields.io/badge/missions-16-ffb347)
 ![boss types](https://img.shields.io/badge/boss%20types-6-e0492f)
 ![weapons](https://img.shields.io/badge/weapons-20-9be15d)
-![districts](https://img.shields.io/badge/districts-13-6da8ff)
+![districts](https://img.shields.io/badge/districts-19-6da8ff)
 ![deps](https://img.shields.io/badge/npm%20dependencies-0-8d9793)
 
 ---

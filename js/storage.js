@@ -1,5 +1,5 @@
 /*
- * Zombie Hunter: Survival — save data
+ * Meow Zombie Hunter — save data
  * One JSON blob in localStorage. Everything degrades gracefully when
  * storage is unavailable (private mode, embedded webviews).
  */
@@ -36,6 +36,7 @@ window.ZH = window.ZH || {};
      multipliers applied once at the start of a run. */
   ZH.CHARACTERS = ZH.CHARACTERS || [
     { id: 'hunter',  name: 'ASH HUNTER',  tag: 'BALANCED',           desc: 'The last ranger. No bonus, no penalty.', price: 0,    hp: 1,    speed: 1,    damage: 1,    scrap: 1,    coat: '#33402f', accent: '#c0472f' },
+    { id: 'meow',    name: 'MEOW HUNTER', tag: 'LIFE DISCHARGE',     desc: 'Cat ears, nine lives. Every hit siphons vitality back.', price: 0, hp: 1, speed: 1.06, damage: 1, scrap: 1, free: true, coat: '#3a3348', accent: '#ff8fd0' },
     { id: 'ranger',  name: 'DUNE RANGER', tag: '+12% MOVE SPEED',    desc: 'Long strides. Slips through alleys fast.', price: 1500, hp: 1,    speed: 1.12, damage: 1,    scrap: 1,    coat: '#3d4a2a', accent: '#d7a13a' },
     { id: 'medic',   name: 'FIELD MEDIC', tag: '+25% MAX VITALS',    desc: 'A bigger health pool for the long waves.', price: 2600, hp: 1.25, speed: 1,    damage: 1,    scrap: 1,    coat: '#2b4548', accent: '#58d6c0' },
     { id: 'scrapper',name: 'SCRAP BARON', tag: '+25% SCRAP',         desc: 'Every corpse pays a little better.', price: 3600, hp: 1,    speed: 1,    damage: 1,    scrap: 1.25, coat: '#4a3a2c', accent: '#c78cff' },
@@ -176,8 +177,10 @@ window.ZH = window.ZH || {};
   }
 
   function selectCharacter(id) {
-    if (!ZH.CHARACTER_BY_ID[id]) return { ok: false, reason: 'unknown' };
-    if (!hasCharacter(id)) return { ok: false, reason: 'locked' };
+    var pick = ZH.CHARACTER_BY_ID[id];
+    if (!pick) return { ok: false, reason: 'unknown' };
+    /* starter survivors are free: the cat is equipable without a purchase */
+    if (!hasCharacter(id) && !pick.free) return { ok: false, reason: 'locked' };
     save.character = id;
     persist();
     return { ok: true, character: id };
