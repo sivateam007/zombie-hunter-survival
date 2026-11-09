@@ -620,10 +620,10 @@
       rewards: [26000,52000,84000],
       waves: cityWaves({
         ladder: [
-          { enemy:"cop", freq:"LOW", max:14 },
-          { enemy:"assault2", freq:"LOW", max:14 },
-          { enemy:"reptile", freq:"HI", max:34 },
-          { enemy:"tower2", freq:"LOW", max:12 },
+          { enemy:"cop", freq:"MID", max:22 },
+          { enemy:"assault2", freq:"MID", max:22 },
+          { enemy:"reptile", freq:"HI", max:36 },
+          { enemy:"tower2", freq:"MID", max:20 },
           { enemy:"miniboss_soldier", freq:"LOW", max:1 }
         ],
         bosses: ["boss_soldier", "boss_tower", "boss_dragon"], zone: 6144
@@ -652,8 +652,8 @@
         ladder: [
           { enemy:"zombieD", freq:"MID", max:36 },
           { enemy:"spider2", freq:"MID", max:32 },
-          { enemy:"manager", freq:"LOW", max:14 },
-          { enemy:"tower1", freq:"LOW", max:14 },
+          { enemy:"manager", freq:"MID", max:20 },
+          { enemy:"tower1", freq:"MID", max:20 },
           { enemy:"miniboss_tower", freq:"LOW", max:1 }
         ],
         bosses: ["boss_tower", "boss_dragon", "boss_soldier", "boss_mutant"], zone: 7168
@@ -666,7 +666,7 @@
       waves: cityWaves({
         ladder: [
           { enemy:"reptile", freq:"HI", max:38 },
-          { enemy:"assault1", freq:"LOW", max:14 },
+          { enemy:"assault1", freq:"MID", max:20 },
           { enemy:"zombieA", freq:"MID", max:36 },
           { enemy:"miniboss_fighter", freq:"LOW", max:1 },
           { enemy:"toxic1", freq:"MID", max:32 }
