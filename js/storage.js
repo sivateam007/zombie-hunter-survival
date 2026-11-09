@@ -57,7 +57,20 @@ window.ZH = window.ZH || {};
     { id: 'medic',   name: 'FIELD MEDIC', tag: '+25% MAX VITALS',    desc: 'A bigger health pool for the long waves.', price: 2600, hp: 1.25, speed: 1,    damage: 1,    scrap: 1,    coat: '#2b4548', accent: '#58d6c0' },
     { id: 'scrapper',name: 'SCRAP BARON', tag: '+25% SCRAP',         desc: 'Every corpse pays a little better.', price: 3600, hp: 1,    speed: 1,    damage: 1,    scrap: 1.25, coat: '#4a3a2c', accent: '#c78cff' },
     { id: 'berserk', name: 'BERSERKER',   tag: '+15% DAMAGE',        desc: 'Hit first. Ask questions never.', price: 5200, hp: 1,    speed: 1,    damage: 1.15, scrap: 1,    coat: '#4a2626', accent: '#ff6b4a' },
-    { id: 'ghost',   name: 'NIGHT GHOST', tag: '+8% SPEED / +10% HP',desc: 'Quiet boots and a stubborn pulse.', price: 7000, hp: 1.10, speed: 1.08, damage: 1,    scrap: 1,    coat: '#2c3446', accent: '#8fd6ff' }
+    { id: 'ghost',   name: 'NIGHT GHOST', tag: '+8% SPEED / +10% HP',desc: 'Quiet boots and a stubborn pulse.', price: 7000, hp: 1.10, speed: 1.08, damage: 1,    scrap: 1,    coat: '#2c3446', accent: '#8fd6ff' },
+    /* ---- prestige roster: serious scrap, serious stats ---- */
+    { id: 'warden',  name: 'THE WARDEN',  tag: '+30% HP / +20% DMG', desc: 'Runs the block. Nothing gets past.', price: 30000, hp: 1.3, speed: 1, damage: 1.2, scrap: 1.1, coat: '#2f3a3d', accent: '#8fd9ff' },
+    { id: 'paladin', name: 'PALADIN',     tag: '+45% HP / LIFESTEAL 5%', desc: 'Armoured in faith, healed by the fight.', price: 38000, hp: 1.45, speed: 0.98, damage: 1.1, scrap: 1, lifesteal: 0.05, coat: '#3a3a46', accent: '#ffe9a8' },
+    { id: 'spectre', name: 'SPECTRE',     tag: '+50% SPEED',           desc: 'Gone before the shot lands.', price: 44000, hp: 0.95, speed: 1.5, damage: 1.1, scrap: 1, coat: '#242c34', accent: '#b9ffef' },
+    { id: 'tyrant',  name: 'TYRANT',      tag: '+45% DMG / +25% HP',   desc: 'Rules by attrition.', price: 50000, hp: 1.25, speed: 1, damage: 1.45, scrap: 1.1, coat: '#3d2a2a', accent: '#ff5a3d' },
+    { id: 'oracle',  name: 'THE ORACLE',  tag: '+90% SCRAP',           desc: 'Sees where every corpse pays out.', price: 56000, hp: 1.05, speed: 1.05, damage: 1.05, scrap: 1.9, coat: '#2e2a3f', accent: '#c9a8ff' },
+    { id: 'samurai', name: 'SAMURAI',     tag: '+35% DMG / +30% HP',   desc: 'One clean cut per wave.', price: 64000, hp: 1.3, speed: 1.04, damage: 1.35, scrap: 1, coat: '#33262b', accent: '#ff5252' },
+    { id: 'valkyrie',name: 'VALKYRIE',    tag: '+30% SPD / +30% DMG',  desc: 'Picks the horde, then picks it apart.', price: 72000, hp: 1.1, speed: 1.3, damage: 1.3, scrap: 1.05, coat: '#2b3340', accent: '#a8d8ff' },
+    { id: 'monk',    name: 'IRON MONK',   tag: '+65% MAX VITALS',      desc: 'Breathes. Endures. Still standing.', price: 82000, hp: 1.65, speed: 1.02, damage: 1.05, scrap: 1, coat: '#3a3227', accent: '#ffcf70' },
+    { id: 'huntress',name: 'HUNTRESS',    tag: '+45% DMG / +20% SPD',  desc: 'Never misses the second shot.', price: 95000, hp: 1.05, speed: 1.2, damage: 1.45, scrap: 1.1, coat: '#2c3a2c', accent: '#b6ff7a' },
+    { id: 'empress', name: 'THE EMPRESS', tag: '+35% TO EVERYTHING',   desc: 'Owns the district, the scrap, the night.', price: 115000, hp: 1.35, speed: 1.35, damage: 1.35, scrap: 1.35, coat: '#3a2838', accent: '#ffa8d8' },
+    { id: 'seraph',  name: 'SERAPH',      tag: '+30% ALL / LIFESTEAL 10%', desc: 'Wings of scrap, halo of teeth.', price: 150000, hp: 1.3, speed: 1.3, damage: 1.3, scrap: 1.3, lifesteal: 0.1, coat: '#3a3830', accent: '#fff4c2' },
+    { id: 'overlord',name: 'VOID OVERLORD', tag: '+60% HP / +60% DMG', desc: 'The horde is staff. You are management.', price: 250000, hp: 1.6, speed: 1.1, damage: 1.6, scrap: 1.2, coat: '#241f2e', accent: '#c45cff' }
   ];
   /* six permanent store upgrades, kept across every run and every survivor.
      Separate from the original six coin skills so GameSnacks parity holds. */
@@ -103,6 +116,7 @@ window.ZH = window.ZH || {};
     p.speed = Math.round((p.speed || 300) * (ch.speed || 1));
     if (p.attack) p.attack = Math.round(p.attack * (ch.damage || 1) * 100) / 100;
     p.fortune = Math.round((p.fortune || 0) * (ch.scrap || 1) * 100) / 100;
+    if (ch.lifesteal) p.lifesteal = Math.max(p.lifesteal || 0, ch.lifesteal);
     return p;
   };
 
@@ -247,7 +261,7 @@ window.ZH = window.ZH || {};
     var field = lv('field');
     if (field) p.fieldBonus = field * 4;
     var sip = lv('siphon');
-    if (sip) p.lifesteal = 0.03 + sip * 0.01;
+    if (sip) p.lifesteal = Math.max(p.lifesteal || 0, 0.03 + sip * 0.01);
     return p;
   };
 

@@ -73,7 +73,19 @@ window.ZH = window.ZH || {};
     medic:   { coat: '#2b4548', coatLit: '#406064', coatDark: '#172829', vest: '#3d5c5c', accent: '#58d6c0', accentDark: '#2f8c7c' },
     scrapper:{ coat: '#4a3a2c', coatLit: '#66513d', coatDark: '#2a2118', vest: '#6a5138', accent: '#c78cff', accentDark: '#7a4fa3' },
     berserk: { coat: '#4a2626', coatLit: '#673838', coatDark: '#2a1414', vest: '#654030', accent: '#ff6b4a', accentDark: '#a63b26' },
-    ghost:   { coat: '#2c3446', coatLit: '#414d63', coatDark: '#171d27', vest: '#48546b', accent: '#8fd6ff', accentDark: '#4b7e9e' }
+    ghost:   { coat: '#2c3446', coatLit: '#414d63', coatDark: '#171d27', vest: '#48546b', accent: '#8fd6ff', accentDark: '#4b7e9e' },
+    warden:  { coat: '#2f3a3d', coatLit: '#435256', coatDark: '#182022', vest: '#3c4a4e', accent: '#8fd9ff', accentDark: '#4c8aa3' },
+    paladin: { coat: '#3a3a46', coatLit: '#525263', coatDark: '#1e1e26', vest: '#4a4a58', accent: '#ffe9a8', accentDark: '#a38f4e' },
+    spectre: { coat: '#242c34', coatLit: '#35404b', coatDark: '#12171c', vest: '#2c3640', accent: '#b9ffef', accentDark: '#5a9c8a' },
+    tyrant:  { coat: '#3d2a2a', coatLit: '#563b3b', coatDark: '#1f1414', vest: '#4a3232', accent: '#ff5a3d', accentDark: '#a33922' },
+    oracle:  { coat: '#2e2a3f', coatLit: '#443d5c', coatDark: '#171522', vest: '#3a3350', accent: '#c9a8ff', accentDark: '#6f4fa3' },
+    samurai: { coat: '#33262b', coatLit: '#4a3740', coatDark: '#1a1316', vest: '#3f2f36', accent: '#ff5252', accentDark: '#a32b2b' },
+    valkyrie:{ coat: '#2b3340', coatLit: '#3e4a5e', coatDark: '#151b24', vest: '#354252', accent: '#a8d8ff', accentDark: '#4e7ea3' },
+    monk:    { coat: '#3a3227', coatLit: '#524734', coatDark: '#201b14', vest: '#463c2d', accent: '#ffcf70', accentDark: '#a3842c' },
+    huntress:{ coat: '#2c3a2c', coatLit: '#3f523f', coatDark: '#161f16', vest: '#364536', accent: '#b6ff7a', accentDark: '#5c9c3d' },
+    empress: { coat: '#3a2838', coatLit: '#544052', coatDark: '#1e141c', vest: '#473246', accent: '#ffa8d8', accentDark: '#a34e7e' },
+    seraph:  { coat: '#3a3830', coatLit: '#555247', coatDark: '#1f1e19', vest: '#474437', accent: '#fff4c2', accentDark: '#a3974e' },
+    overlord:{ coat: '#241f2e', coatLit: '#352e45', coatDark: '#110e16', vest: '#2c2638', accent: '#c45cff', accentDark: '#6f29a3' }
   };
 
   function paletteFor(id) {
