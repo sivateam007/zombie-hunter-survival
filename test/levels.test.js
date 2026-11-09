@@ -5,9 +5,9 @@ const { ZH } = require('./_setup');
 
 const themes = Object.keys(ZH.Arena.THEMES);
 const MULTIPLIERS = [1, 1.5, 2.25, 3.5, 4.75, 7.61, 17.09, 11.42, 13.5, 18.4, 24.6, 31.2,
-  38.5, 46.0, 55.0, 66.0];
+  38.5, 46.0, 55.0, 66.0, 78.0, 92.0, 108.0, 126.0];
 
-assert.strictEqual(ZH.STAGES.length, 16, 'the campaign has sixteen stages');
+assert.strictEqual(ZH.STAGES.length, 20, 'the campaign has twenty stages');
 assert.strictEqual(ZH.LEVELS, ZH.STAGES, 'ZH.LEVELS aliases the stage table');
 assert.strictEqual(ZH.TIME_LEVEL_COMPLETED, 1200, 'a stage is won at 20 minutes');
 
@@ -41,7 +41,11 @@ assert.deepStrictEqual(ZH.STAGES.map((s) => s.rewards), [
   [16000, 32000, 52000],
   [18000, 36000, 58000],
   [20000, 40000, 65000],
-  [24000, 48000, 78000]
+  [24000, 48000, 78000],
+  [26000, 52000, 84000],
+  [28000, 56000, 90000],
+  [30000, 60000, 98000],
+  [34000, 68000, 110000]
 ], 'rewards scale with the campaign');
 
 /* every wave reference resolves, and the timings are seconds, not ms */
@@ -125,4 +129,4 @@ assert.strictEqual(ZH.priceForSkill(1), 0, 'the first level is free');
 assert.strictEqual(ZH.priceForSkill(2), 1000, 'then 1,000');
 assert.strictEqual(ZH.priceForSkill(30), 435000, 'top price 435,000');
 
-console.log('levels.test.js ✓ sixteen stages, 20 weapons, 14 supplies, six coin skills');
+console.log('levels.test.js ✓ twenty stages, 20 weapons, 14 supplies, six coin skills');

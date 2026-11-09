@@ -984,6 +984,17 @@ window.ZH = window.ZH || {};
       if (ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('TREASURE', 'Grab it to pick a skill');
     }
 
+    /* gift drops: a wrapped box that pays out a random reward */
+    this.giftT = (this.giftT || 0) + dt;
+    if (this.giftT > 40 && this.pickups.length < 26) {
+      this.giftT = 0;
+      var ga = rand(0, TAU), gd = rand(150, 330);
+      this.pickups.push({
+        type: 'gift', x: p.x + Math.cos(ga) * gd, y: p.y + Math.sin(ga) * gd, life: 45
+      });
+      if (ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('GIFT DROP', 'Something is wrapped nearby');
+    }
+
     this.updateCamera(dt);
     this.pushHud();
 
@@ -1180,6 +1191,21 @@ window.ZH = window.ZH || {};
         ctx.strokeRect(-16, -14, 32, 26);
         ctx.fillStyle = '#ffd166';
         ctx.fillRect(-3, -8, 6, 8);
+      } else if (pk.type === 'gift') {
+        var gglow = ctx.createRadialGradient(0, 0, 3, 0, 0, 40);
+        gglow.addColorStop(0, 'rgba(255,214,120,0.42)');
+        gglow.addColorStop(1, 'rgba(255,214,120,0)');
+        ctx.fillStyle = gglow;
+        ctx.beginPath(); ctx.arc(0, 0, 40, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#2f8c7c';
+        ctx.fillRect(-14, -12, 28, 24);
+        ctx.fillStyle = '#ffd166';
+        ctx.fillRect(-3.5, -12, 7, 24);
+        ctx.fillRect(-14, -3.5, 28, 7);
+        ctx.strokeStyle = '#12332e'; ctx.lineWidth = 2;
+        ctx.strokeRect(-14, -12, 28, 24);
+        ctx.fillStyle = '#ffe9a8';
+        ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(6, -20); ctx.lineTo(-6, -20); ctx.closePath(); ctx.fill();
       } else if (pk.type === 'item') {
         var look = ZH.itemLook ? ZH.itemLook(pk.itemId) : ['?', '#ccc'];
         var ig = ctx.createRadialGradient(0, 0, 3, 0, 0, 34);

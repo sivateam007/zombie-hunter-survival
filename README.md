@@ -1,7 +1,7 @@
 # Meow Zombie Hunter 🐱
 
 A cat-eared top-down survival shooter in the classic horde-survivor genre:
-nine chapters, sixteen hand-authored missions, boss fights, endless night, a permanent upgrade
+eleven chapters, twenty hand-authored missions, boss fights, endless night, a permanent upgrade
 economy and a persistent leaderboard.
 
 Everything you see is drawn at runtime — **no sprite sheets, no image downloads, no licensed art**.
@@ -10,11 +10,11 @@ kinematics each frame, so walking, aiming, reloading, reeling from a hit and dyi
 animation rather than frame swaps. [anime.js](js/vendor/anime.min.js) drives every screen change,
 card stagger, count-up and banner.
 
-![chapters](https://img.shields.io/badge/chapters-9-ffb347)
-![missions](https://img.shields.io/badge/missions-16-ffb347)
+![chapters](https://img.shields.io/badge/chapters-11-ffb347)
+![missions](https://img.shields.io/badge/missions-20-ffb347)
 ![boss types](https://img.shields.io/badge/boss%20types-6-e0492f)
 ![weapons](https://img.shields.io/badge/weapons-20-9be15d)
-![districts](https://img.shields.io/badge/districts-19-6da8ff)
+![districts](https://img.shields.io/badge/districts-25-6da8ff)
 ![deps](https://img.shields.io/badge/npm%20dependencies-0-8d9793)
 
 ---
@@ -52,7 +52,7 @@ and every input source can be blended mid-run without switching modes.
 
 ## What is in the game
 
-**Nine chapters, sixteen missions, six boss types**
+**Eleven chapters, twenty missions, six boss types**
 
 | # | Chapter | District | Boss zone |
 | --- | --- | --- | --- |

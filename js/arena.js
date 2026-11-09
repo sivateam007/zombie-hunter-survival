@@ -69,32 +69,44 @@ window.ZH = window.ZH || {};
     cathedral:{name: 'Old Cathedral',       base: '#2e2b36', fog: 'rgba(42,38,56,0.55)', ambient: 'dust',  lamp: '#dcd0ff' },
     skyline: { name: 'Skyline Heights',     base: '#232838', fog: 'rgba(26,34,52,0.58)', ambient: 'rain',  lamp: '#9ec8ff' },
     greenhouse:{name:'Glass Gardens',       base: '#293528', fog: 'rgba(32,48,36,0.5)',  ambient: 'dust',  lamp: '#c8ffb0' },
-    boneyard:{ name: 'The Boneyard',        base: '#2f2c27', fog: 'rgba(48,42,32,0.55)', ambient: 'ash',   lamp: '#ffe9c0' }
+    boneyard:{ name: 'The Boneyard',        base: '#2f2c27', fog: 'rgba(48,42,32,0.55)', ambient: 'ash',   lamp: '#ffe9c0' },
+    overpass:{ name: 'Skyway Bridges',      base: '#232f38', fog: 'rgba(28,44,56,0.55)', ambient: 'rain',  lamp: '#b8e8ff' },
+    snowfield:{name: 'Frozen Fields',       base: '#31383c', fog: 'rgba(58,70,80,0.45)', ambient: 'ash',   lamp: '#e6f4ff' },
+    quarry:  { name: 'Old Quarry',          base: '#33322f', fog: 'rgba(52,48,42,0.55)', ambient: 'dust',  lamp: '#ffd9a0' },
+    junkyard:{ name: 'Rust Junkyard',       base: '#312b26', fog: 'rgba(54,40,30,0.55)', ambient: 'ash',   lamp: '#ffc978' },
+    boardwalk:{name: 'Sunset Boardwalk',    base: '#2d3038', fog: 'rgba(48,40,50,0.5)',  ambient: 'dust',  lamp: '#ffb0a0' },
+    observatory:{name:'Hill Observatory',   base: '#282c3a', fog: 'rgba(34,40,60,0.58)', ambient: 'rain',  lamp: '#cfd8ff' }
   };
 
   /* Districts that can border one another. A mall may flow into downtown or
      a metro station, never into a street with parked cars, so walking out of
      a district changes the scenery without breaking it. */
   var NEIGHBORS = {
-    street: ['downtown', 'suburb', 'docks', 'boneyard'],
-    factory: ['warehouse', 'docks', 'street', 'foundry'],
+    street: ['downtown', 'suburb', 'docks', 'boneyard', 'quarry'],
+    factory: ['warehouse', 'docks', 'street', 'foundry', 'junkyard'],
     hospital: ['downtown', 'subway', 'mall', 'cathedral'],
     downtown: ['street', 'mall', 'subway', 'rooftop', 'skyline', 'arcade'],
-    docks: ['warehouse', 'canal', 'street', 'boneyard'],
-    suburb: ['park', 'street', 'canal', 'greenhouse'],
-    airport: ['warehouse', 'downtown', 'street'],
-    rooftop: ['downtown', 'hospital', 'skyline'],
+    docks: ['warehouse', 'canal', 'street', 'boneyard', 'boardwalk'],
+    suburb: ['park', 'street', 'canal', 'greenhouse', 'snowfield'],
+    airport: ['warehouse', 'downtown', 'street', 'snowfield'],
+    rooftop: ['downtown', 'hospital', 'skyline', 'observatory'],
     mall: ['downtown', 'subway', 'hospital', 'arcade'],
     subway: ['downtown', 'mall', 'hospital', 'cathedral'],
-    warehouse: ['factory', 'docks', 'airport', 'foundry'],
+    warehouse: ['factory', 'docks', 'airport', 'foundry', 'junkyard'],
     park: ['suburb', 'canal', 'greenhouse'],
-    canal: ['docks', 'park', 'suburb', 'greenhouse'],
+    canal: ['docks', 'park', 'suburb', 'greenhouse', 'overpass'],
     arcade: ['mall', 'downtown', 'subway'],
     foundry: ['factory', 'warehouse', 'docks'],
     cathedral: ['hospital', 'subway', 'downtown'],
     skyline: ['downtown', 'rooftop', 'mall'],
     greenhouse: ['park', 'suburb', 'canal'],
-    boneyard: ['docks', 'warehouse', 'street']
+    boneyard: ['docks', 'warehouse', 'street', 'junkyard'],
+    overpass: ['canal', 'docks', 'skyline'],
+    snowfield: ['suburb', 'airport', 'quarry'],
+    quarry: ['street', 'snowfield', 'junkyard'],
+    junkyard: ['factory', 'warehouse', 'quarry', 'boneyard'],
+    boardwalk: ['docks', 'canal', 'mall'],
+    observatory: ['rooftop', 'skyline', 'cathedral']
   };
 
   /* world dimensions + tile constants */
@@ -427,6 +439,36 @@ window.ZH = window.ZH || {};
       var wx = ox + rr(rnd, 80, w - 80), wy = oy + rr(rnd, 80, h - 80);
       ctx.fillStyle = 'rgba(40,80,100,0.22)';
       ctx.beginPath(); ctx.ellipse(wx, wy, rr(rnd, 28, 55), rr(rnd, 16, 30), rr(rnd, 0, TAU), 0, TAU); ctx.fill();
+    }
+  }
+
+  /* A bridge district: dark water below, long decks crossing it, railings
+     and lamp posts. drawBridge() is the same painter the canal uses. */
+  function overpassBase(ctx, w, h, ox, oy, rnd) {
+    ctx.fillStyle = '#1d2a33'; ctx.fillRect(ox, oy, w, h);
+    for (var r = 0; r < 26; r++) {
+      var wy = oy + rr(rnd, 0, h);
+      ctx.strokeStyle = 'rgba(110,180,210,' + rr(rnd, 0.05, 0.14).toFixed(2) + ')';
+      ctx.lineWidth = rr(rnd, 1, 2.4);
+      ctx.beginPath(); ctx.moveTo(ox, wy); ctx.lineTo(ox + w, wy + rr(rnd, -8, 8)); ctx.stroke();
+    }
+    ctx.fillStyle = '#34383c';
+    ctx.fillRect(ox, oy, w, 150);
+    ctx.fillRect(ox, oy + h - 150, w, 150);
+    ctx.fillStyle = 'rgba(220,220,215,0.35)';
+    for (var d = 0; d < 8; d++) {
+      ctx.fillRect(ox + d * 64 + 20, oy + 72, 34, 5);
+      ctx.fillRect(ox + d * 64 + 20, oy + h - 78, 34, 5);
+    }
+    for (var b = 0; b < 3; b++) {
+      drawBridge(ctx, ox + (b + 0.5) * (w / 3) - 34, oy + 40, 68, h - 80);
+    }
+    for (var l = 0; l < 4; l++) {
+      var lx = ox + (l + 0.5) * (w / 4);
+      ctx.fillStyle = '#1f2225'; ctx.fillRect(lx, oy + 138, 5, 26);
+      ctx.fillStyle = '#ffd9a0'; ctx.beginPath(); ctx.arc(lx + 2, oy + 138, 3.4, 0, TAU); ctx.fill();
+      ctx.fillRect(lx, oy + h - 164, 5, 26);
+      ctx.beginPath(); ctx.arc(lx + 2, oy + h - 164, 3.4, 0, TAU); ctx.fill();
     }
   }
 
@@ -1018,7 +1060,9 @@ window.ZH = window.ZH || {};
       /* six new districts reuse the proven surface painters, so they keep the
          same density and props while reading as different places */
       arcade: mallBase, foundry: concreteBase, cathedral: hospitalBase,
-      skyline: downtownBase, greenhouse: parkBase, boneyard: streetBase
+      skyline: downtownBase, greenhouse: parkBase, boneyard: streetBase,
+      overpass: overpassBase, snowfield: airportBase, quarry: concreteBase,
+      junkyard: warehouseBase, boardwalk: docksBase, observatory: hospitalBase
     };
     (BASE[fn] || roofBase)(ctx, CHUNK, CHUNK, ox, oy, rnd);
 

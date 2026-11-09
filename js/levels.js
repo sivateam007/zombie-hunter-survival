@@ -31,7 +31,9 @@
     { id: 6, name: 'DOWNTOWN', stages: [8, 9] },
     { id: 7, name: 'THE OUTSKIRTS', stages: [10, 11] },
     { id: 8, name: 'THE UNDERCITY', stages: [12, 13] },
-    { id: 9, name: 'THE LAST MILE', stages: [14, 15] }
+    { id: 9, name: 'THE LAST MILE', stages: [14, 15] },
+    { id: 10, name: 'THE SKYWAY', stages: [16, 17] },
+    { id: 11, name: 'THE FAR EDGE', stages: [18, 19] }
   ];
   ZH.CHAPTERS = CHAPTERS;
 
@@ -610,6 +612,66 @@
           { enemy:"miniboss_tower", freq:"LOW", max:1 }
         ],
         bosses: ["boss_soldier", "boss_mutant", "boss_dragon", "boss_tower", "boss_spider", "boss_reptile"], zone: 6144
+      })
+    },
+    {
+      id: 16, name: "Stage 17", tile: "overpass", bg: "bg17", map: "map_lv17.png",
+      multiplier: 78.0, timeToTreasure: 15,
+      rewards: [26000,52000,84000],
+      waves: cityWaves({
+        ladder: [
+          { enemy:"cop", freq:"LOW", max:14 },
+          { enemy:"assault2", freq:"LOW", max:14 },
+          { enemy:"reptile", freq:"HI", max:34 },
+          { enemy:"tower2", freq:"LOW", max:12 },
+          { enemy:"miniboss_soldier", freq:"LOW", max:1 }
+        ],
+        bosses: ["boss_soldier", "boss_tower", "boss_dragon"], zone: 6144
+      })
+    },
+    {
+      id: 17, name: "Stage 18", tile: "snowfield", bg: "bg18", map: "map_lv18.png",
+      multiplier: 92.0, timeToTreasure: 15,
+      rewards: [28000,56000,90000],
+      waves: cityWaves({
+        ladder: [
+          { enemy:"slug", freq:"MID", max:24 },
+          { enemy:"builder", freq:"MID", max:32 },
+          { enemy:"bat", freq:"HI", max:36 },
+          { enemy:"toxic2", freq:"MID", max:30 },
+          { enemy:"miniboss_toxic2", freq:"LOW", max:1 }
+        ],
+        bosses: ["boss_mutant", "boss_spider", "boss_reptile"], zone: 6656
+      })
+    },
+    {
+      id: 18, name: "Stage 19", tile: "quarry", bg: "bg19", map: "map_lv19.png",
+      multiplier: 108.0, timeToTreasure: 15,
+      rewards: [30000,60000,98000],
+      waves: cityWaves({
+        ladder: [
+          { enemy:"zombieD", freq:"MID", max:36 },
+          { enemy:"spider2", freq:"MID", max:32 },
+          { enemy:"manager", freq:"LOW", max:14 },
+          { enemy:"tower1", freq:"LOW", max:14 },
+          { enemy:"miniboss_tower", freq:"LOW", max:1 }
+        ],
+        bosses: ["boss_tower", "boss_dragon", "boss_soldier", "boss_mutant"], zone: 7168
+      })
+    },
+    {
+      id: 19, name: "Stage 20", tile: "boardwalk", bg: "bg20", map: "map_lv20.png",
+      multiplier: 126.0, timeToTreasure: 15,
+      rewards: [34000,68000,110000],
+      waves: cityWaves({
+        ladder: [
+          { enemy:"reptile", freq:"HI", max:38 },
+          { enemy:"assault1", freq:"LOW", max:14 },
+          { enemy:"zombieA", freq:"MID", max:36 },
+          { enemy:"miniboss_fighter", freq:"LOW", max:1 },
+          { enemy:"toxic1", freq:"MID", max:32 }
+        ],
+        bosses: ["boss_soldier", "boss_tower", "boss_spider", "boss_reptile", "boss_dragon", "boss_mutant"], zone: 8192
       })
     }
   ];

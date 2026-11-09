@@ -1327,6 +1327,44 @@
           }
         } else if (pk.type === 'medikit') {
           p.hp = Math.min(p.maxHp, p.hp + (pk.value || 50));
+        } else if (pk.type === 'gift') {
+          /* a wrapped box pays out one random reward */
+          var roll = Math.random();
+          var label = '', colour = '#ffd166';
+          if (roll < 0.38) {
+            var cashG = 250 + Math.floor(Math.random() * 550);
+            world.coins = (world.coins || 0) + cashG;
+            label = '+' + cashG + ' SCRAP';
+          } else if (roll < 0.58) {
+            p.hp = Math.min(p.maxHp, p.hp + 35);
+            label = '+35 HP'; colour = '#9be15d';
+          } else if (roll < 0.76) {
+            if (ZH.openShield) ZH.openShield(p, ZH.SHIELD.force);
+            label = 'FORCE FIELD'; colour = '#9ed8ff';
+          } else if (roll < 0.92) {
+            p.magnet = (p.magnet || 0) + 0.5;
+            label = 'MAGNET +50%'; colour = '#ff9ad5';
+          } else {
+            world.coins = (world.coins || 0) + 1000;
+            label = 'JACKPOT +1000'; colour = '#ffe066';
+          }
+          if (world.floaters && world.floaters.length < 70) {
+            world.floaters.push({
+              text: label, x: pk.x, y: pk.y - 22, vy: -42,
+              life: 1, max: 1, size: 15, color: colour
+            });
+          }
+          if (world.particles && world.particles.length < 240) {
+            var giftCols = ['rgba(255,214,120,0.95)', 'rgba(155,225,93,0.9)', 'rgba(255,143,208,0.9)'];
+            for (var gp = 0; gp < 12; gp++) {
+              world.particles.push({
+                x: pk.x, y: pk.y, vx: rand(-150, 150), vy: rand(-200, -20),
+                grav: 240, life: rand(0.3, 0.6), max: 0.6, size: rand(1.6, 3.2),
+                color: giftCols[gp % 3]
+              });
+            }
+          }
+          if (ZH.Audio) ZH.Audio.play('buy');
         } else if (pk.type === 'item') {
           if (pk.item === 'supply' && ZH.SUPPLIES[pk.itemId]) {
             if (!p.supplies) p.supplies = {};
