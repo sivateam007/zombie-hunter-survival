@@ -606,6 +606,7 @@ window.ZH = window.ZH || {};
     /* ---- desktop steering: WASD / arrows, mouse aim, Space-to-fly ----
        The touch stick stays the primary control on a phone, but a desktop
        player should never have to drag a thumbstick with a mouse. */
+    var canvas = self.canvas || document.getElementById('game');
     var MOVE_CODES = {
       KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down',
       KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right'

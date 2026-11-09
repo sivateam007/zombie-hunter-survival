@@ -22,23 +22,9 @@
       ['gun'];
     ZH.UI.showMenu({ unblockedWeaponIds: unblockedWeaponIds });
 
-    // After the player finishes picking a weapon, start the first stage.
-    // The menu UI now renders the weapon picker immediately, so we can
-    // start the game right away if a weapon is already chosen.
-    var save = ZH.Save && ZH.Save.get ? ZH.Save.get() : null;
-    var startOnMenu = function () {
-      if (ZH.Game && ZH.Game.autoStart) {
-        ZH.Game.autoStart(0);
-      }
-    };
-    if (save && save.currentWeapon) {
-      startOnMenu();
-    } else {
-      window.addEventListener('pointerdown', function once() {
-        window.removeEventListener('pointerdown', once);
-        startOnMenu();
-      }, { once: true });
-    }
+    // The menu is the front door: campaign stage list, endless night, arsenal
+    // and leaderboard all live there. A run starts only when the player asks
+    // for one (CAMPAIGN -> stage -> DEPLOY), so the list is never skipped.
 
     /* unlock audio on the first gesture */
     var unlock = function () {
