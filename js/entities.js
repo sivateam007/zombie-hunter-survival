@@ -89,7 +89,7 @@
     force: 60,       /* a shield cell arms the full 60 s force field          */
     hit: 3.0,        /* after a bite or an enemy round                       */
     revive: 3.0,     /* after spending scrap to get back up                  */
-    levelup: 1.2,    /* while the level-up cards are on screen               */
+    levelup: 120,    /* a 2-minute force field while choosing a level-up card */
     dash: 0.35,      /* during a combat roll                                 */
     dashExit: 0.12   /* the instant after the roll ends                      */
   };
@@ -1297,7 +1297,7 @@
   function updatePickups(list, dt, world) {
     var p = world.player;
     var a = attribsOf(p);
-    var pickupRange = 150 * (1 + (a.pickup_range_bonus || 0));
+    var pickupRange = 150 * (1 + (a.pickup_range_bonus || 0)) * (1 + (p.magnet || 0));
     for (var i = list.length - 1; i >= 0; i--) {
       var pk = list[i];
       pk.life -= dt;

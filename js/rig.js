@@ -53,6 +53,8 @@ window.ZH = window.ZH || {};
   /* player-selectable survivor palettes, layered over HUNTER */
   var CHARACTER_PALETTES = {
     meow:    { coat: '#3a3348', coatLit: '#524a68', coatDark: '#211d2c', vest: '#5c4a63', accent: '#ff8fd0', accentDark: '#b0577f' },
+    ninja:   { coat: '#22262e', coatLit: '#333a45', coatDark: '#11141a', vest: '#2b3038', accent: '#7dffd4', accentDark: '#3d9c82' },
+    titan:   { coat: '#3b3430', coatLit: '#554b44', coatDark: '#221e1b', vest: '#4d423a', accent: '#ffb347', accentDark: '#a86f22' },
     ranger:  { coat: '#3d4a2a', coatLit: '#5c6d3e', coatDark: '#242d18', vest: '#6b5a36', accent: '#d7a13a', accentDark: '#8f6a1e' },
     medic:   { coat: '#2b4548', coatLit: '#406064', coatDark: '#172829', vest: '#3d5c5c', accent: '#58d6c0', accentDark: '#2f8c7c' },
     scrapper:{ coat: '#4a3a2c', coatLit: '#66513d', coatDark: '#2a2118', vest: '#6a5138', accent: '#c78cff', accentDark: '#7a4fa3' },

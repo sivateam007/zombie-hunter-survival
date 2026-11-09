@@ -37,6 +37,8 @@ window.ZH = window.ZH || {};
   ZH.CHARACTERS = ZH.CHARACTERS || [
     { id: 'hunter',  name: 'ASH HUNTER',  tag: 'BALANCED',           desc: 'The last ranger. No bonus, no penalty.', price: 0,    hp: 1,    speed: 1,    damage: 1,    scrap: 1,    coat: '#33402f', accent: '#c0472f' },
     { id: 'meow',    name: 'MEOW HUNTER', tag: 'LIFE DISCHARGE',     desc: 'Cat ears, nine lives. Every hit siphons vitality back.', price: 0, hp: 1, speed: 1.06, damage: 1, scrap: 1, free: true, coat: '#3a3348', accent: '#ff8fd0' },
+    { id: 'ninja',   name: 'SILENT NINJA', tag: '+22% MOVE SPEED',     desc: 'Fastest boots in the city. Never gets surrounded.', price: 4200, hp: 0.9, speed: 1.22, damage: 1, scrap: 1, coat: '#22262e', accent: '#7dffd4' },
+    { id: 'titan',   name: 'IRON TITAN',   tag: '+45% MAX VITALS',     desc: 'Slow, enormous, impossible to bite down.', price: 6400, hp: 1.45, speed: 0.92, damage: 1.05, scrap: 1, coat: '#3b3430', accent: '#ffb347' },
     { id: 'ranger',  name: 'DUNE RANGER', tag: '+12% MOVE SPEED',    desc: 'Long strides. Slips through alleys fast.', price: 1500, hp: 1,    speed: 1.12, damage: 1,    scrap: 1,    coat: '#3d4a2a', accent: '#d7a13a' },
     { id: 'medic',   name: 'FIELD MEDIC', tag: '+25% MAX VITALS',    desc: 'A bigger health pool for the long waves.', price: 2600, hp: 1.25, speed: 1,    damage: 1,    scrap: 1,    coat: '#2b4548', accent: '#58d6c0' },
     { id: 'scrapper',name: 'SCRAP BARON', tag: '+25% SCRAP',         desc: 'Every corpse pays a little better.', price: 3600, hp: 1,    speed: 1,    damage: 1,    scrap: 1.25, coat: '#4a3a2c', accent: '#c78cff' },

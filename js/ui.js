@@ -271,6 +271,9 @@ window.ZH = window.ZH || {};
         });
       });
 
+      // 4. magnet: permanently widens pickup reach for this run
+      pool.push({ type: 'magnet', id: 'magnet', name: 'MAGNET +50%', desc: 'Every pickup on the ground is dragged to you.' });
+
       var picked = [];
       for (var n = 0; n < 3 && pool.length > 0; n++) {
         var idx = Math.floor(Math.random() * pool.length);
@@ -364,7 +367,9 @@ window.ZH = window.ZH || {};
         var ctype = card.dataset.type || 'weapon';
         var save = ZH.Save.get();
         if (btn.dataset.act === 'take') {
-          if (ctype === 'upgrade') {
+          if (ctype === 'magnet') {
+            if (G && G.player) G.player.magnet = (G.player.magnet || 0) + 0.5;
+          } else if (ctype === 'upgrade') {
             // level up the weapon already in the run
             if (G && G.player) {
               if (!G.player.weapons) G.player.weapons = {};
@@ -823,6 +828,10 @@ window.ZH = window.ZH || {};
       if (last.hp !== hpShown || last.maxHp !== maxHp) {
         e.hpFill.style.width = (hpFrac * 100).toFixed(1) + '%';
         e.hpText.textContent = hpShown + '/' + maxHp;
+        if (window.anime && hpShown < last.hp) {
+          anime.remove('#hp-text');
+          anime({ targets: '#hp-text', scale: [1.22, 1], duration: 220, easing: 'easeOutQuad' });
+        }
         e.hpBar.classList.toggle('is-low', hpFrac < 0.35);
         last.hp = hpShown;
         last.maxHp = maxHp;

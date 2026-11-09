@@ -1307,3 +1307,7 @@ body.in-game .mobile-controls { display: flex; }
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* desktop: the keyboard replaces the thumbstick */
+@media (pointer: fine) { #joystick { display: none !important; } }
+body.kb #joystick { display: none !important; }

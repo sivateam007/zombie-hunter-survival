@@ -219,6 +219,31 @@ window.ZH = window.ZH || {};
       var c = this.traffic[i];
       c.x += c.vx * dt;
       c.y += c.vy * dt;
+      /* a running car hurts the hunter too: crash damage with a short
+         cooldown, ignored while any force field is up */
+      var pdx = p.x - c.x, pdy = p.y - c.y;
+      var crash = 44;
+      if (pdx * pdx + pdy * pdy < crash * crash && !(p.shieldT > 0)) {
+        var cdT = c._crashT != null ? this.t - c._crashT : 99;
+        if (cdT > 1.2) {
+          c._crashT = this.t;
+          p.hp = Math.max(0, p.hp - 14);
+          if (ZH.openShield) ZH.openShield(p, ZH.SHIELD.hit);
+          this.shake = Math.max(this.shake, 9);
+          this.floaters.push({
+            text: '-14', x: p.x, y: p.y - 46, vy: -46,
+            life: 0.8, max: 0.8, size: 16, color: '#ff6b6b'
+          });
+          for (var cp = 0; cp < 8; cp++) {
+            this.particles.push({
+              x: p.x, y: p.y + 4, vx: rand(-170, 170), vy: rand(-140, 40),
+              life: 0.4, max: 0.4, size: rand(1.6, 3.2),
+              color: 'rgba(255,150,70,0.9)'
+            });
+          }
+          if (ZH.Audio) ZH.Audio.play('error');
+        }
+      }
       /* running cars plough through the horde; every roadkill discharges a
          little life back into the hunter, and the splash is visible */
       if (this.zombies && this.zombies.length) {
