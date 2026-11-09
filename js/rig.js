@@ -319,47 +319,126 @@ window.ZH = window.ZH || {};
 
   /* ---------------------------- hunter heads ---------------------------- */
   function hunterHead(ctx, pal, p, opts) {
+    var b = p.bulk;
     var hx = 0, hy = -49;
+    /* scarf knotted at the throat, tail hanging down the chest */
+    var flutter = Math.sin(p.t * 8) * p.moving * 2.2;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = pal.accentDark;
+    ctx.lineWidth = 4.0 * b;
+    ctx.beginPath();
+    ctx.moveTo(-3.4 * b, -44.0);
+    ctx.quadraticCurveTo(-5.8 * b, -41 + flutter * 0.4, -5.8 * b - p.moving * 1.6, -36.4 + flutter);
+    ctx.stroke();
+    ctx.strokeStyle = pal.accent;
+    ctx.lineWidth = 2.4 * b;
+    ctx.beginPath();
+    ctx.moveTo(-3.4 * b, -44.0);
+    ctx.quadraticCurveTo(-5.6 * b, -41 + flutter * 0.4, -5.6 * b - p.moving * 1.6, -36.8 + flutter);
+    ctx.stroke();
+    ctx.restore();
     /* neck */
-    capsule(ctx, 0, -45, -0.6, -48, 5.2 * p.bulk, pal.skinShade);
-    /* face */
-    circle(ctx, hx, hy, 6.4 * p.bulk, pal.skin);
-    ctx.fillStyle = pal.skinShade;
+    capsule(ctx, 0, -45.2, -0.8, -47.6, 5.0 * b, pal.skinShade);
+    /* raised jacket collar */
+    ctx.fillStyle = pal.coatDark || pal.coat;
     ctx.beginPath();
-    ctx.arc(hx, hy, 6.4 * p.bulk, 0.15, Math.PI - 0.15);
-    ctx.fill();
-    /* hair / beanie */
-    ctx.fillStyle = pal.hair;
-    ctx.beginPath();
-    ctx.arc(hx, hy - 0.6, 6.5 * p.bulk, Math.PI * 1.02, Math.PI * 2.02);
-    ctx.lineTo(hx - 6.5 * p.bulk, hy - 1.2);
+    ctx.moveTo(-5.3 * b, -45.2);
+    ctx.lineTo(-4.2 * b, -48.3);
+    ctx.lineTo(4.4 * b, -48.3);
+    ctx.lineTo(5.5 * b, -45.2);
     ctx.closePath();
     ctx.fill();
-    /* goggles pushed up */
-    ctx.strokeStyle = pal.metalDark;
-    ctx.lineWidth = 1.6;
+    /* skull + jaw */
+    ctx.fillStyle = pal.skin;
     ctx.beginPath();
-    ctx.moveTo(hx - 5.6 * p.bulk, hy + 0.2);
-    ctx.lineTo(hx + 5.4 * p.bulk, hy + 0.2);
-    ctx.stroke();
-    circle(ctx, hx + 2.6 * p.bulk, hy + 0.2, 1.9, 'rgba(120,190,200,0.9)');
-    circle(ctx, hx - 2.6 * p.bulk, hy + 0.2, 1.7, 'rgba(120,190,200,0.75)');
-    /* eye + brow (front-facing 3/4) */
-    ctx.fillStyle = '#1b1b1b';
-    ctx.beginPath();
-    ctx.ellipse(hx + 3.2 * p.bulk, hy + 4.4, 1.1, 1.5, 0, 0, TAU);
+    ctx.ellipse(hx + 0.5, hy + 1.2, 5.9 * b, 6.4 * b, 0.05, 0, TAU);
     ctx.fill();
-    /* scarf tail flutters with speed */
-    var flutter = Math.sin(p.t * 8) * p.moving * 2.4;
-    ctx.strokeStyle = pal.accent;
-    ctx.lineWidth = 3.4;
-    ctx.lineCap = 'round';
+    ctx.fillStyle = 'rgba(0,0,0,0.13)';
     ctx.beginPath();
-    ctx.moveTo(-2.5, -44);
-    ctx.quadraticCurveTo(-6 - p.moving * 1.6, -43 + flutter * 0.6, -9 - p.moving * 2.4, -40 + flutter);
+    ctx.ellipse(hx + 1.6, hy + 4.8, 4.3 * b, 2.3 * b, 0.12, 0, TAU);
+    ctx.fill();
+    /* helmet shell, lit from the left */
+    var hg = ctx.createLinearGradient(-7 * b, hy - 7, 7 * b, hy);
+    hg.addColorStop(0, shade(pal.hair, 0.22));
+    hg.addColorStop(0.55, pal.hair);
+    hg.addColorStop(1, shade(pal.hair, -0.3));
+    ctx.fillStyle = hg;
+    ctx.beginPath();
+    ctx.arc(hx, hy - 1.2, 6.9 * b, Math.PI * 0.96, Math.PI * 2.04);
+    ctx.lineTo(hx + 6.7 * b, hy - 1.5);
+    ctx.lineTo(hx - 6.7 * b, hy - 1.5);
+    ctx.closePath();
+    ctx.fill();
+    /* helmet brim */
+    ctx.fillStyle = shade(pal.hair, -0.38);
+    roundRect(ctx, hx - 7.4 * b, hy - 2.5, 14.8 * b, 2.1 * b, 1.0 * b);
+    ctx.fill();
+    /* accent stripe over the crown */
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * 0.85;
+    ctx.strokeStyle = pal.accent;
+    ctx.lineWidth = 1.2 * b;
+    ctx.beginPath();
+    ctx.arc(hx, hy - 1.2, 6.9 * b, Math.PI * 1.2, Math.PI * 1.7);
     ctx.stroke();
-    ctx.strokeStyle = pal.accentDark;
-    ctx.lineWidth = 1.4;
+    ctx.restore();
+    /* goggle strap + lenses pushed up on the helmet */
+    ctx.strokeStyle = pal.metalDark;
+    ctx.lineWidth = 1.7 * b;
+    ctx.beginPath();
+    ctx.moveTo(hx - 5.9 * b, hy - 4.1);
+    ctx.lineTo(hx + 5.7 * b, hy - 4.1);
+    ctx.stroke();
+    [-2.4, 2.4].forEach(function (dx) {
+      ctx.fillStyle = 'rgba(140,214,222,0.92)';
+      ctx.beginPath();
+      ctx.ellipse(hx + dx * b, hy - 4.1, 1.75 * b, 1.4 * b, 0, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = pal.metalDark;
+      ctx.lineWidth = 0.85 * b;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.beginPath();
+      ctx.ellipse(hx + dx * b - 0.5 * b, hy - 4.5, 0.5 * b, 0.3 * b, -0.5, 0, TAU);
+      ctx.fill();
+    });
+    /* fabric half-mask over nose and mouth */
+    ctx.fillStyle = 'rgba(26,31,33,0.85)';
+    ctx.beginPath();
+    ctx.moveTo(hx - 4.6 * b, hy + 2.0);
+    ctx.quadraticCurveTo(hx + 0.6, hy + 3.9, hx + 5.0 * b, hy + 1.9);
+    ctx.quadraticCurveTo(hx + 4.4 * b, hy + 6.1, hx + 0.4, hy + 6.7);
+    ctx.quadraticCurveTo(hx - 3.6 * b, hy + 6.1, hx - 4.6 * b, hy + 2.0);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+    ctx.lineWidth = 0.7;
+    ctx.beginPath();
+    ctx.moveTo(hx - 3.4 * b, hy + 3.9);
+    ctx.quadraticCurveTo(hx + 0.6, hy + 5.3, hx + 4.0 * b, hy + 3.7);
+    ctx.stroke();
+    /* eye + brow, tucked just under the brim */
+    ctx.fillStyle = '#171a1a';
+    ctx.beginPath();
+    ctx.ellipse(hx + 3.0 * b, hy + 0.5, 1.15, 1.35, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.beginPath();
+    ctx.arc(hx + 3.4 * b, hy + 0.05, 0.36, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = shade(pal.skinShade, -0.35);
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.moveTo(hx + 1.4 * b, hy - 1.5);
+    ctx.lineTo(hx + 4.8 * b, hy - 1.8);
+    ctx.stroke();
+
+    /* chin strap */
+    ctx.strokeStyle = 'rgba(20,24,26,0.55)';
+    ctx.lineWidth = 0.9;
+    ctx.beginPath();
+    ctx.moveTo(hx - 4.4 * b, hy + 0.6);
+    ctx.quadraticCurveTo(hx, hy + 7.6, hx + 4.4 * b, hy + 0.8);
     ctx.stroke();
   }
 
@@ -687,8 +766,9 @@ window.ZH = window.ZH || {};
       offHand = { x: sup.ex, y: sup.ey, angle: localAim };
 
       /* back arm (drawn first) */
-      capsule(ctx, -shoulderX + 1, shY + 1, sup.jx, sup.jy, 4.9 * bulk, shade(coat, -0.12), 'rgba(0,0,0,0.45)');
-      capsule(ctx, sup.jx, sup.jy, sup.ex, sup.ey, 4.0 * bulk, coatLit, 'rgba(0,0,0,0.35)');
+      capsule(ctx, -shoulderX + 1, shY + 1, sup.jx, sup.jy, 4.4 * bulk, shade(coat, -0.12), 'rgba(0,0,0,0.45)');
+      capsule(ctx, sup.jx, sup.jy, sup.ex, sup.ey, 3.5 * bulk, coatLit, 'rgba(0,0,0,0.35)');
+      circle(ctx, sup.jx, sup.jy, 2.1 * bulk, pal.pad || shade(coatDark, -0.15));
       circle(ctx, sup.ex, sup.ey, 2.5 * bulk, pal.glove || '#232a26');
 
       /* drawTorso after back arm */
@@ -705,20 +785,30 @@ window.ZH = window.ZH || {};
       ctx.fillStyle = shade(pal.vest || coat, -0.14);
       roundRect(ctx, -8.6 * bulk, -25, 3.4, 5, 1.2); ctx.fill();
       roundRect(ctx, 5.2 * bulk, -25, 3.4, 5, 1.2); ctx.fill();
-      ctx.strokeStyle = 'rgba(0,0,0,0.38)';
-      ctx.lineWidth = 2.1; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(-5, -42.5); ctx.lineTo(4.6 * bulk, -30); ctx.stroke();
+      ctx.strokeStyle = shade(pal.strap || coatDark, -0.2);
+      ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-5.2, -43); ctx.lineTo(4.6 * bulk, -30.4); ctx.stroke();
+      ctx.fillStyle = pal.metal;
+      ctx.save();
+      ctx.translate(-0.2, -36.6); ctx.rotate(0.55);
+      roundRect(ctx, -1.5, -1.2, 3.0, 2.4, 0.7); ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = shade(coatDark, -0.1);
+      ctx.beginPath();
+      ctx.ellipse(-5.5 * bulk, -42.4, 3.7 * bulk, 2.5 * bulk, 0.25, 0, TAU);
+      ctx.fill();
       ctx.fillStyle = shade(coatLit, -0.05);
       ctx.beginPath();
-      ctx.ellipse(5.6 * bulk, -42.6, 4.4 * bulk, 3.1 * bulk, -0.25, 0, TAU);
+      ctx.ellipse(5.5 * bulk, -42.6, 3.9 * bulk, 2.7 * bulk, -0.25, 0, TAU);
       ctx.fill();
       ctx.strokeStyle = 'rgba(0,0,0,0.42)'; ctx.lineWidth = 1;
       ctx.stroke();
       ctx.restore();
 
       /* front arm holds the gun */
-      capsule(ctx, shoulderX, shY, main.jx, main.jy, 5.4 * bulk, coat, 'rgba(0,0,0,0.5)');
-      capsule(ctx, main.jx, main.jy, main.ex, main.ey, 4.2 * bulk, coatLit, 'rgba(0,0,0,0.35)');
+      capsule(ctx, shoulderX, shY, main.jx, main.jy, 4.7 * bulk, coat, 'rgba(0,0,0,0.5)');
+      capsule(ctx, main.jx, main.jy, main.ex, main.ey, 3.6 * bulk, coatLit, 'rgba(0,0,0,0.35)');
+      circle(ctx, main.jx, main.jy, 2.2 * bulk, pal.pad || shade(coatDark, -0.15));
       circle(ctx, main.ex, main.ey, 2.6 * bulk, pal.glove || '#232a26');
 
       /* head */
