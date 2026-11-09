@@ -145,7 +145,8 @@ window.ZH = window.ZH || {};
     this.continueCount = 0;
     this.continueOffers = 0;
     this.expToNext = 1000;
-    if (window.ZH && ZH.Anim) ZH.Anim.banner(stage.name, 'SURVIVE 20 MINUTES');
+    if (window.ZH && ZH.Anim) ZH.Anim.banner(stage.name,
+      (this.player.power ? this.player.power.name : 'SURVIVE 20 MINUTES'));
     this.lastTs = performance.now();
   };
 
@@ -928,6 +929,8 @@ window.ZH = window.ZH || {};
     if (ZH.updateProjectiles) ZH.updateProjectiles(this.bullets, dt, this);
     if (ZH.updateProjectiles) ZH.updateProjectiles(this.enemyBullets, dt, this);
     if (ZH.updatePickups) ZH.updatePickups(this.pickups, dt, this);
+    /* survivor power runtime: regeneration and burn ticks */
+    if (ZH.Powers) ZH.Powers.update(this, dt);
 
     // all weapons fire automatically along the aim direction
     this.autoFire(dt);

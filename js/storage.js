@@ -117,6 +117,8 @@ window.ZH = window.ZH || {};
     if (p.attack) p.attack = Math.round(p.attack * (ch.damage || 1) * 100) / 100;
     p.fortune = Math.round((p.fortune || 0) * (ch.scrap || 1) * 100) / 100;
     if (ch.lifesteal) p.lifesteal = Math.max(p.lifesteal || 0, ch.lifesteal);
+    /* every survivor brings one named special power into the run */
+    if (ZH.Powers) ZH.Powers.attach(p, ch.id);
     return p;
   };
 

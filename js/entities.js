@@ -333,10 +333,14 @@
     var frac = (z.boss || z.miniboss) ? ZH.COMBAT.bossHitFrac : ZH.COMBAT.minHitFrac;
     var floor = (z.maxHp || 0) * frac;
     if (!isFinite(dmg) || dmg < floor) dmg = floor;
+    /* survivor power: crits, executes and berserk scale the hit here */
+    if (ZH.Powers) dmg = ZH.Powers.modifyDamage(world, z, dmg);
     /* diagnostics hook: the harness reads the damage that actually lands */
     if (ZH.onDamage) ZH.onDamage(world, z, dmg);
     z.hp -= dmg;
     z.hurtFlash = 0.2;
+    /* survivor power: burn, chain arcs and splash land after the hit */
+    if (ZH.Powers) ZH.Powers.onHit(world, z, dmg);
     /* life discharge: a share of every hit flows back into the hunter, with
        a pink siphon burst once enough has accumulated to be worth showing */
     var sip = world.player;
@@ -392,6 +396,7 @@
       z.dead = true;
       if (world.player) world.player.kills = (world.player.kills || 0) + 1;
       world.score = (world.score || 0) + 10;
+      if (ZH.Powers) ZH.Powers.onKill(world, z);
       // exp gems are the main drop; big enemies always leave scrap too
       world.pickups.push({ type: 'exp', x: z.x, y: z.y, life: 12, value: z.boss ? 40 : 10 });
       /* a dark pool under the body: the street remembers the fight */
@@ -1091,11 +1096,16 @@
           if (!ZH.shielded(p) && !p.jetActive) {
             var a = attribsOf(p);
             var armor = Math.min(0.8, (a.defense || 0) / 100);
-            p.hp -= z.dmg * (1 - armor);
-            ZH.openShield(p, ZH.SHIELD.hit);   /* force field: one window */
-            if (p.hp <= 0) { p.hp = 0; p.dead = true; }
-            world.shake = Math.max(world.shake || 0, 5);
-            if (ZH.Anim && ZH.Anim.hurt) ZH.Anim.hurt();
+            var bite = z.dmg * (1 - armor);
+            /* survivor power: dodge cancels the bite, thorns bites back */
+            if (ZH.Powers) bite = ZH.Powers.onBite(world, z, bite);
+            if (bite > 0) {
+              p.hp -= bite;
+              ZH.openShield(p, ZH.SHIELD.hit);   /* force field: one window */
+              if (p.hp <= 0) { p.hp = 0; p.dead = true; }
+              world.shake = Math.max(world.shake || 0, 5);
+              if (ZH.Anim && ZH.Anim.hurt) ZH.Anim.hurt();
+            }
           }
         }
       }
@@ -1274,11 +1284,15 @@
         if (Math.hypot(p.x - b.x, p.y - b.y) < p.r + b.r) {
           if (!ZH.shielded(p)) {
             var ar = Math.min(0.8, (attribsOf(p).defense || 0) / 100);
-            p.hp -= b.dmg * (1 - ar);
-            ZH.openShield(p, ZH.SHIELD.hit);   /* force field: one window */
-            if (p.hp <= 0) { p.hp = 0; p.dead = true; }
-            world.shake = Math.max(world.shake || 0, 5);
-            if (ZH.Anim && ZH.Anim.hurt) ZH.Anim.hurt();
+            var shot = b.dmg * (1 - ar);
+            if (ZH.Powers) shot = ZH.Powers.onBite(world, null, shot);
+            if (shot > 0) {
+              p.hp -= shot;
+              ZH.openShield(p, ZH.SHIELD.hit);   /* force field: one window */
+              if (p.hp <= 0) { p.hp = 0; p.dead = true; }
+              world.shake = Math.max(world.shake || 0, 5);
+              if (ZH.Anim && ZH.Anim.hurt) ZH.Anim.hurt();
+            }
           }
           list.splice(i, 1);
           continue;

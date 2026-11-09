@@ -873,6 +873,7 @@ p { margin: 0; line-height: 1.5; }
 .char-name { font-size: 13px; font-weight: 800; letter-spacing: 0.05em; }
 .char-tag { font-size: 10px; letter-spacing: 0.1em; color: var(--amber); margin-top: 1px; }
 .char-desc { font-size: 11px; color: var(--dim); margin-top: 3px; line-height: 1.25; }
+.char-power { font-size: 10px; letter-spacing: 0.05em; color: #ffd166; margin-top: 3px; line-height: 1.25; }
 .redeem-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: stretch; }
 .redeem-row .btn { width: auto; }
 .redeem-row input {

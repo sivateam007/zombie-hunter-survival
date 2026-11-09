@@ -725,6 +725,7 @@ window.ZH = window.ZH || {};
         div.innerHTML = '<div class="char-swatch" style="--char-accent:' + ch.accent + ';--char-coat:' + ch.coat + '"></div>' +
           '<div class="char-info"><div class="char-name">' + ch.name + '</div>' +
           '<div class="char-tag">' + ch.tag + '</div>' +
+          '<div class="char-power">⚡ ' + (ZH.Powers && ZH.Powers.get(ch.id) ? ZH.Powers.get(ch.id).name + ' — ' + ZH.Powers.get(ch.id).blurb : 'NO POWER') + '</div>' +
           '<div class="char-desc">' + ch.desc + '</div></div>';
         var btn = document.createElement('button');
         btn.className = 'btn small' + (has ? ' ghost' : '');
