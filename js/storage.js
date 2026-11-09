@@ -45,6 +45,14 @@ window.ZH = window.ZH || {};
     { id: 'vampire', name: 'NIGHT VAMPIRE', tag: 'LIFESTEAL +6%',      desc: 'Bites back, and keeps what it takes.', price: 11800, hp: 1.05, speed: 1.05, damage: 1, scrap: 1, coat: '#2b1f28', accent: '#c04dff' },
     { id: 'brawler', name: 'BRAWLER',      tag: '+30% HP / +10% DMG', desc: 'Walks into the horde on purpose.', price: 13500, hp: 1.3, speed: 0.96, damage: 1.1, scrap: 1, coat: '#332722', accent: '#ff8a4a' },
     { id: 'catlord', name: 'CAT LORD',     tag: '+35% SPEED / +15% HP', desc: 'Nine lives, nine ways to spend them.', price: 15000, hp: 1.15, speed: 1.35, damage: 1.05, scrap: 1.1, coat: '#30283f', accent: '#ffd6f2' },
+    { id: 'neoncat', name: 'NEON CAT',     tag: '+25% SPEED',           desc: 'Runs the rooftops like a stray current.', price: 9000, hp: 1, speed: 1.25, damage: 1, scrap: 1, coat: '#2a2f45', accent: '#5cf2ff' },
+    { id: 'ronin',   name: 'THE RONIN',    tag: '+25% DAMAGE',          desc: 'One blade, no master, many dead.', price: 10500, hp: 1.02, speed: 1.04, damage: 1.25, scrap: 1, coat: '#2b2b30', accent: '#e8e8e8' },
+    { id: 'frost',   name: 'FROSTBITE',    tag: '+40% MAX VITALS',      desc: 'Cold hands, colder blood.', price: 11000, hp: 1.4, speed: 0.98, damage: 1, scrap: 1, coat: '#283a44', accent: '#a8e8ff' },
+    { id: 'ember',   name: 'EMBER',        tag: '+15% DMG / +10% SPD',  desc: 'Leaves a trail of ash behind the horde.', price: 12500, hp: 1.05, speed: 1.1, damage: 1.15, scrap: 1, coat: '#3d2a22', accent: '#ff7a3d' },
+    { id: 'tech',    name: 'THE TECHIE',   tag: '+35% SCRAP',           desc: 'Strips every corpse for parts.', price: 13000, hp: 1, speed: 1.04, damage: 1.05, scrap: 1.35, coat: '#2b333a', accent: '#7dffd4' },
+    { id: 'warlock', name: 'WARLOCK',      tag: 'LIFESTEAL +8%',        desc: 'Trades blood for blood.', price: 14500, hp: 1.08, speed: 1.05, damage: 1.1, scrap: 1, coat: '#2c2136', accent: '#9b5cff' },
+    { id: 'queen',   name: 'HIVE QUEEN',   tag: '+20% HP / +20% DMG',   desc: 'The horde answers to her.', price: 18000, hp: 1.2, speed: 1, damage: 1.2, scrap: 1.1, coat: '#3a2d33', accent: '#ff5c9e' },
+    { id: 'ghostcat',name: 'GHOST CAT',    tag: '+40% SPEED',           desc: 'You hear the meow after the claws.', price: 20000, hp: 0.95, speed: 1.4, damage: 1.1, scrap: 1, coat: '#2a3038', accent: '#d8f6ff' },
     { id: 'ranger',  name: 'DUNE RANGER', tag: '+12% MOVE SPEED',    desc: 'Long strides. Slips through alleys fast.', price: 1500, hp: 1,    speed: 1.12, damage: 1,    scrap: 1,    coat: '#3d4a2a', accent: '#d7a13a' },
     { id: 'medic',   name: 'FIELD MEDIC', tag: '+25% MAX VITALS',    desc: 'A bigger health pool for the long waves.', price: 2600, hp: 1.25, speed: 1,    damage: 1,    scrap: 1,    coat: '#2b4548', accent: '#58d6c0' },
     { id: 'scrapper',name: 'SCRAP BARON', tag: '+25% SCRAP',         desc: 'Every corpse pays a little better.', price: 3600, hp: 1,    speed: 1,    damage: 1,    scrap: 1.25, coat: '#4a3a2c', accent: '#c78cff' },
@@ -70,7 +78,15 @@ window.ZH = window.ZH || {};
     SIVA1000:   { coins: 1000, label: 'SIVA DROP' },
     ZOMBIEBUFF: { coins: 1500, label: 'ZOMBIE BUFF' },
     GAMESNACKS: { coins: 2000, character: 'ranger', label: 'GAME SNACKS PACK' },
-    FORCEFIELD: { coins: 600,  label: 'FORCE FIELD SUPPLY' }
+    FORCEFIELD: { coins: 600,  label: 'FORCE FIELD SUPPLY' },
+    MEOWCAT:    { coins: 1500, character: 'catlord', label: 'MEOW CAT PACK' },
+    NEON2026:   { coins: 1200, label: 'NEON DROP' },
+    GIFTBOX:    { coins: 800,  label: 'GIFT BOX' },
+    BRIDGE100:  { coins: 1000, label: 'SKYWAY CACHE' },
+    CITY25:     { coins: 2500, label: 'CITY TOUR' },
+    DAILY777:   { coins: 700,  label: 'LUCKY SEVEN' },
+    STOREUP:    { coins: 900,  label: 'STORE CREDIT' },
+    SURVIVOR:   { coins: 1800, character: 'scout', label: 'SCOUT RECRUIT' }
   };
 
   /** apply the selected survivor once, after the six skills have been set */
@@ -261,9 +277,24 @@ window.ZH = window.ZH || {};
   function claimDaily() {
     if (!dailyAvailable()) return { ok: false, reason: 'claimed' };
     save.lastDaily = today();
-    save.coins += 350;
+    /* the daily crate: 350 scrap guaranteed, plus one random bonus */
+    var bonus = 0, kind = 'scrap', label = 'DAILY DROP';
+    var roll = Math.random();
+    if (roll < 0.42) {
+      bonus = 200 + Math.floor(Math.random() * 600);
+      label = 'DAILY CRATE';
+    } else if (roll < 0.62) {
+      save.upgrades.magnet = Math.min(5, (save.upgrades.magnet || 0) + 1);
+      kind = 'upgrade'; label = 'FREE MAGNET LEVEL';
+    } else if (roll < 0.82) {
+      bonus = 1200; label = 'BIG CRATE';
+    } else {
+      save.upgrades.vitality = Math.min(8, (save.upgrades.vitality || 0) + 1);
+      kind = 'upgrade'; label = 'FREE VITALITY LEVEL';
+    }
+    save.coins += 350 + bonus;
     persist();
-    return { ok: true, coins: 350 };
+    return { ok: true, coins: 350 + bonus, bonus: bonus, kind: kind, label: label };
   }
 
   function redeem(code) {

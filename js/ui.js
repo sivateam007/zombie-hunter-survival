@@ -821,9 +821,9 @@ window.ZH = window.ZH || {};
         ZH.Audio.play && ZH.Audio.play('error');
         return;
       }
-      if (msg) msg.textContent = '+350 SCRAP · DAILY DROP CLAIMED';
+      if (msg) msg.textContent = '+' + r.coins + ' SCRAP · ' + (r.label || 'DAILY DROP') + ' CLAIMED';
       ZH.Audio.play && ZH.Audio.play('buy');
-      ZH.Anim.toast && ZH.Anim.toast('+350 SCRAP', 'good');
+      ZH.Anim.toast && ZH.Anim.toast('+' + r.coins + ' · ' + (r.label || 'DAILY'), 'good');
       UI.renderShop();
     },
 
