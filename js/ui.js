@@ -706,6 +706,7 @@ window.ZH = window.ZH || {};
         ug.appendChild(div);
       });
       this.renderCharacters(save);
+      this.renderStore(save);
     },
 
     /* safehouse survivor cards: buy, then equip. Palettes come from rig.js. */
@@ -755,6 +756,41 @@ window.ZH = window.ZH || {};
         daily.disabled = !avail;
         daily.textContent = avail ? 'CLAIM DAILY +350' : 'CLAIMED TODAY';
       }
+    },
+
+    /* permanent store upgrades: bought once, active in every run */
+    renderStore: function (save) {
+      var grid = $('store-grid');
+      if (!grid) return;
+      save = save || ZH.Save.get();
+      grid.innerHTML = '';
+      (ZH.STORE_UPGRADES || []).forEach(function (u) {
+        var lvl = ZH.Save.upgradeLevel(u.id);
+        var max = u.max || 5;
+        var full = lvl >= max;
+        var price = ZH.Save.upgradePrice(u.id, lvl + 1);
+        var div = document.createElement('div');
+        div.className = 'upgrade' + (full ? ' is-max' : '');
+        div.innerHTML = '<div class="u-name">' + u.name + ' LV ' + lvl + '</div>' +
+          '<div class="u-val">' + u.desc(lvl + (full ? 0 : 1)) + '</div>' +
+          '<button class="btn small' + (full ? ' ghost' : '') + '">' +
+          (full ? 'MAX' : price.toLocaleString()) + '</button>';
+        var btn = div.querySelector('button');
+        if (!full) {
+          btn.addEventListener('click', function () {
+            ZH.Audio.play && ZH.Audio.play('click');
+            var r = ZH.Save.buyUpgrade(u.id);
+            if (!r.ok) {
+              ZH.Anim.toast && ZH.Anim.toast(r.reason === 'coins' ? 'Not enough scrap' : 'Maxed out', 'error');
+              ZH.Audio.play && ZH.Audio.play('error');
+              return;
+            }
+            ZH.Anim.toast && ZH.Anim.toast(u.name + ' -> LV ' + r.level, 'good');
+            UI.renderShop();
+          });
+        }
+        grid.appendChild(div);
+      });
     },
 
     redeemCode: function () {

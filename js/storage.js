@@ -39,12 +39,29 @@ window.ZH = window.ZH || {};
     { id: 'meow',    name: 'MEOW HUNTER', tag: 'LIFE DISCHARGE',     desc: 'Cat ears, nine lives. Every hit siphons vitality back.', price: 0, hp: 1, speed: 1.06, damage: 1, scrap: 1, free: true, coat: '#3a3348', accent: '#ff8fd0' },
     { id: 'ninja',   name: 'SILENT NINJA', tag: '+22% MOVE SPEED',     desc: 'Fastest boots in the city. Never gets surrounded.', price: 4200, hp: 0.9, speed: 1.22, damage: 1, scrap: 1, coat: '#22262e', accent: '#7dffd4' },
     { id: 'titan',   name: 'IRON TITAN',   tag: '+45% MAX VITALS',     desc: 'Slow, enormous, impossible to bite down.', price: 6400, hp: 1.45, speed: 0.92, damage: 1.05, scrap: 1, coat: '#3b3430', accent: '#ffb347' },
+    { id: 'reaper',  name: 'REAPER',       tag: '+20% DAMAGE',        desc: 'Every round lands heavier.', price: 8400, hp: 1, speed: 1.02, damage: 1.2, scrap: 1, coat: '#2a2430', accent: '#ff4d4d' },
+    { id: 'scout',   name: 'SCATTER SCOUT', tag: '+30% SPEED / -10% HP', desc: 'First in, first out.', price: 7600, hp: 0.9, speed: 1.3, damage: 1, scrap: 1, coat: '#2f3d36', accent: '#ffe066' },
+    { id: 'banker',  name: 'THE BANKER',   tag: '+50% SCRAP',         desc: 'Even the dead pay interest.', price: 9800, hp: 1, speed: 1, damage: 1, scrap: 1.5, coat: '#3a3226', accent: '#ffd166' },
+    { id: 'vampire', name: 'NIGHT VAMPIRE', tag: 'LIFESTEAL +6%',      desc: 'Bites back, and keeps what it takes.', price: 11800, hp: 1.05, speed: 1.05, damage: 1, scrap: 1, coat: '#2b1f28', accent: '#c04dff' },
+    { id: 'brawler', name: 'BRAWLER',      tag: '+30% HP / +10% DMG', desc: 'Walks into the horde on purpose.', price: 13500, hp: 1.3, speed: 0.96, damage: 1.1, scrap: 1, coat: '#332722', accent: '#ff8a4a' },
+    { id: 'catlord', name: 'CAT LORD',     tag: '+35% SPEED / +15% HP', desc: 'Nine lives, nine ways to spend them.', price: 15000, hp: 1.15, speed: 1.35, damage: 1.05, scrap: 1.1, coat: '#30283f', accent: '#ffd6f2' },
     { id: 'ranger',  name: 'DUNE RANGER', tag: '+12% MOVE SPEED',    desc: 'Long strides. Slips through alleys fast.', price: 1500, hp: 1,    speed: 1.12, damage: 1,    scrap: 1,    coat: '#3d4a2a', accent: '#d7a13a' },
     { id: 'medic',   name: 'FIELD MEDIC', tag: '+25% MAX VITALS',    desc: 'A bigger health pool for the long waves.', price: 2600, hp: 1.25, speed: 1,    damage: 1,    scrap: 1,    coat: '#2b4548', accent: '#58d6c0' },
     { id: 'scrapper',name: 'SCRAP BARON', tag: '+25% SCRAP',         desc: 'Every corpse pays a little better.', price: 3600, hp: 1,    speed: 1,    damage: 1,    scrap: 1.25, coat: '#4a3a2c', accent: '#c78cff' },
     { id: 'berserk', name: 'BERSERKER',   tag: '+15% DAMAGE',        desc: 'Hit first. Ask questions never.', price: 5200, hp: 1,    speed: 1,    damage: 1.15, scrap: 1,    coat: '#4a2626', accent: '#ff6b4a' },
     { id: 'ghost',   name: 'NIGHT GHOST', tag: '+8% SPEED / +10% HP',desc: 'Quiet boots and a stubborn pulse.', price: 7000, hp: 1.10, speed: 1.08, damage: 1,    scrap: 1,    coat: '#2c3446', accent: '#8fd6ff' }
   ];
+  /* six permanent store upgrades, kept across every run and every survivor.
+     Separate from the original six coin skills so GameSnacks parity holds. */
+  ZH.STORE_UPGRADES = ZH.STORE_UPGRADES || [
+    { id: 'magnet',   name: 'MAGNET',      max: 5, base: 1200, desc: function (l) { return '+' + (l * 25) + '% pickup reach'; } },
+    { id: 'siphon',   name: 'SIPHON',      max: 5, base: 1800, desc: function (l) { return '+' + l + '% life discharge'; } },
+    { id: 'sprint',   name: 'SPRINT',      max: 5, base: 1500, desc: function (l) { return '+' + (l * 3) + '% move speed'; } },
+    { id: 'vitality', name: 'VITALITY',    max: 8, base: 900,  desc: function (l) { return '+' + (l * 5) + ' max vitals'; } },
+    { id: 'fortune',  name: 'FORTUNE',     max: 5, base: 2000, desc: function (l) { return '+' + (l * 5) + '% scrap'; } },
+    { id: 'field',    name: 'FORCE FIELD', max: 5, base: 2200, desc: function (l) { return '+' + (l * 4) + 's shield'; } }
+  ];
+
   ZH.CHARACTER_BY_ID = ZH.CHARACTER_BY_ID || {};
   ZH.CHARACTERS.forEach(function (ch) { ZH.CHARACTER_BY_ID[ch.id] = ch; });
 
@@ -166,6 +183,55 @@ window.ZH = window.ZH || {};
   /* ------------------------- survivor roster ------------------------- */
   function hasCharacter(id) { return save.characters.indexOf(id) !== -1; }
 
+  /* ------------------------- permanent upgrades ----------------------- */
+  function upgradeDef(id) {
+    var found = null;
+    (ZH.STORE_UPGRADES || []).forEach(function (u) { if (u.id === id) found = u; });
+    return found;
+  }
+  function upgradeLevel(id) {
+    return (save.upgrades && save.upgrades[id]) || 0;
+  }
+  function upgradePrice(id, level) {
+    var def = upgradeDef(id);
+    if (!def) return Infinity;
+    var lvl = level == null ? upgradeLevel(id) + 1 : level;
+    return Math.round(def.base * Math.pow(1.75, Math.max(0, lvl - 1)));
+  }
+  function buyUpgrade(id) {
+    var def = upgradeDef(id);
+    if (!def) return { ok: false, reason: 'unknown' };
+    var lvl = upgradeLevel(id);
+    if (lvl >= def.max) return { ok: false, reason: 'max' };
+    var price = upgradePrice(id, lvl + 1);
+    if (save.coins < price) return { ok: false, reason: 'coins', price: price };
+    save.coins -= price;
+    save.upgrades[id] = lvl + 1;
+    persist();
+    return { ok: true, level: lvl + 1, price: price };
+  }
+
+  /* apply every bought upgrade once, at the start of a run */
+  ZH.applyUpgrades = function (p, s) {
+    if (!p) return p;
+    s = s || save;
+    var up = (s && s.upgrades) || {};
+    var lv = function (id) { return up[id] || 0; };
+    var vit = lv('vitality');
+    if (vit) { p.maxHp = Math.round(p.maxHp + vit * 5); p.hp = p.maxHp; }
+    var spr = lv('sprint');
+    if (spr) p.speed = Math.round(p.speed * (1 + spr * 0.03));
+    var mag = lv('magnet');
+    if (mag) p.magnet = (p.magnet || 0) + mag * 0.25;
+    var fort = lv('fortune');
+    if (fort) p.fortune = Math.round((p.fortune || 0) + fort * 5);
+    var field = lv('field');
+    if (field) p.fieldBonus = field * 4;
+    var sip = lv('siphon');
+    if (sip) p.lifesteal = 0.03 + sip * 0.01;
+    return p;
+  };
+
   function buyCharacter(id) {
     var ch = ZH.CHARACTER_BY_ID[id];
     if (!ch) return { ok: false, reason: 'unknown' };
@@ -264,6 +330,9 @@ window.ZH = window.ZH || {};
     buySkill: buySkill,
     buyWeapon: buyWeapon,
     hasCharacter: hasCharacter,
+    upgradeLevel: upgradeLevel,
+    upgradePrice: upgradePrice,
+    buyUpgrade: buyUpgrade,
     buyCharacter: buyCharacter,
     selectCharacter: selectCharacter,
     dailyAvailable: dailyAvailable,

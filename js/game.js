@@ -123,6 +123,8 @@ window.ZH = window.ZH || {};
       this.character = save.character;
     }
     if (ZH.applyCharacter) ZH.applyCharacter(this.player, this.character);
+    /* permanent store upgrades land on top of the survivor's own perks */
+    if (ZH.applyUpgrades) ZH.applyUpgrades(this.player, save);
     this.input.jet = false;
     this.traffic = [];
     this.trafficT = 0;

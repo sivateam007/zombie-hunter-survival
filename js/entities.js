@@ -341,7 +341,7 @@
        a pink siphon burst once enough has accumulated to be worth showing */
     var sip = world.player;
     if (sip && !sip.dead && sip.hp != null && sip.maxHp) {
-      var frac = (ZH.LIFESTEAL && ZH.LIFESTEAL.frac) || 0.03;
+      var frac = (sip.lifesteal != null ? sip.lifesteal : (ZH.LIFESTEAL && ZH.LIFESTEAL.frac)) || 0.03;
       var gain = Math.min((ZH.LIFESTEAL && ZH.LIFESTEAL.max) || 2.5, dmg * frac);
       if (gain > 0.02 && sip.hp < sip.maxHp) {
         sip.hp = Math.min(sip.maxHp, sip.hp + gain);
@@ -1339,7 +1339,7 @@
             p.hp = Math.min(p.maxHp, p.hp + 35);
             label = '+35 HP'; colour = '#9be15d';
           } else if (roll < 0.76) {
-            if (ZH.openShield) ZH.openShield(p, ZH.SHIELD.force);
+            if (ZH.openShield) ZH.openShield(p, ZH.SHIELD.force + (p.fieldBonus || 0));
             label = 'FORCE FIELD'; colour = '#9ed8ff';
           } else if (roll < 0.92) {
             p.magnet = (p.magnet || 0) + 0.5;
