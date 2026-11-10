@@ -95,6 +95,7 @@ window.ZH = window.ZH || {};
       rw.waveT = 0;
       rw.spawned = 0;
       rw.fired = 0;
+      rw.warned = false;
       if (rw.__origStart == null) rw.__origStart = rw.startTime;
       rw.startTime = rw.__origStart;
     }
@@ -226,7 +227,7 @@ window.ZH = window.ZH || {};
          cooldown, ignored while any force field is up */
       var pdx = p.x - c.x, pdy = p.y - c.y;
       var crash = 44;
-      if (pdx * pdx + pdy * pdy < crash * crash && !(p.shieldT > 0)) {
+      if (pdx * pdx + pdy * pdy < crash * crash && !(p.shieldT > 0) && !p.jetActive) {
         var cdT = c._crashT != null ? this.t - c._crashT : 99;
         if (cdT > 1.2) {
           c._crashT = this.t;
@@ -409,6 +410,13 @@ window.ZH = window.ZH || {};
         if (wave.waveT >= wave.duration) {
           wave.active = false;
         }
+      } else if (wave.bossZone && !wave.warned && !wave.used && t >= wave.startTime - 3) {
+        /* the original's DELAY_HIDE_HAZARD_INFO: a 3 s warning before the
+           zone shuts, so the boss is never a surprise */
+        wave.warned = true;
+        if (ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('WARNING', 'BOSS INCOMING');
+        if (ZH.Anim && ZH.Anim.flash) ZH.Anim.flash('214,42,32', { peak: 0.55, duration: 520 });
+        if (ZH.Audio) ZH.Audio.play('error');
       } else if (t >= wave.startTime && !wave.used) {
         wave.used = true;
         if (wave.bossZone) {
@@ -464,6 +472,7 @@ window.ZH = window.ZH || {};
       if (wv.bossZone) {
         // bosses: re-arm, they gate themselves through `fired`/cycle
         wv.used = false;
+        wv.warned = false;
         wv.startTime = this.elapsed + 60 + this.waveCycle * 30;
         continue;
       }
@@ -841,14 +850,54 @@ window.ZH = window.ZH || {};
     if (!p) return;
     var held = !!(this.input && (this.input.jet || this.input.padJet)) &&
       this.state === 'playing' && !p.dead;
+    var wasFlying = !!p._wasJet;
     if (ZH.tickJetpack) ZH.tickJetpack(p, dt, held);
-    if (p.jetActive && Math.random() < 0.45) {
+
+    /* ignition and landing both read in the world: a dust ring kicks out on
+       take-off, a smaller puff settles when the boots touch down */
+    if (p.jetActive && !wasFlying) {
+      this.shake = Math.max(this.shake || 0, 3.4);
       this.particles.push({
-        x: p.x + rand(-7, 7), y: p.y + 9,
-        vx: rand(-35, 35), vy: rand(40, 110),
-        life: 0.34, max: 0.34, size: 2.4,
-        color: Math.random() < 0.5 ? 'rgba(255,180,70,0.85)' : 'rgba(150,230,255,0.8)'
+        x: p.x, y: p.y + 10, vx: 0, vy: 0, life: 0.32, max: 0.32,
+        size: 46, ring: true, color: 'rgba(190,232,255,0.85)'
       });
+      for (var ig = 0; ig < 8; ig++) {
+        var ia = rand(0, TAU);
+        this.particles.push({
+          x: p.x, y: p.y + 8, vx: Math.cos(ia) * rand(70, 190), vy: Math.sin(ia) * rand(20, 70) + 30,
+          life: rand(0.2, 0.4), max: 0.4, size: rand(1.6, 3),
+          color: 'rgba(200,214,224,0.55)'
+        });
+      }
+    } else if (!p.jetActive && wasFlying) {
+      this.particles.push({
+        x: p.x, y: p.y + 10, vx: 0, vy: 0, life: 0.26, max: 0.26,
+        size: 30, ring: true, color: 'rgba(220,220,220,0.5)'
+      });
+    }
+    p._wasJet = p.jetActive;
+
+    if (p.jetActive) {
+      /* twin thrusters: an additive flame plus a second, shorter core, and a
+         speed streak while the ignition kick is still running */
+      var burst = p.jetBurst > 0;
+      var n = burst ? 3 : 2;
+      for (var jp = 0; jp < n; jp++) {
+        this.particles.push({
+          x: p.x + rand(-8, 8), y: p.y + 9,
+          vx: rand(-40, 40) - (p.moveX || 0) * 40,
+          vy: rand(60, 150) + (p.moveY || 0) * 40,
+          life: burst ? 0.4 : 0.3, max: 0.4, size: rand(1.8, 3.2),
+          blend: 'lighter',
+          color: Math.random() < 0.5 ? 'rgba(255,182,72,0.8)' : 'rgba(160,235,255,0.75)'
+        });
+      }
+      if (burst) {
+        this.particles.push({
+          x: p.x, y: p.y + 12, vx: 0, vy: 0, life: 0.18, max: 0.18,
+          size: 58, ring: true, color: 'rgba(255,214,140,0.8)'
+        });
+      }
     }
   };
 
@@ -874,23 +923,43 @@ window.ZH = window.ZH || {};
     return true;
   };
 
-  /* top up every magazine that is not already full or loading */
+  /* ---------------------------- manual reload ----------------------------
+     A deliberate reload is a TACTICAL action: it starts instantly on every
+     carried gun, finishes in 60% of the automatic time, and works on a
+     half-empty magazine (so the player can top up before a boss instead of
+     waiting to run dry). Pressing it with full magazines answers instead of
+     doing nothing silently. */
+  Game.RELOAD_MANUAL_MUL = 0.6;
   Game.reload = function () {
     var p = this.player;
     if (!p || !p.weapons || p.dead || this.state !== 'playing') return false;
-    var started = false;
+    var started = 0, full = 0;
     for (var name in p.weapons) {
       var w = p.weapons[name];
-      var def = ZH.WEAPONS && ZH.WEAPONS[name];
-      if (!def) continue;
+      var base = ZH.WEAPONS && ZH.WEAPONS[name];
+      if (!base) continue;
+      /* the gun that is actually equipped (an evolved entry) owns the mag */
+      var eff = ZH.effectiveWeapon ? ZH.effectiveWeapon(name, w, p.supplies) : name;
+      var def = (ZH.WEAPONS && ZH.WEAPONS[eff]) || base;
       if (def.ammo === false) continue;          /* melee / orbit guns never reload */
-      if (w.mag == null) { w.mag = def.mag; w.reloading = 0; }
-      if (w.reloading > 0 || w.mag >= def.mag) continue;
-      w.reloading = def.reload || 1.5;
-      started = true;
+      if (w.mag == null || !isFinite(w.mag)) { w.mag = def.mag; w.reloading = 0; }
+      if (w.mag >= (def.mag || base.mag)) { full++; continue; }
+      if (w.reloading > 0) { started++; continue; }
+      w.reloading = (def.reload || 1.5) * this.RELOAD_MANUAL_MUL;
+      w.manual = true;
+      started++;
     }
-    if (started && ZH.Audio) ZH.Audio.play('reload');
-    return started;
+    if (started) {
+      if (ZH.Audio) ZH.Audio.play('reload');
+      if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast('RELOADING', 'info');
+      return true;
+    }
+    /* nothing to do: say so, so the button never feels dead */
+    if (full) {
+      if (ZH.Audio) ZH.Audio.play('click');
+      if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast('MAGAZINE FULL', 'info');
+    }
+    return false;
   };
 
   Game.pause = function () {
@@ -929,6 +998,8 @@ window.ZH = window.ZH || {};
     this.t += dt;
     /* the red edge pulse that answers a hit fades on its own */
     this.hurtT = Math.max(0, (this.hurtT || 0) - dt);
+    /* and the bomb pickup whitens the frame for a beat */
+    this.bombFlash = Math.max(0, (this.bombFlash || 0) - dt);
     /* a live boss zone freezes the level clock (original behaviour) */
     if (!this.bossZoneActive) this.elapsed += dt;
 
@@ -1235,6 +1306,48 @@ window.ZH = window.ZH || {};
         ctx.strokeRect(-14, -12, 28, 24);
         ctx.fillStyle = '#ffe9a8';
         ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(6, -20); ctx.lineTo(-6, -20); ctx.closePath(); ctx.fill();
+      } else if (pk.type === 'bomb') {
+        /* black sphere with a lit fuse: the screen-clear pickup */
+        var bglow = ctx.createRadialGradient(0, 0, 3, 0, 0, 36);
+        bglow.addColorStop(0, 'rgba(255,120,90,0.4)');
+        bglow.addColorStop(1, 'rgba(255,120,90,0)');
+        ctx.fillStyle = bglow;
+        ctx.beginPath(); ctx.arc(0, 0, 36, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#1b1d21';
+        ctx.beginPath(); ctx.arc(0, 2, 11, 0, TAU); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,140,90,0.9)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, 2, 11, 0, TAU); ctx.stroke();
+        ctx.strokeStyle = '#c9b489'; ctx.lineWidth = 2.4;
+        ctx.beginPath(); ctx.moveTo(4, -8); ctx.lineTo(9, -16); ctx.stroke();
+        ctx.fillStyle = '#ffb347';
+        ctx.beginPath(); ctx.arc(10, -18, 3, 0, TAU); ctx.fill();
+      } else if (pk.type === 'magnet') {
+        /* horseshoe magnet, cyan glow */
+        var mglow = ctx.createRadialGradient(0, 0, 3, 0, 0, 34);
+        mglow.addColorStop(0, 'rgba(120,230,255,0.4)');
+        mglow.addColorStop(1, 'rgba(120,230,255,0)');
+        ctx.fillStyle = mglow;
+        ctx.beginPath(); ctx.arc(0, 0, 34, 0, TAU); ctx.fill();
+        ctx.strokeStyle = '#8fe6ff'; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.arc(0, 0, 8, Math.PI, 0); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(-8, 8); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(8, 8); ctx.stroke();
+        ctx.strokeStyle = '#ff6b6b'; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.moveTo(-8, 7); ctx.lineTo(-8, 11); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(8, 7); ctx.lineTo(8, 11); ctx.stroke();
+      } else if (pk.type === 'medikit') {
+        var kig = ctx.createRadialGradient(0, 0, 3, 0, 0, 32);
+        kig.addColorStop(0, 'rgba(255,255,255,0.3)');
+        kig.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = kig;
+        ctx.beginPath(); ctx.arc(0, 0, 32, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#e8edf2';
+        ctx.fillRect(-12, -9, 24, 18);
+        ctx.strokeStyle = '#7c8894'; ctx.lineWidth = 1.6;
+        ctx.strokeRect(-12, -9, 24, 18);
+        ctx.fillStyle = '#e04b4b';
+        ctx.fillRect(-2.5, -6, 5, 12);
+        ctx.fillRect(-6, -2.5, 12, 5);
       } else if (pk.type === 'item') {
         var look = ZH.itemLook ? ZH.itemLook(pk.itemId) : ['?', '#ccc'];
         var ig = ctx.createRadialGradient(0, 0, 3, 0, 0, 34);
@@ -1556,6 +1669,17 @@ window.ZH = window.ZH || {};
       ctx.save();
       ctx.globalAlpha = danger;
       ctx.fillStyle = this._hurtVig;
+      ctx.fillRect(0, 0, this.W, this.H);
+      ctx.restore();
+    }
+
+    /* bomb pickup: a white shutter over the whole frame as the screen clears */
+    var bombA = Math.min(1, (this.bombFlash || 0) / 0.42);
+    if (bombA > 0.01) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = bombA * 0.6;
+      ctx.fillStyle = 'rgba(255,244,214,1)';
       ctx.fillRect(0, 0, this.W, this.H);
       ctx.restore();
     }

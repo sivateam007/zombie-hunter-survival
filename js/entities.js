@@ -59,8 +59,21 @@
      window: it gates damage, feeds the HUD countdown, paints the hunter ring
      and drives the body blink. player.invuln is only a legacy mirror. */
   /* ----------------------------- jetpack ----------------------------- */
+  /* ----------------------------- jetpack -----------------------------
+     A tactical short-burst jet, not a slow balloon: ignition costs a chunk of
+     fuel and kicks the hunter forward for a moment, the tank gives ~4 s of
+     flight, and a grounded hunter refills in ~3 s. Running dry locks the
+     jets until the button is released, so the pack cannot stutter on fumes. */
   ZH.JETPACK = ZH.JETPACK || {
-    max: 100, drain: 34, regen: 16, min: 12, speed: 1.5, lift: 18
+    max: 100,
+    drain: 25,        /* 4 s of continuous flight from a full tank     */
+    regen: 30,        /* ~3 s to refill on the ground                  */
+    min: 15,          /* cannot ignite below this                      */
+    cost: 6,          /* ignition burns a little extra                 */
+    speed: 1.6,       /* hover speed multiplier                        */
+    burstSpeed: 2.05, /* the take-off kick, for `burst` seconds        */
+    burst: 0.3,
+    lift: 20
   };
 
   /** one hold-to-fly fuel clock, separate from the shield clock */
@@ -68,19 +81,32 @@
     if (!p) return 0;
     var j = ZH.JETPACK;
     if (p.jetFuel == null) p.jetFuel = j.max;
+    if (p.jetBurst == null) p.jetBurst = 0;
+    /* dry tank: the pack is locked until the button comes up, then it may
+       ignite again as soon as it has the minimum charge */
+    if (!held) p.jetLock = false;
     if (!p.jetActive) {
-      if (held && !p.dead && p.jetFuel >= j.min) p.jetActive = true;
+      if (held && !p.dead && !p.jetLock && p.jetFuel >= j.min) {
+        p.jetActive = true;
+        p.jetFuel = Math.max(0, p.jetFuel - (j.cost || 0));
+        p.jetBurst = j.burst || 0;
+        if (ZH.Audio) ZH.Audio.play('dash');
+      }
     } else if (!held || p.dead || p.jetFuel <= 0) {
       p.jetActive = false;
     }
     if (p.jetActive) {
       p.jetFuel = Math.max(0, p.jetFuel - j.drain * dt);
-      if (p.jetFuel <= 0) p.jetActive = false;
+      if (p.jetBurst > 0) p.jetBurst = Math.max(0, p.jetBurst - dt);
+      if (p.jetFuel <= 0) { p.jetActive = false; p.jetLock = true; }
     } else {
-      p.jetFuel = Math.min(j.max, p.jetFuel + j.regen * dt);
+      p.jetBurst = 0;
+      /* a held (but locked) pack does not recharge: the hunter has to let go
+         and land before the tank refills, which is what makes fuel a resource */
+      if (!held) p.jetFuel = Math.min(j.max, p.jetFuel + j.regen * dt);
     }
-    if (p.jetActive) p.jetLift = Math.min(j.lift || 18, (p.jetLift || 0) + 90 * dt);
-    else p.jetLift = Math.max(0, (p.jetLift || 0) - 90 * dt);
+    if (p.jetActive) p.jetLift = Math.min(j.lift || 18, (p.jetLift || 0) + 110 * dt);
+    else p.jetLift = Math.max(0, (p.jetLift || 0) - 110 * dt);
     return p.jetFuel;
   };
 
@@ -487,6 +513,31 @@
          so the timeline can be topped up mid-fight */
       if (z.boss || Math.random() < 0.06) {
         world.pickups.push({ type: 'shield', x: z.x + rand(-10, 10), y: z.y - 6, life: 20, value: ZH.SHIELD.force });
+      }
+      /* miniboss deaddrops, exactly the original's per-type table: a bomb from
+         the soldiers/towers, a medkit from the toxic ones, a magnet from the
+         builder, a chest or a coin pile from the rest */
+      var DEADDROP = {
+        miniboss_builder: 'magnet', miniboss_fighter: 'coin',
+        miniboss_spider: 'treasure', miniboss_reptile: 'treasure',
+        miniboss_soldier: 'bomb', miniboss_tower: 'bomb',
+        miniboss_toxic1: 'medikit', miniboss_toxic2: 'coin'
+      };
+      if (z.miniboss && DEADDROP[z.type]) {
+        var drop = DEADDROP[z.type];
+        var dropPk = { type: drop, x: z.x, y: z.y - 8, life: 45 };
+        if (drop === 'coin') dropPk.value = 1000;
+        if (drop === 'medikit') dropPk.value = 60;
+        world.pickups.push(dropPk);
+      }
+      /* the ordinary horde rarely leaves a bomb or a medkit as well */
+      if (!z.boss && !z.miniboss) {
+        var rollDrop = Math.random();
+        if (rollDrop < 0.004) {
+          world.pickups.push({ type: 'bomb', x: z.x, y: z.y - 6, life: 40 });
+        } else if (rollDrop < 0.014) {
+          world.pickups.push({ type: 'medikit', x: z.x, y: z.y - 6, life: 40, value: 45 });
+        }
       }
       /* supplies drop into the world as real items, so the catalogue (kevlar,
          sneakers, supplements, axe upgrades…) shows up on the ground and not
@@ -1072,8 +1123,9 @@
     var mx = p.moveX, my = p.moveY;
     var len = Math.hypot(mx, my);
     var a = attribsOf(p);
+    var jet = ZH.JETPACK || {};
     var speed = p.speed * (1 + (a.speed_bonus || 0)) *
-      (p.jetActive ? ((ZH.JETPACK && ZH.JETPACK.speed) || 1.5) : 1);
+      (p.jetActive ? ((p.jetBurst > 0 ? jet.burstSpeed : jet.speed) || 1.6) : 1);
     if (len > 0.01) {
       p.x += mx * speed * dt;
       p.y += my * speed * dt;
@@ -1131,8 +1183,42 @@
     if (ZH.Audio) ZH.Audio.play(z.type === 'cop' ? 'pistol' : 'spit');
   }
 
+  /* Soft body separation: the horde used to stack into a single black dot
+     when a wave converged. A cheap pairwise push spreads the bodies into a
+     ring around the hunter (the original's `mass` idea, without collisions). */
+  function separateHorde(list) {
+    if (list.length > 140) return;
+    for (var i = 0; i < list.length; i++) {
+      var a = list[i];
+      if (a.dead || a.boss) continue;
+      for (var j = i + 1; j < list.length; j++) {
+        var b = list[j];
+        if (b.dead || b.boss) continue;
+        var dx = b.x - a.x, dy = b.y - a.y;
+        var min = (a.r || 12) + (b.r || 12);
+        var d2 = dx * dx + dy * dy;
+        if (d2 >= min * min) continue;
+        if (d2 < 0.0001) {
+          /* perfectly stacked bodies have no direction to separate along:
+             split them on a golden-angle fan so a spawn pile unfolds */
+          var sep = min * 0.35;
+          var sa = (i * 2.399963) + (j * 1.618034);
+          if (!a.stationary) { a.x -= Math.cos(sa) * sep; a.y -= Math.sin(sa) * sep; }
+          if (!b.stationary) { b.x += Math.cos(sa) * sep; b.y += Math.sin(sa) * sep; }
+          continue;
+        }
+        var d = Math.sqrt(d2);
+        var push = (min - d) * 0.5;
+        var ux = dx / d, uy = dy / d;
+        if (!a.stationary) { a.x -= ux * push; a.y -= uy * push; }
+        if (!b.stationary) { b.x += ux * push; b.y += uy * push; }
+      }
+    }
+  }
+
   function updateEnemies(list, dt, world) {
     var p = world.player;
+    separateHorde(list);
     for (var i = list.length - 1; i >= 0; i--) {
       var z = list[i];
       if (z.dead) { z.removeT -= dt; continue; }
@@ -1406,9 +1492,10 @@
       pk.life -= dt;
       if (pk.life <= 0) { list.splice(i, 1); continue; }
       var d = Math.hypot(pk.x - p.x, pk.y - p.y);
-      if (d < pickupRange) {
-        pk.x += (p.x - pk.x) / (d || 1) * 260 * dt;
-        pk.y += (p.y - pk.y) / (d || 1) * 260 * dt;
+      var pullSpeed = pk.pulling ? 900 : 260;
+      if (d < pickupRange || pk.pulling) {
+        pk.x += (p.x - pk.x) / (d || 1) * pullSpeed * dt;
+        pk.y += (p.y - pk.y) / (d || 1) * pullSpeed * dt;
       }
       if (d < 22) {
         if (pk.type === 'exp') {
@@ -1430,6 +1517,40 @@
           }
         } else if (pk.type === 'medikit') {
           p.hp = Math.min(p.maxHp, p.hp + (pk.value || 50));
+        } else if (pk.type === 'bomb') {
+          /* screen clear (the original's BONUS_BOMB): every normal body on
+             the field dies, bosses only take a bite of their bar */
+          world.bombFlash = 0.42;
+          world.shake = Math.max(world.shake || 0, 13);
+          var cleared = 0;
+          for (var bz = world.zombies.length - 1; bz >= 0; bz--) {
+            var ze = world.zombies[bz];
+            if (ze.dead) continue;
+            if (ze.boss) { damageEnemy(world, ze, (ze.maxHp || 0) * 0.08); continue; }
+            damageEnemy(world, ze, (ze.maxHp || 0) + 1);
+            cleared++;
+          }
+          if (world.particles && world.particles.length < 240) {
+            for (var bp2 = 0; bp2 < 26; bp2++) {
+              var ba2 = rand(0, TAU), bv2 = rand(120, 460);
+              world.particles.push({
+                x: pk.x, y: pk.y, vx: Math.cos(ba2) * bv2, vy: Math.sin(ba2) * bv2,
+                life: rand(0.25, 0.55), max: 0.55, size: rand(2, 4.4),
+                blend: 'lighter', color: 'rgba(255,206,120,0.9)'
+              });
+            }
+          }
+          if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast('BOMB · ' + cleared + ' CLEARED', 'good');
+          if (ZH.Audio) ZH.Audio.play('slam');
+        } else if (pk.type === 'magnet') {
+          /* vacuum every drop on the ground toward the hunter */
+          for (var mi = 0; mi < world.pickups.length; mi++) {
+            var mp = world.pickups[mi];
+            if (mp === pk || mp.type === 'shield') continue;
+            mp.pulling = 1;
+          }
+          if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast('MAGNET', 'good');
+          if (ZH.Audio) ZH.Audio.play('magnet');
         } else if (pk.type === 'gift') {
           /* a wrapped box pays out one random reward */
           var roll = Math.random();

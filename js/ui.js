@@ -940,6 +940,13 @@ window.ZH = window.ZH || {};
       }
       if (d.reloading) e.reload.style.width = (d.reloadFrac * 100).toFixed(1) + '%';
 
+      /* manual reload button: labels the action and dims while it runs */
+      var reloadBtnEl = $('btn-reload');
+      if (reloadBtnEl) {
+        reloadBtnEl.classList.toggle('is-cooling', !!d.reloading);
+        reloadBtnEl.textContent = d.reloading ? 'RELOADING' : 'RELOAD';
+      }
+
       if (last.coins !== d.coins) {
         e.coins.textContent = d.coins.toLocaleString();
         last.coins = d.coins;
