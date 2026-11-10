@@ -1,0 +1,47 @@
+=== getExpsToLevelUp ===
+
+getExpsToLevelUp:function(){for(var b=
+1E3,e=this.level-1,f=0;f<e;f++)b*=1.25;return b=Math.floor(b)},damagePlayer:function(b){0<this.timeInvincible||(b=b*Level.instance.getLevelMultiplier()*GetDifficultyMulForEnemyDMG(Level.instance.difficulty),b-=b*this.attribs.defense/100,0>b&&(b=0),MissionUpdate(MISSION_TYPE_RECEIVE_X_DMG,b),ContainerGame.instance.textPrtcls.CreateTextParticle1(this.x,this.y-
+
+=== ShowSkillSlots ===
+
+ShowSkillSlots:function(b){LOG("SceneGame.ShowSkillSlots: gameRunning = false");playSound(SceneGame.instance,"levelup");joyStick.visible=!1;gameRunning=Buttons.enabled=!1;gamePaused=!0;this.anims.pauseAll();Player.instance.onPause();dlgSlots.cntResetButton.visible=!1;REWARDED_ADS_ENABLED&&(dlgSlots.cntAdsResetButton.visible=
+!1);dlgSlots.resetCounter=0;dlgSlots.prepareSlots(b);tweenShowObjectAlpha(this,dlgSlots,150,"Sine.easeIn",function(){Buttons.enabled=!0})},AskToContinue:function(){LOG("SceneGame.AskToContinue: gameRunning = false");playSound(SceneGame.instance,"levelup");joyStick.visible=!1;Buttons.enabled=!1;gameContinues--;gameRunning=!1;gamePaused=!0;this.anims.pauseAll();Player.instance.onPause();dlgContinue.updateData();dlgContinue.timerContinue=TIME_TO_CONTINUE;tweenShowObjectAlpha(this,dlgContinue,150,"Sine.easeIn",
+function(){Buttons.enabled=!0})},CanWeAskToContinue:function(){return 0>=gameContinues?!1:REWARDED_ADS_ENABLED?!0:Level.instance.levelMoney>=getPriceForContinue(MAX_CONTINUES-gameContinues+1)},GameWin:function(){LOG("SceneGame.GameWin: gameRunning = false");joyStick.visible=!1;Buttons.enabled=!1;this.UpdateMissionSurviveForXMinutes();playSound(SceneGame.instance,"game_victory");gameRunning=!1;gamePaused=!0;this.anims.pauseAll();Player.instance.onGameOver();containerOverlay.showAnimated();dlgGameOver.gameWin(function(){Buttons.enabled=
+!0;GameSnacks.game.levelComplete(SelectedLevel)});SavedGame=null;GameData.Save()},GameOver:function(){LOG("SceneGame.GameOver: gameRunning = false");joyStick.visible=!1;Buttons.enabled=!1;this.UpdateMissionSurviveForXMinutes();gameRunning=!1;gamePaused=!0;this.anims.pauseAll();this.CanWeAskToContinue()?this.AskToContinue():(playMusic(this,"music_menu"),Player.instance.onGameOver(),containerOverlay.showAnimated(),dlgGameOver.gameOver(function(){Buttons.enabled=!0;GameSnacks.game.gameOver()}),SavedGame=
+null,GameData.Save())},UpdateMissionSurviveForXMinutes:function(){MissionUpdate(MISSION_TYPE_SURVIVE_X_MINUTES,Math.floor(Math.floor(Level.instance.time/1E3)/60));SetRecordLevelTime(SelectedLevel,Level.instance.time,Level.instance.difficulty)}});var ContainerOverlay=new Phaser.Class({Extends:Phaser.GameObje
+
+=== addWeapon ===
+
+addWeapon:function(b){if(!this.weapons.hasOwnProperty(b)){var e=Object.create(window[b].prototype);e.constructor.apply(e);if(e.hasOwnProperty("consumable")&&e.consumable)e.consume();else return this.weapons[b]=e}},addSupply:function(b){if(!this.supplies.hasOwnProperty(b)){var e=Object.create(window[b].prototype);e.constructor.apply(e);if(e.hasOwnProperty("consumable")&&e.consumable)e.consume();
+else return this.supplies[b]=e}},weaponOrSupplyActive:function(b){return this.weapons.hasOwnProperty(b)||this.supplies.hasOwnProperty(b)?!0:!1},getWeaponOrSupplyObj:function(b){if(this.weapons.hasOwnProperty(b))return this.weapons[b];if(this.supplies.hasOwnProperty(b))return this.supplies[b];b=Object.create(window[b].prototype);b.constructor.apply(b);return b},createKeyboardControls:function(){this.scene.input.keyboard.removeKey(Phaser.Input.Keyboard.KeyCodes.LEFT);this.scene.input.keyboard.remov
+
+=== addSupply ===
+
+addSupply:function(b){if(!this.supplies.hasOwnProperty(b)){var e=Object.create(window[b].prototype);e.constructor.apply(e);if(e.hasOwnProperty("consumable")&&e.consumable)e.consume();
+else return this.supplies[b]=e}},weaponOrSupplyActive:function(b){return this.weapons.hasOwnProperty(b)||this.supplies.hasOwnProperty(b)?!0:!1},getWeaponOrSupplyObj:function(b){if(this.weapons.hasOwnProperty(b))return this.weapons[b];if(this.supplies.hasOwnProperty(b))return this.supplies[b];b=Object.create(window[b].prototype);b.constructor.apply(b);return b},createKeyboardControls:function(){this.scene.input.keyboard.removeKey(Phaser.Input.Keyboard.KeyCodes.LEFT);this.scene.input.keyboard.removeKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
+this.scene.input.keyboard.removeKey(Phaser.Input.Keyboard.KeyCodes.UP);this.scene.input.keyboard.removeKey(Phaser.Input.Keyboard.KeyCodes.DOWN);this.scene.input.keyboard
+
+=== Kevlar supply ===
+
+Kevlar=function(){this.init()};
+Kevlar.prototype={constructor:Kevlar,init:function(){this.name="SUPPLY_NAME_KEVLAR";this.desc="SUPPLY_DESC_KEVLAR";this.defFrame="supply_kevlar.png";this.evoSupp="Sword";this.reset()},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+this.bonus[b])},getFrame:function(b){return this.defFrame},reset:function(){this.level=1;this.bonus=[0,10,20,30,40,50];this.attribs=[];this.updateAttribs()},updateAttribs:function(){this.attribs.defense=this.bonus[this.level]},
+levelUp:function(){this.level++;this.updateAttribs()}};AmmoBooster=function(){this.init()};
+AmmoBooster.prototype={constructor:AmmoBooster,init:function(){this.name="SUPPLY_NAME_AMMOBOOSTER";this.desc="SUPPLY_DESC_AMMOBOOSTER";this.defFrame="supply_ammobooster.png";this.evoSupp=["Gun","Launcher"];this.reset()},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+100*this.bonus[b])},getFrame:function(b){return this.defFrame},reset:function(){this.level=1;this.bonus=[0,.1,.2,.3,.4,.5];this.attribs=[];this.updateAttribs()},updateAttribs:function(){this.attribs.attack_bonus=
+this.bonus[this.level]},levelUp:function(){this.level++;this.updateAttribs()}};Handbook=function(){this.init()};
+Handbook.prototype={constructor:Handbook,init:function(){this.name="SUPPLY_NAME_HANDBOOK";this.desc="SUPPLY_DESC_HANDBOOK";this.defFrame="supply_handbook.png";this.evoSupp="Flamethrower";this.reset()},getName:
+
+=== AmmoBooster ===
+
+AmmoBooster=function(){this.init()};
+AmmoBooster.prototype={constructor:AmmoBooster,init:function(){this.name="SUPPLY_NAME_AMMOBOOSTER";this.desc="SUPPLY_DESC_AMMOBOOSTER";this.defFrame="supply_ammobooster.png";this.evoSupp=["Gun","Launcher"];this.reset()},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+100*this.bonus[b])},getFrame:function(b){return this.defFrame},reset:function(){this.level=1;this.bonus=[0,.1,.2,.3,.4,.5];this.attribs=[];this.updateAttribs()},updateAttribs:function(){this.attribs.attack_bonus=
+this.bonus[this.level]},levelUp:function(){this.level++;this.updateAttribs()}};Handbook=function(){this.init()};
+Handbook.prototype={constructor:Handbook,init:function(){this.name="SUPPLY_NAME_HANDBOOK";this.desc="SUPPLY_DESC_HANDBOOK";this.defFrame="supply_handbook.png";this.evoSupp="Flamethrower";this.reset()},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+this.bonus[b])},getFrame:function(b){return this.defFrame},reset:function(){this.level=1;this.bonus=[0,8,16,24,32,40];this.attribs=[];this.updateAttribs()},updateAttribs:function(){this.attribs.exp_bonus=this.
+
+=== bossZone collision ===
+
+spriteInCollisionWithZone(this)&&(this.x=b),null!=Enemies.instance.getStaticEnemyInCollsionWithSprite(this)&&(this.x=b),null!=Bosses.instance.getStaticBossInCollsionWithSprite(this)&&(this.x=b),this.y+=this.vectr.y,BossZone.instance.spriteInCollisionWithZone(this)&&(this.y=e),null!=Enemies.instance.
+
+=== player collision mass ===
+
+MISSING isCollision

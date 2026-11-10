@@ -1,0 +1,490 @@
+.anchorSpeed=this.getRotSpeed(),b.anchorAngle=e,b.anchorRadius=10,b.anchorRadSpd=2.5,b.anchorTotal=this.getAnchorTotal(),b.life=3E3,b.setScale(1),b.collSize2=b.displayWidth*b.originX)}};
+Circular=function(){this.init()};
+Circular.prototype={constructor:Circular,init:function(){this.name="WEAPON_NAME_CIRCULAR";
+this.desc="WEAPON_DESC_CIRCULAR1";
+this.defFrame="weapon_saw.png";
+this.evoName="WEAPON_NAME_RIPPER";
+this.evoDesc="WEAPON_DESC_RIPPER";
+this.evoFrame="weapon_ripper.png";
+this.evoSupp="Chronometer";
+this.reset()},getName:function(b){return 5<b?Str(this.evoName):Str(this.name)},getDesc:function(b){if(5<b)return Str(this.evoDesc);
+switch(b){case 1:return Str("WEAPON_DESC_CIRCULAR1");
+case 2:case 3:case 4:case 5:return Str("WEAPON_DESC_CIRCULAR2345")}},
+getFrame:function(b){return 5<b?this.evoFrame:this.defFrame},reset:function(){this.level=1;
+this.speed=.25;
+this.cooldown=8E3;
+this.life=4E3;
+this.delay=.1*this.getCooldown();
+this.evoAired=!1},levelUp:function(){this.level++},getCount:function(){return 2==this.level?3:3==this.level?4:4==this.level?5:5==this.level?6:5<this.level?7:2},getDamage:function(){var b=Player.instance.getAttrib("attack");2==this.level&&(b*=1.25);3==this.level&&(b*=1.5);4==this.level&&(b*=1.75);5==this.level&&(b*=2);5<this.level&&
+(b*=4);
+return b},getSpeed:function(){var b=100;2==this.level&&(b=110);3==this.level&&(b=120);4==this.level&&(b=130);5==this.level&&(b=140);
+b/=3E4;
+return b+Player.instance.attribs.shot_speed_bonus*b},getRadius:function(){var b=100;2==this.level&&(b=120);3==this.level&&(b=140);4==this.level&&(b=160);5==this.level&&(b=180);5<this.level&&(b=220);
+return b+Player.instance.attribs.shot_range_bonus*b},getLife:function(){return 5<this.level?6E6:this.life+Math.floor(Player.instance.attribs.shot_range_bonus*
+this.life)},getCooldown:function(){return Math.ceil(this.cooldown-this.cooldown*Player.instance.attribs.cooldown_bonus)},getProjectileSprite:function(){return 5<this.level?"weaopon_ripper_shot.png":"weapon_saw.png"},update:function(b,e){this.delay-=e;
+if(0>=this.delay){this.delay=this.getCooldown();
+if(5<this.level){if(this.evoAired)return;
+this.evoAired=!0}
+b=0;
+e=2*Math.PI/this.getCount();
+for(var f=this.getCount()-1;0<=f;
+f--){var h=Projectiles.instance.spawnProjectile(this.getProjectileSprite(),Player.instance.x,
+Player.instance.y,0,0,this.getSpeed(),this.getDamage());
+null!=h&&(h.tgtsCount=-1,h.rotation=Math.PI/2,h.rotationSpeed=.01,h.anchor=Player.instance,h.anchorSpeed=this.getSpeed(),h.anchorAngle=b,h.anchorRadius=this.getRadius(),h.anchorTotal=null,h.life=this.getLife(),h.killEnmShots=!0,h.z=100);
+b+=e}}}};
+Tesla=function(){this.init()};
+Tesla.prototype={constructor:Tesla,init:function(){this.name="WEAPON_NAME_TESLA";
+this.desc="WEAPON_DESC_TESLA1";
+this.defFrame="weapon_tesla.png";
+this.evoName="WEAPON_NAME_THUNDERORB";
+this.evoDesc="WEAPON_DESC_THUNDERORB";
+this.evoFrame="weapon_thunderorb.png";
+this.evoSupp="ActionGloves";
+this.reset()},getName:function(b){return 5<b?Str(this.evoName):Str(this.name)},getDesc:function(b){if(5<b)return Str(this.evoDesc);
+switch(b){case 1:return Str("WEAPON_DESC_TESLA1");
+case 2:case 3:case 4:case 5:return Str("WEAPON_DESC_TESLA2345")}},getFrame:function(b){return 5<
+b?this.evoFrame:this.defFrame},reset:function(){this.level=1;
+this.range=500;
+this.rangeSq=this.range*this.range;
+this.cooldown=2500;
+this.delay=.1*this.getCooldown();
+this.tmp=this.level},levelUp:function(){this.level++;
+this.tmp=this.level},getDamage:function(){var b=5*Player.instance.getAttrib("attack");2==this.level&&(b*=1.25);3==this.level&&(b*=1.5);4==this.level&&(b*=1.75);5==this.level&&(b*=2);5<this.level&&(b*=4);
+return b},getRadius:function(){var b=50;2==this.level&&(b=60);3==this.level&&(b=70);
+4==this.level&&(b=80);5==this.level&&(b=90);5<this.level&&(b=200);
+return b+Math.floor(Player.instance.attribs.shot_range_bonus*b)},getCooldown:function(){return Math.ceil(this.cooldown-this.cooldown*Player.instance.attribs.cooldown_bonus)},update:function(b,e){this.delay-=e;0>=this.delay&&(this.delay=100,this.tmp--,0>=this.tmp&&(this.tmp=this.level,this.delay=this.getCooldown(),5<this.level&&(this.tmp=3)),Enemies.instance.getEnemiesInRadius(Player.instance.x,Player.instance.y,this.range),b=BossZone.instance.bossZoneActive?
+Bosses.instance.getBossesInRadius(Player.instance.x,Player.instance.y,this.range):Enemies.instance.getEnemiesInRadius(Player.instance.x,Player.instance.y,this.range),Phaser.Utils.Array.Shuffle(b),0==b.length&&(this.delay=100),b=b[0],null!=b&&(this.spawnTesla(b.x,b.y),Enemies.instance.damageEnemiesInRadius(b.x,b.y,this.getRadius(),this.getDamage()),Bosses.instance.damageBossesInRadius(b.x,b.y,this.getRadius(),this.getDamage())))},spawnTesla:function(b,e){var f=Explosions.instance.getFirst(!1);
+if(null==
+f)return null;
+f.setOrigin(.5,1);
+f.setPosition(b,e);
+f.setTexture("pak_game","laser_beam.png");
+f.rotation=0;
+f.scaleX=.1;
+f.alpha=1;
+f.displayHeight=2*RES_SCREEN_HEIGHT;
+f.visible=!0;
+f.active=!0;
+playSound(SceneGame.instance,"lightning");
+SceneGame.instance.tweens.add({targets:f,alpha:0,scaleX:2,duration:200,ease:"Sine.easeIn",onComplete:function(h){h.targets[0].visible=!1}});
+b=containerGame.explosions.spawnExplosion(this.getExplosionAnim(),b,e);
+null!=b&&(b.rotation=-Phaser.Math.DegToRad(77),b.setScale(1),
+5<this.level&&(b.rotation=0,b.setScale(2)))},getExplosionAnim:function(){return 5<this.level?"effect_thunderorb":"lightning_hit"}};
+SpikedBall=function(){this.init()};
+SpikedBall.prototype={constructor:SpikedBall,init:function(){this.name="WEAPON_NAME_SPIKEDBALL";
+this.desc="WEAPON_DESC_SPIKEDBALL1";
+this.defFrame="weapon_bounce_0.png";
+this.evoName="WEAPON_NAME_BILIARD";
+this.evoDesc="WEAPON_DESC_BILIARD";
+this.evoFrame="weapon_biliard.png";
+this.evoSupp="Sneakers";
+this.reset()},getName:function(b){return 5<b?Str(this.evoName):Str(this.name)},getDesc:function(b){if(5<b)return Str(this.evoDesc);
+switch(b){case 1:return Str("WEAPON_DESC_SPIKEDBALL1");
+case 2:case 5:return Str("WEAPON_DESC_SPIKEDBALL25");
+case 3:case 4:return Str("WEAPON_DESC_SPIKEDBALL34")}},getFrame:function(b){return 5<b?this.evoFrame:this.defFrame},reset:function(){this.level=1;
+this.range=300;
+this.rangeSq=this.range*this.range;
+this.cooldown=3E3;
+this.life=4E3;
+this.delay=.1*this.getCooldown();
+this.tmp=this.level},levelUp:function(){this.level++},getCount:function(){var b=1;1<this.level&&(b=2);4<this.level&&(b=3);5<this.level&&(b=1);
+return b},getDamage:function(){var b=4*Player.instance.getAttrib("attack");3==this.level&&(b*=1.5);
+4==this.level&&(b*=2);5==this.level&&(b*=2);5<this.level&&(b*=2.5);
+return b},getSpeed:function(){var b=100;2==this.level&&(b=100);3==this.level&&(b=120);4==this.level&&(b=130);5==this.level&&(b=140);5<this.level&&(b=150);
+b/=180;
+return b+Player.instance.attribs.shot_speed_bonus*b},getLife:function(){return this.life+Math.floor(Player.instance.attribs.shot_range_bonus*this.life)},getCooldown:function(){return Math.ceil(this.cooldown-this.cooldown*Player.instance.attribs.cooldown_bonus)},update:function(b,
+e){this.delay-=e;
+if(0>=this.delay)if(this.delay=250,this.tmp--,0>=this.tmp&&(this.tmp=this.getCount(),this.delay=this.getCooldown()),5<this.level){b=2*Math.PI/8;
+e=new Phaser.Math.Vector2(1,1);
+e.setAngle(Phaser.Math.FloatBetween(0,2*Math.PI));
+e.normalize();
+var f="ball1.png ball2.png ball3.png ball4.png ball5.png ball6.png ball7.png ball8.png".split(" ");
+Phaser.Utils.Array.Shuffle(f);
+for(var h=0;8>h;
+h++){var n=this._launchBall(e);
+null!=n&&(n.setFrame(f[h]),n.rotationSpeed=.2,n.tgtsCount=3);
+e.setAngle(e.angle()+
+b);
+e.normalize()}}
+else BossZone.instance.bossZoneActive?(b=Bosses.instance.findBossClosestToPlayer(Player.instance.x,Player.instance.y),e=Enemies.instance.findEnemyClosestToPlayer(Player.instance.x,Player.instance.y),null!=e&&(null==b?b=e:e.distToPlayerSq<b.distToPlayerSq&&(b=e))):b=Enemies.instance.findEnemyClosestToPlayer(Player.instance.x,Player.instance.y),null!=b&&0<=this.rangeSq&&(e=new Phaser.Math.Vector2(b.x-Player.instance.x,b.y-Player.instance.y),e.normalize(),e.scale(this.getSpeed()),this._launchBall(e))},
+getProjectileSprite:function(){return 5<this.level?"shot_dragon.png":"#weapon_bounce"},_launchBall:function(b){var e=Projectiles.instance.spawnProjectile(this.getProjectileSprite(),Player.instance.x,Player.instance.y,b.x,b.y,this.getSpeed(),this.getDamage());
+null!=e&&(e.setScale(.9),e.collSize2=e.displayWidth*e.originX*.8,e.tgtsCount=-1,e.rotation=b.angle()+Math.PI/2,e.life=this.getLife(),e.bounceEnemy=!0,e.bounceBossZn=!0,e.bounceScreen=!0,e.bounce=!0,e.z=100,e.onFinish=function(f){f.explosive=!0;
+f.radius=50;
+f.dmg=50;
+Projectiles.instance.explodeProjectile(f)});
+return e}};
+Forcefield=function(){this.init()};
+Forcefield.prototype={constructor:Forcefield,init:function(){this.name="WEAPON_NAME_FORCEFIELD";
+this.desc="WEAPON_DESC_FORCEFIELD1";
+this.defFrame="weapon_forcefield.png";
+this.evoName="WEAPON_NAME_DOMAIN";
+this.evoDesc="WEAPON_DESC_DOMAIN";
+this.evoFrame="weapon_domain.png";
+this.evoSupp="EnergyDrink";
+this.reset()},getName:function(b){return 5<b?Str(this.evoName):Str(this.name)},getDesc:function(b){if(5<b)return Str(this.evoDesc);
+switch(b){case 1:return Str("WEAPON_DESC_FORCEFIELD1");
+case 2:case 3:case 4:case 5:return Str("WEAPON_DESC_FORCEFIELD2345")}},
+getFrame:function(b){return 5<b?this.evoFrame:this.defFrame},reset:function(){this.level=1;
+this.delay=0},levelUp:function(){this.level++},getDamage:function(){var b=3*Player.instance.getAttrib("attack");2==this.level&&(b*=1.3);3==this.level&&(b*=1.6);4==this.level&&(b*=1.9);5==this.level&&(b*=2.2);5<this.level&&(b*=2.5);
+return b},getRadius:function(){var b=60;2==this.level&&(b=70);3==this.level&&(b=80);4==this.level&&(b=90);5==this.level&&(b=100);5<this.level&&(b=80);
+return b+Math.floor(Player.instance.attribs.shot_range_bonus*
+b)},update:function(b,e){b=this.getRadius();5<this.level&&(Player.instance.sprForceField.stop(),Player.instance.sprForceField.setFrame("domain_effect.png"));
+Player.instance.sprForceField.visible=!0;
+Player.instance.sprForceField.displayWidth=2*b;
+Player.instance.sprForceField.scaleY=Player.instance.sprForceField.scaleX;
+this.delay-=e;
+if(0>=this.delay){this.delay=350;5<this.level&&(this.delay=150);
+soundIsPlaying(SceneGame.instance,"forcefield")||playSound(SceneGame.instance,"forcefield");
+e=Enemies.instance.getEnemiesInRadius(Player.instance.x,
+Player.instance.y,b);
+for(var f=0;
+f<e.length;
+f++)Enemies.instance.damageEnemy(e[f],this.getDamage());
+b=Projectiles.instance.getEnemyProjectilesInRadius(Player.instance.x,Player.instance.y,b);
+Projectiles.instance.invalidateProjectiles(b)}}};
+Launcher=function(){this.init()};
+Launcher.prototype={constructor:Launcher,init:function(){this.name="WEAPON_NAME_LAUNCHER";
+this.desc="WEAPON_DESC_LAUNCHER1";
+this.defFrame="weapon_launcher.png";
+this.evoName="WEAPON_NAME_AIRSTRIKE";
+this.evoDesc="WEAPON_DESC_AIRSTRIKE";
+this.evoFrame="weapon_airstrike.png";
+this.evoSupp="AmmoBooster";
+this.reset()},getName:function(b){return 5<b?Str(this.evoName):Str(this.name)},getDesc:function(b){if(5<b)return Str(this.evoDesc);
+switch(b){case 1:return Str("WEAPON_DESC_LAUNCHER1");
+case 2:case 3:return Str("WEAPON_DESC_LAUNCHER23");
+case 4:case 5:return Str("WEAPON_DESC_LAUNCHER45")}},getFrame:function(b){return 5<b?this.evoFrame:this.defFrame},reset:function(){this.level=1;
+this.radius=80;
+this.speed=.5;
+this.range=250;
+this.cooldown=8E3;
+this.life=6E3;
+this.delay=.1*this.getCooldown();
+this.tmp=50;
+this.aimRot=0;
+this.aimRotInc=4*Math.PI/this.getCount()},levelUp:function(){this.level++;
+this.aimRotInc=4*Math.PI/this.getCount();
+this.tmp=this.getCount();
+this.delay=this.getCooldown()-this.life},getDamage:function(){var b=2*Player.instance.getAttrib("attack");
+4==this.level&&(b*=1.5);5==this.level&&(b*=2);5<this.level&&(b*=2.5);
+return b},getCount:function(){return 2==this.level?50:2<this.level?100:5<this.level?10:25},getRadius:function(){return this.radius+Math.floor(Player.instance.attribs.shot_range_bonus*this.radius)},getSpeed:function(){var b=this.speed+Math.floor(Player.instance.attribs.shot_speed_bonus*this.speed);5<this.level&&(b*=3.5);
+return b},getCooldown:function(){return Math.ceil(this.cooldown-this.cooldown*Player.instance.attribs.cooldown_bonus)},
+update:function(b,e){this.delay-=e;0>=this.delay&&(this.delay=this.life/this.getCount(),this.tmp--,0>=this.tmp&&(this.tmp=this.getCount(),this.delay=this.getCooldown()-this.life),5<this.level?(this.delay=100,b={x:Player.instance.x+Phaser.Math.Between(-RES_SCREEN_WIDTH2,RES_SCREEN_WIDTH2),y:Player.instance.y+Phaser.Math.Between(-RES_SCREEN_HEIGHT2,RES_SCREEN_HEIGHT2)},this._launchAirStrikeRocket(b)):(this.aimRot+=this.aimRotInc,b={x:Player.instance.x+Math.cos(this.aimRot)*this.range,y:Player.instance.y+
+Math.sin(this.aimRot)*this.range},this._launchMiniRocket(b)))},_launchMiniRocket:function(b){var e=new Phaser.Math.Vector2(b.x-Player.instance.x,b.y-Player.instance.y);
+e.normalize();
+var f=Projectiles.instance.spawnProjectile("laucher_shot.png",Player.instance.x,Player.instance.y,e.x,e.y,this.getSpeed(),this.getDamage());
+null!=f&&(f.target=b,f.setScale(.8),f.distToTgt=Phaser.Math.Distance.BetweenPointsSquared(f,f.target),f.startPos={x:Player.instance.x,y:Player.instance.y},f.explosive=!0,f.radius=
+this.getRadius(),f.rotation=e.angle())},_launchAirStrikeRocket:function(b){var e=b.x,f=b.y-RES_SCREEN_HEIGHT2,h=new Phaser.Math.Vector2(0,1);
+e=Projectiles.instance.spawnProjectile("air_rocket.png",e,f,h.x,h.y,this.getSpeed(),this.getDamage());
+null!=e&&(e.explosive=!0,e.radius=this.getRadius(),e.target={x:b.x,y:b.y},e.tgtsCount=100,e.rotation=Math.PI/2)}};
+Molotov=function(){this.init()};
+Molotov.prototype={constructor:Molotov,init:function(){this.name="WEAPON_NAME_MOLOTOV";
+this.desc="WEAPON_DESC_MOLOTOV1";
+this.defFrame="weapon_molotov.png";
+this.evoName="WEAPON_NAME_CANISTER";
+this.evoDesc="WEAPON_DESC_CANISTER";
+this.evoFrame="weapon_canister.png";
+this.evoSupp="Detector";
+this.reset()},getName:function(b){return 5<b?Str(this.evoName):Str(this.name)},getDesc:function(b){if(5<b)return Str(this.evoDesc);
+switch(b){case 1:return Str("WEAPON_DESC_MOLOTOV1");
+case 2:case 3:case 4:case 5:return Str("WEAPON_DESC_MOLOTOV2345")}},
+getFrame:function(b){return 5<b?this.evoFrame:this.defFrame},reset:function(){this.level=1;
+this.speed=.5;
+this.range=200;
+this.cooldown=3E3;
+this.delay=.1*this.getCooldown();
+this.tmp=this.getCount();
+this.aimRot=0;
+this.aimRotInc=2*Math.PI/this.getCount();
+this.life=3E3},levelUp:function(){this.level++;
+this.tmp=this.getCount();
+this.delay=this.getCooldown();
+this.aimRot=Phaser.Math.FloatBetween(0,2*Math.PI);
+this.aimRotInc=2*Math.PI/this.getCount()},getDamage:function(){var b=Player.instance.getAttrib("attack");
+2==this.level&&(b*=1.25);3==this.level&&(b*=1.5);4==this.level&&(b*=1.75);5==this.level&&(b*=2);5<this.level&&(b*=2.5);
+return b},getCount:function(){return 5<this.level?12:this.level+1},getLife:function(){return this.life+Math.floor(Player.instance.attribs.shot_range_bonus*this.life)},getSpeed:function(){return this.speed+Math.floor(Player.instance.attribs.shot_speed_bonus*this.speed)},getRadius:function(){var b=70;2==this.level&&(b=80);3==this.level&&(b=90);4==this.level&&(b=110);5==this.level&&
+(b=120);5<this.level&&(b=180);
+return b+Math.floor(Player.instance.attribs.shot_range_bonus*b)},getCooldown:function(){return Math.ceil(this.cooldown-this.cooldown*Player.instance.attribs.cooldown_bonus)},update:function(b,e){this.delay-=e;0>=this.delay&&(this.delay=100,this.tmp--,this._launchMolotov(this.aimRot),0>=this.tmp&&(this.tmp=this.getCount(),this.delay=this.getCooldown(),this.aimRot=Phaser.Math.FloatBetween(0,2*Math.PI)))},_launchMolotov:function(b){b={x:Player.instance.x+Math.cos(b)*this.range,
+y:Player.instance.y+Math.sin(b)*this.range};
+var e=new Phaser.Math.Vector2(b.x-Player.instance.x,b.y-Player.instance.y);
+e.normalize();
+var f=Projectiles.instance.spawnProjectile("weapon_molotov.png",Player.instance.x,Player.instance.y,e.x,e.y,this.getSpeed(),this.getDamage());
+null!=f&&(f.target=b,f.startPos={x:Player.instance.x,y:Player.instance.y},f.fire=!0,f.radius=this.getRadius(),f.rotation=e.angle()+Math.PI/2,f.rotationSpeed=.01,f.life=this.getLife(),f.sound="molotov",this.aimRot+=this.aimRotInc)}};
+Kevlar=function(){this.init()};
+Kevlar.prototype={constructor:Kevlar,init:function(){this.name="SUPPLY_NAME_KEVLAR";
+this.desc="SUPPLY_DESC_KEVLAR";
+this.defFrame="supply_kevlar.png";
+this.evoSupp="Sword";
+this.reset()},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+this.bonus[b])},getFrame:function(b){return this.defFrame},reset:function(){this.level=1;
+this.bonus=[0,10,20,30,40,50];
+this.attribs=[];
+this.updateAttribs()},updateAttribs:function(){this.attribs.defense=this.bonus[this.level]},
+levelUp:function(){this.level++;
+this.updateAttribs()}};
+AmmoBooster=function(){this.init()};
+AmmoBooster.prototype={constructor:AmmoBooster,init:function(){this.name="SUPPLY_NAME_AMMOBOOSTER";
+this.desc="SUPPLY_DESC_AMMOBOOSTER";
+this.defFrame="supply_ammobooster.png";
+this.evoSupp=["Gun","Launcher"];
+this.reset()},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+100*this.bonus[b])},getFrame:function(b){return this.defFrame},reset:function(){this.level=1;
+this.bonus=[0,.1,.2,.3,.4,.5];
+this.attribs=[];
+this.updateAttribs()},updateAttribs:function(){this.attribs.attack_bonus=
+this.bonus[this.level]},levelUp:function(){this.level++;
+this.updateAttribs()}};
+Handbook=function(){this.init()};
+Handbook.prototype={constructor:Handbook,init:function(){this.name="SUPPLY_NAME_HANDBOOK";
+this.desc="SUPPLY_DESC_HANDBOOK";
+this.defFrame="supply_handbook.png";
+this.evoSupp="Flamethrower";
+this.reset()},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+this.bonus[b])},getFrame:function(b){return this.defFrame},reset:function(){this.level=1;
+this.bonus=[0,8,16,24,32,40];
+this.attribs=[];
+this.updateAttribs()},updateAttribs:function(){this.attribs.exp_bonus=this.bonus[this.level]},
+levelUp:function(){this.level++;
+this.updateAttribs()}};
+Scope=function(){this.init()};
+Scope.prototype={constructor:Scope,init:function(){this.name="SUPPLY_NAME_SCOPE";
+this.desc="SUPPLY_DESC_SCOPE";
+this.defFrame="supply_scope.png";
+this.evoSupp="Drill";
+this.reset()},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+100*this.bonus[b])},getFrame:function(b){return this.defFrame},reset:function(){this.level=1;
+this.bonus=[0,.1,.2,.3,.4,.5];
+this.attribs=[];
+this.updateAttribs()},updateAttribs:function(){this.attribs.shot_range_bonus=this.bonus[this.level]},
+levelUp:function(){this.level++;
+this.updateAttribs()}};
+Propane=function(){this.init()};
+Propane.prototype={constructor:Propane,init:function(){this.name="SUPPLY_NAME_PROPANE";
+this.desc="SUPPLY_DESC_PROPANE";
+this.defFrame="supply_propane.png";
+this.evoSupp="Bazooka";
+this.reset()},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+100*this.bonus[b])},getFrame:function(b){return this.defFrame},reset:function(){this.level=1;
+this.bonus=[0,.1,.2,.3,.4,.5];
+this.attribs=[];
+this.updateAttribs()},updateAttribs:function(){this.attribs.shot_speed_bonus=this.bonus[this.level]},
+levelUp:function(){this.level++;
+this.updateAttribs()}};
+Magnet=function(){this.init()};
+Magnet.prototype={constructor:Magnet,init:function(){this.name="SUPPLY_NAME_MAGNET";
+this.desc="SUPPLY_DESC_MAGNET";
+this.defFrame="supply_magnet.png";
+this.evoSupp="Boomerang";
+this.reset()},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+100*this.bonus[b])},getFrame:function(b){return this.defFrame},reset:function(){this.level=1;
+this.bonus=[0,.5,2,3,4,5];
+this.attribs=[];
+this.updateAttribs()},updateAttribs:function(){this.attribs.pickup_range_bonus=this.bonus[this.level]},
+levelUp:function(){this.level++;
+this.updateAttribs()}};
+Chronometer=function(){this.init()};
+Chronometer.prototype={constructor:Chronometer,init:function(){this.name="SUPPLY_NAME_CHRONOMETER";
+this.desc="SUPPLY_DESC_CHRONOMETER";
+this.defFrame="supply_chrono.png";
+this.evoSupp="Circular";
+this.reset()},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+100*this.bonus[b])},getFrame:function(b){return this.defFrame},reset:function(){this.level=1;
+this.bonus=[0,.1,.2,.3,.4,.5];
+this.attribs=[];
+this.updateAttribs()},updateAttribs:function(){this.attribs.attack_bonus=
+this.bonus[this.level]},levelUp:function(){this.level++;
+this.updateAttribs()}};
+ActionGloves=function(){this.init()};
+ActionGloves.prototype={constructor:ActionGloves,init:function(){this.name="SUPPLY_NAME_ACTIONGLOVES";
+this.desc="SUPPLY_DESC_ACTIONGLOVES";
+this.defFrame="supply_gloves.png";
+this.evoSupp=["Crossbow","Tesla"];
+this.reset()},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+100*this.bonus[b])},getFrame:function(b){return this.defFrame},reset:function(){this.level=1;
+this.bonus=[0,.08,.16,.24,.32,.4];
+this.attribs=[];
+this.updateAttribs()},updateAttribs:function(){this.attribs.cooldown_bonus=
+this.bonus[this.level]},levelUp:function(){this.level++;
+this.updateAttribs()}};
+EnergyDrink=function(){this.init()};
+EnergyDrink.prototype={constructor:EnergyDrink,init:function(){this.name="SUPPLY_NAME_ENERGYDRINK";
+this.desc="SUPPLY_DESC_ENERGYDRINK";
+this.defFrame="supply_energydrink.png";
+this.evoSupp="Forcefield";
+this.reset()},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+100*this.bonus[b])},getFrame:function(b){return this.defFrame},reset:function(){this.level=1;
+this.bonus=[0,.01,.02,.03,.04,.05];
+this.attribs=[];
+this.updateAttribs()},updateAttribs:function(){this.attribs.regen_bonus=
+this.bonus[this.level]},levelUp:function(){this.level++;
+this.updateAttribs()}};
+Sneakers=function(){this.init()};
+Sneakers.prototype={constructor:Sneakers,init:function(){this.name="SUPPLY_NAME_SNEAKERS";
+this.desc="SUPPLY_DESC_SNEAKERS";
+this.defFrame="supply_sneakers.png";
+this.evoSupp="SpikedBall";
+this.reset()},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+100*this.bonus[b])},getFrame:function(b){return this.defFrame},reset:function(){this.level=1;
+this.bonus=[0,.1,.2,.3,.4,.5];
+this.attribs=[];
+this.updateAttribs()},updateAttribs:function(){this.attribs.speed_bonus=this.bonus[this.level]},
+levelUp:function(){this.level++;
+this.updateAttribs()}};
+Detector=function(){this.init()};
+Detector.prototype={constructor:Detector,init:function(){this.name="SUPPLY_NAME_DETECTOR";
+this.desc="SUPPLY_DESC_DETECTOR";
+this.defFrame="supply_detector.png";
+this.evoSupp="Molotov";
+this.reset()},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+this.bonus[b])},getFrame:function(b){return this.defFrame},reset:function(){this.level=1;
+this.bonus=[0,8,16,24,32,40];
+this.attribs=[];
+this.updateAttribs()},updateAttribs:function(){this.attribs.cash_bonus=this.bonus[this.level]},
+levelUp:function(){this.level++;
+this.updateAttribs()}};
+Supplements=function(){this.init()};
+Supplements.prototype={constructor:Supplements,init:function(){this.name="SUPPLY_NAME_SUPPLEMENTS";
+this.desc="SUPPLY_DESC_SUPPLEMENTS";
+this.defFrame="supply_supplements.png";
+this.evoSupp="Axe";
+this.reset()},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+100*this.bonus[b])},getFrame:function(b){return this.defFrame},reset:function(){this.level=1;
+this.bonus=[0,.2,.4,.6,.8,1];
+this.attribs=[];
+this.updateAttribs()},updateAttribs:function(){this.attribs.attack_bonus=
+this.bonus[this.level]},levelUp:function(){this.level++;
+this.updateAttribs()}};
+Coins=function(){this.init()};
+Coins.prototype={constructor:Coins,init:function(){this.name="SUPPLY_NAME_COINS";
+this.desc="SUPPLY_DESC_COINS";
+this.defFrame="item_coin_2.png";
+this.evoSupp=null;
+this.consumable=!0;
+this.value=1E3},getName:function(b){return Str(this.name)},getFrame:function(b){return this.defFrame},getDesc:function(b){return Str(this.desc).replace("[x]",""+this.value)},consume:function(){Level.instance.incLevelMoney(this.value)}};
+Medikit=function(){this.init()};
+Medikit.prototype={constructor:Medikit,init:function(){this.name="SUPPLY_NAME_MEDIKIT";
+this.desc="SUPPLY_DESC_MEDIKIT";
+this.defFrame="item_medikit.png";
+this.evoSupp=null;
+this.consumable=!0},getName:function(b){return Str(this.name)},getDesc:function(b){return Str(this.desc).replace("[x]",""+Player.instance.attribs.firstaid)},getFrame:function(b){return this.defFrame},consume:function(){Player.instance.incHealth(Player.instance.attribs.firstaid)}};
+var ScenePreload=new Phaser.Class({Extends:Phaser.Scene,initialize:function(){Phaser.Scene.call(this,{key:"ScenePreload",active:!0})},preload:function(){this.load.xml("lang_strings","assets/dat/m.isr");
+this.load.image("inl","assets/gfx/inl.png");
+this.load.once("complete",function(){GetResolutionScale();
+languages=new Languages(this.game);
+this.loadLanguageSettings();
+this.imgPreloadLogo=this.add.image(0,0,"inl");
+this.imgPreloadLogo.setScale(.8);
+this.imgPreloadLogo.setOrigin(.5,.5);
+this.imgPreloadLogo.visible=
+!1;
+var b=this.cameras.main.width,e=this.cameras.main.height;
+this.txtLoading=this.make.text({x:b/2,y:e/6*2,text:STR("LOADING"),style:{font:"55px gamefont",fill:"#F9D720"}});
+this.txtLoading.setOrigin(.5,.5);
+updateTextToWidth(this.txtLoading,320,55,2);
+this.txtLoadingPerc=this.make.text({x:b/2,y:e/6*2,text:"LOADING",style:{font:"85px gamefont",fill:"#F9D720"}});
+this.txtLoadingPerc.setOrigin(.5,.5);
+game.device.os.desktop||(Resolution.RESOLUTION_SCALE=.88,resize());
+this.scale.refresh();
+this.loadAllAssets()},
+this);
+this.imgPreloadLogo=null},loadAllAssets:function(){var b=navigator.userLanguage||navigator.language,e=getUrlParameterByName("lang");
+null!==e&&(b=e);0==b.indexOf("ru")&&this.load.image("splash_ru","assets/gfx/splash_ru.png");
+this.load.plugin("rexvirtualjoystickplugin","js/Libs/rexvirtualjoystickplugin.min.js");
+this.load.spine("man","assets/gfx/man.json","assets/gfx/man.atlas");
+this.load.image("splash","assets/gfx/splash.png");
+this.load.atlas("pak_menu","assets/gfx/pak_menu.png","assets/gfx/pak_menu.json");
+this.load.atlas("pak_menu2","assets/gfx/pak_menu2.png","assets/gfx/pak_menu2.json");
+this.load.atlas("pak_game","assets/gfx/pak_game.png","assets/gfx/pak_game.json");
+this.load.atlas("pak_actors","assets/gfx/pak_actors.png","assets/gfx/pak_actors.json");
+this.load.image("menu_bg","assets/gfx/menu_bg.png");
+this.load.image("bg1","assets/gfx/bg1.png");
+this.load.image("bg2","assets/gfx/bg2.png");
+this.load.image("bg3","assets/gfx/bg3.png");
+this.load.image("bg4","assets/gfx/bg4.png");
+this.load.image("bg5",
+"assets/gfx/bg5.png");
+this.load.image("bg6","assets/gfx/bg6.png");
+this.load.image("bg7","assets/gfx/bg7.png");
+this.load.image("bg8","assets/gfx/bg8.png");
+this.load.audio("button",["assets/audio/button.ogg","assets/audio/button.mp3"]);
+this.load.audio("kaching",["assets/audio/kaching.ogg","assets/audio/kaching.mp3"]);
+this.load.audio("coin",["assets/audio/coin.ogg","assets/audio/coin.mp3"]);
+this.load.audio("exp",["assets/audio/exp.ogg","assets/audio/exp.mp3"]);
+this.load.audio("cnt",["assets/audio/cnt.ogg",
+"assets/audio/cnt.mp3"]);
+this.load.audio("hit",["assets/audio/hit.ogg","assets/audio/hit.mp3"]);
+this.load.audio("zd1",["assets/audio/zd1.ogg","assets/audio/zd1.mp3"]);
+this.load.audio("zd2",["assets/audio/zd2.ogg","assets/audio/zd2.mp3"]);
+this.load.audio("zd3",["assets/audio/zd3.ogg","assets/audio/zd3.mp3"]);
+this.load.audio("zd4",["assets/audio/zd4.ogg","assets/audio/zd4.mp3"]);
+this.load.audio("zd5",["assets/audio/zd5.ogg","assets/audio/zd5.mp3"]);
+this.load.audio("nomoney",["assets/audio/nomoney.ogg",
+"assets/audio/nomoney.mp3"]);
+this.load.audio("levelup",["assets/audio/levelup.ogg","assets/audio/levelup.mp3"]);
+this.load.audio("booster",["assets/audio/booster.ogg","assets/audio/booster.mp3"]);
+this.load.audio("gun2",["assets/audio/gun2.ogg","assets/audio/gun2.mp3"]);
+this.load.audio("bomb",["assets/audio/bomb.ogg","assets/audio/bomb.mp3"]);
+this.load.audio("laser",["assets/audio/laser.ogg","assets/audio/laser.mp3"]);
+this.load.audio("sword",["assets/audio/sword.ogg","assets/audio/sword.mp3"]);
+this.load.audio("rocket",
+["assets/audio/rocket.ogg","assets/audio/rocket.mp3"]);
+this.load.audio("swipe",["assets/audio/swipe.ogg","assets/audio/swipe.mp3"]);
+this.load.audio("whoosh1",["assets/audio/whoosh1.ogg","assets/audio/whoosh1.mp3"]);
+this.load.audio("rifle2",["assets/audio/rifle2.ogg","assets/audio/rifle2.mp3"]);
+this.load.audio("magnet",["assets/audio/magnet.ogg","assets/audio/magnet.mp3"]);
+this.load.audio("molotov",["assets/audio/molotov.ogg","assets/audio/molotov.mp3"]);
+this.load.audio("slot_tick",["assets/audio/slot_tick.ogg",
+"assets/audio/slot_tick.mp3"]);
+this.load.audio("medkit",["assets/audio/medkit.ogg","assets/audio/medkit.mp3"]);
+this.load.audio("forcefield",["assets/audio/forcefield.ogg","assets/audio/forcefield.mp3"]);
+this.load.audio("explosion",["assets/audio/explosion.ogg","assets/audio/explosion.mp3"]);
+this.load.audio("lightning",["assets/audio/lightning.ogg","assets/audio/lightning.mp3"]);
+this.load.audio("player_death",["assets/audio/player_death.ogg","assets/audio/player_death.mp3"]);
+this.load.audio("skill_click",
+["assets/audio/skill_click.ogg","assets/audio/skill_click.mp3"]);
+this.load.audio("game_victory",["assets/audio/game_victory.ogg","assets/audio/game_victory.mp3"]);
+this.load.audio("upgrade_click",["assets/audio/upgrade_click.ogg","assets/audio/upgrade_click.mp3"]);
+this.load.audio("play_button",["assets/audio/play_button.ogg","assets/audio/play_button.mp3"]);
+this.load.audio("reward_button",["assets/audio/reward_button.ogg","assets/audio/reward_button.mp3"]);
+this.load.audio("music_menu",["assets/audio/music_menu.ogg",
+"assets/audio/music_menu.mp3"]);
+this.load.audio("music_ingame",["assets/audio/music_ingame.ogg","assets/audio/music_ingame.mp3"]);
+this.load.audio("music_boss",["assets/audio/music_boss.ogg","assets/audio/music_boss.mp3"]);
+this.load.on("progress",function(f){GetResolutionScale();
+this.txtLoadingPerc.text=Math.floor(100*f)+"%"},this);
+this.load.on("fileprogress",function(f){});
+this.load.on("complete",function(){gamesnacksActive&&GameSnacks.game.ready();
+this.scene.start("SceneGame")},this);
+this.load.start()},
+create:function(){this.scale.on("resize",this.resize,this);
+this.scale.refresh()},resize:function(b,e,f,h){e=b.width;
+b=b.height;
+f=GetResolutionScale();
+this.cameras.resize(e,b);
+null!=this.imgPreloadLogo&&(this.imgPreloadLogo.setPosition(e/2,b/2),this.imgPreloadLogo.setScale(0),this.txtLoading.setScale(f),this.txtLoadingPerc.setScale(f),this.txtLoading.setPosition(e/2,b-150*f),this.txtLoadingPerc.setPosition(e/2,b-80*f))},loadLanguageSettings:function(){Languages.instance.language="en";
+var b=navigator.userLanguage||
+navigator.language;0==b.indexOf("de")&&(Languages.instance.language="de");0==b.indexOf("es")&&(Languages.instance.language="es");0==b.indexOf("fr")&&(Languages.instance.language="fr");0==b.indexOf("it")&&(Languages.instance.language="it");0==b.indexOf("br")&&(Languages.instance.language="pt");0==b.indexOf("pt")&&(Languages.instance.language="pt");0==b.indexOf("ru")&&(Languages.instance.language="ru");
+var e=getUrlParameterByName("lang");
+null!==e&&("en"==e&&(Languages.instance.language="en"),"de"==
+e&&(Languages.instance.language="de"),"es"==e&&(Languages.instance.language="es"),"fr"==e&&(Languages.instance.language="fr"),"it"==e&&(Languages.instance.language="it"),"br"==e&&(Languages.instance.language="pt"),"pt"==e&&(Languages.instance.language="pt"),"ru"==e&&(Languages.instance.language="ru"));"ru"===Languages.instance.language&&(document.title=GameData.BuildTitleRU);
+LOG("systemLanguage = "+b);
+LOG("Languages.instance.language = "+Languages.instance.language)}});
+var gameRunning=!1,SceneGame=new Phaser.Class({Extends:Phaser.Scene,initialize:function SceneGame(){SceneGame.instance=this;
+Phaser.Scene.call(this,{key:"SceneGame",active:!1})},create:function(){this.updateScreenSizeVars();
+GlobalDate=new Date;
+GameData.Load();
+UpdateDailyLoginMission();
+this.game.sound.mute=!SoundsEnabled;
+this.createAnimations();
+containerGame=new ContainerGame(this);
+this.cameraUI=this.cameras.add();
+this.cameraUI.ignore(containerGame);
+containerOverlay=new ContainerOverlay(this);
+containerMenu=
+new ContainerMenu(this);
+containerGameTop=new ContainerGameTop(this);
+dlgCnfrmMsnRst=new DialogConfirmMissionReset(this);
+dlgCnfrmGmExit=new DialogConfirmGameExit(this);
+dlgPause=new DialogPause(this);
+dlgLevelUp=new DialogLevelUp(this);
+dlgSelectPrimary=new DialogSelectPrimary(this);
+dlgGameOver=new DialogGameOver(this,0,0);
+dlgContinue=new DialogContinue(this,0,0);
+dlgSlots=new DialogSlots(this,0,0);
+dlgLootGained=new DialogLootGained(this,0,0);
+containerSplash=new ContainerSplash(this);
+containerTop=new ContainerTop(this);
+containerOnbrdng=new ContainerOnboarding(this);
+containerYndxOverlay=new ContainerYndxOverlay(this);
+containerDebug=null;
+GameData.BuildDebug&&(containerDebug=new ContainerDebug(this));
+containerGame.camera.ignore(containerSplash);
+this.scale.on("resize",t

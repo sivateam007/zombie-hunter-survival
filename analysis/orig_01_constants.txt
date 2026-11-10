@@ -1,0 +1,203 @@
+(e){e.setTint(e.TINT)}):this.button.setTint(this.button.TINT),this.callback(this.button),null!=this.button.onInputOut&&this.button.onInputOut.call({button:this.button}),this.button.buttonPressed=!0)}}
+function ButtonOnInputOver(){if(Buttons.enabled&&game.device.os.desktop&&0!=this.button.alpha&&this.button.visible)if(this.button instanceof Phaser.GameObjects.Container)this.button.each(function(e){var f=Phaser.Display.Color.ValueToColor(e.TINT);
+f.darken(30);
+e.setTint(f.color)});
+else{var b=Phaser.Display.Color.ValueToColor(this.button.TINT);
+b.darken(30);
+this.button.setTint(b.color)}}
+function ButtonOnInputOut(){Buttons.enabled&&game.device.os.desktop&&0!=this.button.alpha&&this.button.visible&&(this.button instanceof Phaser.GameObjects.Container?this.button.each(function(b){b.setTint(b.TINT)}):this.button.setTint(this.button.TINT),this.button.buttonPressed&&(this.button.buttonPressed=!1))};
+var SOUND_VOLUMES=[];
+SOUND_VOLUMES["default"]=.3;
+SOUND_VOLUMES.button=.2;
+SOUND_VOLUMES.music_menu=.4;
+SOUND_VOLUMES.music_ingame=.2;
+SOUND_VOLUMES.music_boss=.3;
+SOUND_VOLUMES.player_death=.5;
+SOUND_VOLUMES.game_victory=.5;
+SOUND_VOLUMES.skill_click=.4;
+SOUND_VOLUMES.upgrade_click=.5;
+SOUND_VOLUMES.reward_button=.5;
+SOUND_VOLUMES.play_button=.5;
+SOUND_VOLUMES.forcefield=.2;
+SOUND_VOLUMES.gun2=.2;
+SOUND_VOLUMES.laser=.2;
+SOUND_VOLUMES.sword=.05;
+SOUND_VOLUMES.rocket=.2;
+SOUND_VOLUMES.kaching=.3;
+SOUND_VOLUMES.coin=.3;
+SOUND_VOLUMES.bomb=.2;
+SOUND_VOLUMES.explosion=.2;
+SOUND_VOLUMES.lightning=.3;
+SOUND_VOLUMES.molotov=.2;
+SOUND_VOLUMES.medkit=.5;
+SOUND_VOLUMES.exp=.1;
+SOUND_VOLUMES.hit=.1;
+SOUND_VOLUMES.zd1=.1;
+SOUND_VOLUMES.zd2=.1;
+SOUND_VOLUMES.z3=.1;
+SOUND_VOLUMES.zd4=.1;
+SOUND_VOLUMES.zd5=.1;
+SOUND_VOLUMES.nomoney=.4;
+SOUND_VOLUMES.magnet=.5;
+SOUND_VOLUMES.whoosh1=.6;
+SOUND_VOLUMES.rifle2=.5;
+SOUND_VOLUMES.swipe=.4;
+SOUND_VOLUMES.levelup=.4;
+SOUND_VOLUMES.booster=.3;
+SOUND_VOLUMES.slot_tick=.3;
+SOUND_VOLUMES.cnt=.4;
+var ActualMusic=null;
+function stopMusic(b){b.sound.stopByKey("music_menu");
+b.sound.stopByKey("music_ingame");
+b.sound.stopByKey("music_boss")}
+function playMusic(b,e){stopMusic(b);
+null!=e&&(ActualMusic=e,SoundsEnabled&&b.sound.play(e,{loop:!0,volume:getSoundVolume(e)}))}
+function playSound(b,e,f){void 0===f&&(f=!1);
+SoundsEnabled&&b.sound.play(e,{volume:getSoundVolume(e),loop:f})}
+function getSound(b,e){return b.sound.get(e)}
+function soundIsPlaying(b,e){e=getSound(b,e);
+return null==e?!1:e.isPlaying}
+function pauseSound(b,e){b=getSound(b,e);
+if(null!=b)try{b.pause()}
+catch(f){}}
+function resumeSound(b,e){b=getSound(b,e);
+if(null!=b)try{b.resume()}
+catch(f){}}
+function stopSound(b,e){b.sound.stopByKey(e)}
+function getSoundVolume(b){return SOUND_VOLUMES.hasOwnProperty(b)?SOUND_VOLUMES[b]:SOUND_VOLUMES["default"]}
+function pauseSounds(b){b.sound.setMute(!0)}
+function resumeSounds(b){b.sound.setMute(!SoundsEnabled)};
+function fullscreenAvail(){return screenfull.isEnabled}
+function fullscreenActive(){return screenfull.isFullscreen}
+function fullscreenToggle(){screenfull.toggle()};
+var GameData=function(){};
+GameData.BuildTitle="Zombie Hunter SURVIVAL";
+GameData.BuildTitleRU="\u041e\u0445\u043e\u0442\u043d\u0438\u043a \u043d\u0430 \u0437\u043e\u043c\u0431\u0438: \u0412\u044b\u0436\u0438\u0432\u0430\u043d\u0438\u0435";
+GameData.BuildVersion="1.0.1";
+GameData.BuildString="05.09.2023 09:00";
+GameData.BuildDebug=!1;
+GameData.ProfileName="inl-srvvr";
+console.info("%c %c   "+GameData.BuildTitle+" v"+GameData.BuildVersion+" | "+GameData.BuildString+"  %c ","background:#353AFB","background:#000080;
+color:#fff","background:#353AFB");
+var DataVersion=.4,PlayerMoney=0,PlayerSkills=[],SelectedLevel=0,MissionsCounter=0,ActiveMissions=[],LevelDifficulty={},LevelTimes={},LevelRewards={},CofferTime=null,MissionsTime=null,SavedGame=null,OnboardingPassed=!1,SoundsEnabled=!0;
+GameData.Reset=function(){PlayerMoney=SelectedMusic=0;
+PlayerSkills=[];
+MissionsCounter=SelectedLevel=0;
+ActiveMissions=[];
+LevelDifficulty={};
+LevelTimes={};
+LevelRewards={};
+SavedGame=null;
+var b=new Date;
+b.setHours(b.getHours()+168-10);
+CofferTime=b.getTime();
+b=new Date;
+b.setHours(b.getHours()+24);
+MissionsTime=b.getTime();
+LoginTime=(new Date).getTime();
+SoundsEnabled=!0;
+PlayerSkills[SKILL_POWER]=1;
+PlayerSkills[SKILL_HEALTH]=1;
+PlayerSkills[SKILL_DEFENSE]=1;
+PlayerSkills[SKILL_FIRSTAID]=1;
+PlayerSkills[SKILL_FORTUNE]=
+1;
+PlayerSkills[SKILL_LEARNING]=1;
+GenerateActiveMissions()};
+GameData.Load=function(){GameData.Reset();
+var b=null;
+try{b=JSON.parse(GameSnacks.storage.getItem(GameData.ProfileName))}
+catch(e){}
+try{if(b.DataVersion!=DataVersion){GameData.Save();
+return}
+PlayerMoney=b.PlayerMoney;
+PlayerSkills=b.PlayerSkills;
+SelectedLevel=b.SelectedLevel;
+MissionsCounter=b.MissionsCounter;
+ActiveMissions=b.ActiveMissions;
+LevelDifficulty=b.LevelDifficulty;
+LevelTimes=b.LevelTimes;
+LevelRewards=b.LevelRewards;
+CofferTime=b.CofferTime;
+MissionsTime=b.MissionsTime;
+SavedGame=b.SavedGame;
+OnboardingPassed=
+b.OnboardingPassed;
+SoundsEnabled=b.SoundsEnabled;
+b.hasOwnProperty("LoginTime")&&(LoginTime=b.LoginTime)}
+catch(e){GameData.Reset()}
+GameData.BuildDebug&&(SoundsEnabled=!1);
+gamesnacksActive&&(SoundsEnabled=GameSnacks.audio.isEnabled());
+SceneGame.instance.game.sound.mute=!SoundsEnabled;
+SoundsMuted=SceneGame.instance.game.sound.mute;
+LOG("GameData.Load(): SoundsMuted = "+SoundsMuted)};
+GameData.Save=function(){var b={};
+b.DataVersion=DataVersion;
+b.PlayerMoney=PlayerMoney;
+b.PlayerSkills=PlayerSkills;
+b.SelectedLevel=SelectedLevel;
+b.MissionsCounter=MissionsCounter;
+b.ActiveMissions=ActiveMissions;
+b.LevelDifficulty=LevelDifficulty;
+b.LevelTimes=LevelTimes;
+b.LevelRewards=LevelRewards;
+b.CofferTime=CofferTime;
+b.MissionsTime=MissionsTime;
+b.LoginTime=LoginTime;
+b.SavedGame=SavedGame;
+b.SoundsEnabled=SoundsEnabled;
+b.OnboardingPassed=OnboardingPassed;
+try{GameSnacks.storage.setItem(GameData.ProfileName,
+JSON.stringify(b))}
+catch(e){}};
+function GetLevelDifficulty(b){return LevelDifficulty.hasOwnProperty(b)&&null!==LevelDifficulty[b]?LevelDifficulty[b]:DIFFICULTY_NORMAL}
+function SetRecordLevelTime(b,e,f){void 0===f&&(f=DIFFICULTY_NORMAL);
+LevelTimes.hasOwnProperty(b)||(LevelTimes[b]=[0,0,0]);
+LevelTimes[b][f]>e||(LevelTimes[b][f]=e)}
+function GetRecordLevelTime(b,e){void 0===e&&(e=DIFFICULTY_NORMAL);
+LevelTimes.hasOwnProperty(b)||(LevelTimes[b]=[0,0,0]);
+return LevelTimes[b][e]}
+function IsLevelLocked(b){return GameData.BuildDebug||0>=b?!1:GetRecordLevelTime(b-1)<TIME_LEVEL_COMPLETED}
+function LevelNewlyUnlocked(b){return 0==b||IsLevelLocked(b-1)?!1:0==GetRecordLevelTime(b)}
+function ResetLevelRewardsData(b){var e=GameLevels[b];
+if(!e.hasOwnProperty("rewards"))throw"[ "+e.name+" ] is missing reward section";
+LevelRewards[b]=[e.rewards[0],e.rewards[1],e.rewards[2],e.rewards[0]*GetDifficultyMulForRewards(DIFFICULTY_HARD),e.rewards[1]*GetDifficultyMulForRewards(DIFFICULTY_HARD),e.rewards[2]*GetDifficultyMulForRewards(DIFFICULTY_HARD),e.rewards[0]*GetDifficultyMulForRewards(DIFFICULTY_INSANE),e.rewards[1]*GetDifficultyMulForRewards(DIFFICULTY_INSANE),e.rewards[2]*GetDifficultyMulForRewards(DIFFICULTY_INSANE)]}
+function GetLevelReward(b,e,f){void 0===f&&(f=DIFFICULTY_NORMAL);
+LevelRewards.hasOwnProperty(b)||ResetLevelRewardsData(b);
+return LevelRewards[b][e+3*f]}
+function SetLevelReward(b,e,f,h){void 0===h&&(h=DIFFICULTY_NORMAL);
+LevelRewards.hasOwnProperty(b)||ResetLevelRewardsData(b);
+LevelRewards[b][e+3*h]=f};
+const Resolution={RESOLUTION_SCALE:1,SCALE_MODE:"SMOOTH"};
+Object.defineProperty(Resolution,"DEFAULT_WIDTH",{get:function(){return 790*this.RESOLUTION_SCALE}});
+Object.defineProperty(Resolution,"MAX_WIDTH",{get:function(){return 790*this.RESOLUTION_SCALE}});
+Object.defineProperty(Resolution,"DEFAULT_HEIGHT",{get:function(){return 1300*this.RESOLUTION_SCALE}});
+Object.defineProperty(Resolution,"MAX_HEIGHT",{get:function(){return 1700*this.RESOLUTION_SCALE}});
+function GetResolutionScale(){return Resolution.RESOLUTION_SCALE};
+var USE_CONTINUE_BUTTON=!1,GAME_SCALE_MUL_MOBILE=1,LEVEL_TOP=185,LEVEL_GAP=20,DIFFICULTY_NORMAL=0,DIFFICULTY_HARD=1,DIFFICULTY_INSANE=2,BONUS_COIN=1,BONUS_MAGNET=2,BONUS_MEDKIT=3,BONUS_BOMB=4,BONUS_FOOD=5,BONUS_TREASURE=10;
+const BIG_FILING_COFFER_SEGMENT_VALUE=25,BIG_FILING_COFFER_SEGMENT_MINUTES=15,BIG_FILING_COFFER_TOTAL_SEGMENTS=60/BIG_FILING_COFFER_SEGMENT_MINUTES*168,BIG_FILING_COFFER_TOTAL_VALUE=BIG_FILING_COFFER_TOTAL_SEGMENTS*BIG_FILING_COFFER_SEGMENT_VALUE,BOMB_BONUS_RADIUS=900,BOMB_BONUS_DAMAGE=500,BOX_BONUS_DROP_CHANCE_COIN=15,BOX_BONUS_DROP_CHANCE_COINx3=20,BOX_BONUS_DROP_CHANCE_PILE=15,BOX_BONUS_DROP_CHANCE_POUCH=10,BOX_BONUS_DROP_CHANCE_MAGNET=10,BOX_BONUS_DROP_CHANCE_MEDKIT=25,BOX_BONUS_DROP_CHANCE_BOMB=
+5,BOSS_ZONE_GRID_SIZE=80,LEVEL_TIMES_MUL=1,TIME_3_MINUTES=18E4,TIME_8_MINUTES=48E4,TIME_LEVEL_COMPLETED=12E5,DELAY_GAME_WON=5E3,DELAY_HIDE_HAZARD_INFO=3E3,TIME_INVINCIBLE=3E3;
+var Languages=function(b){if(null!=Languages.instance)return Languages.instance;
+Languages.instance=this;
+Languages.instance.language="en";
+this.xml=this.gameTextsParsed=null;
+this.gameTextsLists=[];
+b=b.cache.xml.get("lang_strings").getElementsByTagName("string");
+for(var e=0;
+e<b.length;
+e++){null==this.gameTextsLists[b.item(e).getAttribute("id")]&&(this.gameTextsLists[b.item(e).getAttribute("id")]=[]);
+for(var f=0;
+f<LANGUAGES.length;
+f++)0<b.item(e).getElementsByTagName(LANGUAGES[f]).length&&(this.gameTextsLists[b.item(e).getAttribute("id")][LANGUAGES[f]]=
+b.item(e).getElementsByTagName(LANGUAGES[f])[0].textContent.replace(/\\n/g,"\n"))}},LANGUAGES="en de es fr it pt ru".split(" ");
+Languages.instance=null;
+Languages.prototype={};
+function Str(b){return void 0==Languages.instance.gameTextsLists[b]||void 0==Languages.instance.gameTextsLists[b][Languages.instance.language]?(console.warn("STR("+b+") MISSING!"),"NAN"):Languages.instance.gameTextsLists[b][Languages.instance.language].replaceAll("\\n","\n")}
+function STR(b){return Str(b).toUpperCase()}
+function EXPORT_LANGS(){for(textId in Languages.instance.gameTextsLists){for(var b=textId,e=0;
+e<LANGUAGES.length;
+e++)b=b+";"+Languages.instance.gameTextsLists[textId][LANGUAGES[e]];
+LOG(b)}};
+var EnemiesData=[];
+EnemiesData.box={sprite:"pak_game",frame:"item_box",scale:1,speed:0,health:10,range:0,damage:0,attackDelay:0};
+EnemiesData.treasure=

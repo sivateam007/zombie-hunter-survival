@@ -1,0 +1,349 @@
+elTimes;
+b.LevelRewards=LevelRewards;
+b.CofferTime=CofferTime;
+b.MissionsTime=MissionsTime;
+b.LoginTime=LoginTime;
+b.SavedGame=SavedGame;
+b.SoundsEnabled=SoundsEnabled;
+b.OnboardingPassed=OnboardingPassed;
+try{GameSnacks.storage.setItem(GameData.ProfileName,
+JSON.stringify(b))}
+catch(e){}
+}
+;
+function GetLevelDifficulty(b){return LevelDifficulty.hasOwnProperty(b)&&null!==LevelDifficulty[b]?LevelDifficulty[b]:DIFFICULTY_NORMAL}
+function SetRecordLevelTime(b,e,f){void 0===f&&(f=DIFFICULTY_NORMAL);
+LevelTimes.hasOwnProperty(b)||(LevelTimes[b]=[0,0,0]);
+LevelTimes[b][f]>e||(LevelTimes[b][f]=e)}
+function GetRecordLevelTime(b,e){void 0===e&&(e=DIFFICULTY_NORMAL);
+LevelTimes.hasOwnProperty(b)||(LevelTimes[b]=[0,0,0]);
+return LevelTimes[b][e]}
+
+function IsLevelLocked(b){return GameData.BuildDebug||0>=b?!1:GetRecordLevelTime(b-1)<TIME_LEVEL_COMPLETED}
+function LevelNewlyUnlocked(b){return 0==b||IsLevelLocked(b-1)?!1:0==GetRecordLevelTime(b)}
+
+function ResetLevelRewardsData(b){var e=GameLevels[b];
+if(!e.hasOwnProperty("rewards"))throw"[ "+e.name+" ] is missing reward section";
+LevelRewards[b]=[e.rewards[0],e.rewards[1],e.rewards[2],e.rewards[0]*GetDifficultyMulForRewards(DIFFICULTY_HARD),e.rewards[1]*GetDifficultyMulForRewards(DIFFICULTY_HARD),e.rewards[2]*GetDifficultyMulForRewards(DIFFICULTY_HARD),e.rewards[0]*GetDifficultyMulForRewards(DIFFICULTY_INSANE),e.rewards[1]*GetDifficultyMulForRewards(DIFFICULTY_INSANE),e.rewards[2]*GetDifficultyMulForRewards(DIFFICULTY_INSANE)]}
+
+function GetLevelReward(b,e,f){void 0===f&&(f=DIFFICULTY_NORMAL);
+LevelRewards.hasOwnProperty(b)||ResetLevelRewardsData(b);
+return LevelRewards[b][e+3*f]}
+function SetLevelReward(b,e,f,h){void 0===h&&(h=DIFFICULTY_NORMAL);
+LevelRewards.hasOwnProperty(b)||ResetLevelRewardsData(b);
+LevelRewards[b][e+3*h]=f}
+;
+const Resolution={RESOLUTION_SCALE:1,SCALE_MODE:"SMOOTH"}
+;
+Object.defineProperty(Resolution,"DEFAULT_WIDTH",{get:function(){return 790*this.RESOLUTION_SCALE}
+}
+);
+Object.defineProperty(Resolution,"MAX_WIDTH",{get:function(){return 790*this.RESOLUTION_SCALE}
+}
+);
+Object.defineProperty(Resolution,"DEFAULT_HEIGHT",{get:function(){return 1300*this.RESOLUTION_SCALE}
+}
+);
+Object.defineProperty(Resolution,"MAX_HEIGHT",{get:function(){return 1700*this.RESOLUTION_SCALE}
+}
+);
+
+function GetResolutionScale(){return Resolution.RESOLUTION_SCALE}
+;
+var USE_CONTINUE_BUTTON=!1,GAME_SCALE_MUL_MOBILE=1,LEVEL_TOP=185,LEVEL_GAP=20,DIFFICULTY_NORMAL=0,DIFFICULTY_HARD=1,DIFFICULTY_INSANE=2,BONUS_COIN=1,BONUS_MAGNET=2,BONUS_MEDKIT=3,BONUS_BOMB=4,BONUS_FOOD=5,BONUS_TREASURE=10;
+
+const BIG_FILING_COFFER_SEGMENT_VALUE=25,BIG_FILING_COFFER_SEGMENT_MINUTES=15,BIG_FILING_COFFER_TOTAL_SEGMENTS=60/BIG_FILING_COFFER_SEGMENT_MINUTES*168,BIG_FILING_COFFER_TOTAL_VALUE=BIG_FILING_COFFER_TOTAL_SEGMENTS*BIG_FILING_COFFER_SEGMENT_VALUE,BOMB_BONUS_RADIUS=900,BOMB_BONUS_DAMAGE=500,BOX_BONUS_DROP_CHANCE_COIN=15,BOX_BONUS_DROP_CHANCE_COINx3=20,BOX_BONUS_DROP_CHANCE_PILE=15,BOX_BONUS_DROP_CHANCE_POUCH=10,BOX_BONUS_DROP_CHANCE_MAGNET=10,BOX_BONUS_DROP_CHANCE_MEDKIT=25,BOX_BONUS_DROP_CHANCE_BOMB=
+5,BOSS_ZONE_GRID_SIZE=80,LEVEL_TIMES_MUL=1,TIME_3_MINUTES=18E4,TIME_8_MINUTES=48E4,TIME_LEVEL_COMPLETED=12E5,DELAY_GAME_WON=5E3,DELAY_HIDE_HAZARD_INFO=3E3,TIME_INVINCIBLE=3E3;
+var Languages=function(b){if(null!=Languages.instance)return Languages.instance;
+Languages.instance=this;
+Languages.instance.language="en";
+this.xml=this.gameTextsParsed=null;
+this.gameTextsLists=[];
+b=b.cache.xml.get("lang_strings").getElementsByTagName("string");
+for(var e=0;
+e<b.length;
+e++){null==this.gameTextsLists[b.item(e).getAttribute("id")]&&(this.gameTextsLists[b.item(e).getAttribute("id")]=[]);
+for(var f=0;
+f<LANGUAGES.length;
+f++)0<b.item(e).getElementsByTagName(LANGUAGES[f]).length&&(this.gameTextsLists[b.item(e).getAttribute("id")][LANGUAGES[f]]=
+b.item(e).getElementsByTagName(LANGUAGES[f])[0].textContent.replace(/\\n/g,"\n"))}
+}
+,LANGUAGES="en de es fr it pt ru".split(" ");
+Languages.instance=null;
+Languages.prototype={}
+;
+function Str(b){return void 0==Languages.instance.gameTextsLists[b]||void 0==Languages.instance.gameTextsLists[b][Languages.instance.language]?(console.warn("STR("+b+") MISSING!"),"NAN"):Languages.instance.gameTextsLists[b][Languages.instance.language].replaceAll("\\n","\n")}
+function STR(b){return Str(b).toUpperCase()}
+
+function EXPORT_LANGS(){for(textId in Languages.instance.gameTextsLists){for(var b=textId,e=0;
+e<LANGUAGES.length;
+e++)b=b+";
+"+Languages.instance.gameTextsLists[textId][LANGUAGES[e]];
+LOG(b)}
+}
+;
+var EnemiesData=[];
+EnemiesData.box={sprite:"pak_game",frame:"item_box",scale:1,speed:0,health:10,range:0,damage:0,attackDelay:0}
+;
+EnemiesData.treasure={sprite:"pak_game",frame:"item_treasure",scale:1.7,speed:0,health:10,range:0,damage:0,attackDelay:0}
+;
+EnemiesData.zombieA={sprite:"pak_actors",frame:"zombieA",scale:.85,speed:.13,health:10,range:40,damage:4,attackDelay:1E3,bonus:100}
+;
+
+EnemiesData.zombieB={sprite:"pak_actors",frame:"zombieB",scale:.85,speed:.12,health:11,range:40,damage:4,attackDelay:1E3,bonus:100}
+;
+EnemiesData.zombieC={sprite:"pak_actors",frame:"zombieC",scale:.85,speed:.11,health:12,range:40,damage:4,attackDelay:1E3,bonus:100}
+;
+EnemiesData.zombieD={sprite:"pak_actors",frame:"zombieD",scale:.85,speed:.1,health:13,range:40,damage:4,attackDelay:1E3,bonus:100}
+;
+
+EnemiesData.tower1={sprite:"pak_actors",frame:"tower1",scale:.9,speed:0,health:200,range:125,damage:5,attackDelay:350,bonus:300,static:!0}
+;
+EnemiesData.tower2={sprite:"pak_actors",frame:"tower2",scale:.9,speed:0,health:700,range:125,damage:5,attackDelay:350,bonus:3E3,static:!0,shots:[{speed:.35,damage:5,attackDelay:3E3,range:600,sound:"rifle2"}
+]}
+;
+EnemiesData.reptile={sprite:"pak_actors",frame:"reptile",scale:.85,speed:.25,mass:1,health:50,range:40,damage:6,attackDelay:1E3,bonus:300}
+;
+
+EnemiesData.cop={sprite:"pak_actors",frame:"cop",scale:.85,speed:.1,health:25,range:50,damage:5,attackDelay:1E3,bonus:300,shots:[{speed:.35,damage:5,attackDelay:3E3,range:600,sound:"rifle2"}
+]}
+;
+EnemiesData.bat={sprite:"pak_actors",frame:"bat",scale:.85,speed:.5,mass:2,health:10,range:40,damage:3,attackDelay:1E3,bonus:100}
+;
+EnemiesData.builder={sprite:"pak_actors",frame:"builder",scale:.85,speed:.1,health:300,range:40,damage:10,attackDelay:1E3,bonus:1E3}
+;
+
+EnemiesData.spider1={sprite:"pak_actors",frame:"spider1",scale:.85,speed:.15,health:200,range:40,damage:20,attackDelay:1E3,bonus:1E3}
+;
+EnemiesData.spider2={sprite:"pak_actors",frame:"spider2",scale:.85,speed:.2,health:400,range:40,damage:30,attackDelay:1E3,bonus:3E3}
+;
+EnemiesData.toxic1={sprite:"pak_actors",frame:"toxic1",scale:1,speed:.2,mass:2,health:10,range:10,damage:5,attackDelay:1E3,bonus:300,deadshot:{frame:"#effect_acid",scale:.7,speed:0,damage:5,life:2E3,tgtsCount:-1,alphaInTime:{start:1,end:.1}
+}
+}
+;
+
+EnemiesData.toxic2={sprite:"pak_actors",frame:"toxic2",scale:1,speed:.25,mass:2,health:150,range:10,damage:7,attackDelay:1E3,bonus:1E3,deadshot:{frame:"#effect_acid",speed:0,damage:7,life:2E3,tgtsCount:-1,alphaInTime:{start:1,end:.1}
+}
+}
+;
+EnemiesData.slime1={sprite:"pak_actors",frame:"slime1",scale:.85,speed:.15,health:10,range:10,damage:3,attackDelay:1E3,bonus:100,deadshot:{frame:"#effect_acid",scale:.7,speed:0,damage:3,life:1E3,tgtsCount:-1,alphaInTime:{start:1,end:.1}
+}
+}
+;
+
+EnemiesData.slime2={sprite:"pak_actors",frame:"slime2",scale:.85,speed:.1,health:100,range:10,damage:5,attackDelay:1E3,bonus:300,deadshot:{frame:"#effect_acid",speed:0,damage:5,life:1E3,tgtsCount:-1,alphaInTime:{start:1,end:.1}
+}
+,deadspawn:{enemy:"slime1",count:2,effect:"effect_slug",radius:20}
+}
+;
+EnemiesData.slug={sprite:"pak_actors",frame:"slug",scale:.85,speed:.05,health:500,range:10,damage:20,attackDelay:1E3,bonus:3E3,deadspawn:{enemy:"slime2",count:2,effect:"effect_slug",radius:50}
+}
+;
+
+const ASSAULT1_SHOT={speed:.35,damage:5,attackDelay:2500,range:600,sound:"rifle2"}
+;
+EnemiesData.assault1={sprite:"pak_actors",frame:"assault1",scale:.85,speed:.15,health:400,range:50,damage:7,attackDelay:1E3,bonus:3E3,shots:[Object.assign({}
+,ASSAULT1_SHOT,{attackDelay:2500}
+),Object.assign({}
+,ASSAULT1_SHOT,{attackDelay:2800}
+),Object.assign({}
+,ASSAULT1_SHOT,{attackDelay:3100}
+)]}
+;
+
+EnemiesData.manager={sprite:"pak_actors",frame:"manager",scale:.85,speed:.1,health:15,range:50,damage:3,attackDelay:1E3,bonus:300,deadshot:{frame:"shot_briefcase.png",speed:.28,scale:1.5,damage:10,rotationSpeed:.01,destroyable:!0}
+}
+;
+const ASSAULT2_SHOT={speed:.35,damage:5,attackDelay:2500,range:600,angleInc:-20,sound:"rifle2"}
+;
+
+EnemiesData.assault2={sprite:"pak_actors",frame:"assault2",scale:.85,speed:.15,health:400,range:50,damage:7,attackDelay:1E3,bonus:3E3,shots:[Object.assign({}
+,ASSAULT2_SHOT,{angleInc:-20}
+),Object.assign({}
+,ASSAULT2_SHOT,{angleInc:0}
+),Object.assign({}
+,ASSAULT2_SHOT,{angleInc:20}
+)]}
+;
+EnemiesData.miniboss_builder={sprite:"pak_actors",frame:"miniboss_builder",mass:5,scale:.85,speed:.15,health:4E3,range:60,damage:20,attackDelay:1E3,bonus:1E4,healthbar:!0,deaddrop:{type:BONUS_MAGNET}
+}
+;
+
+EnemiesData.miniboss_fighter={sprite:"pak_actors",frame:"miniboss_fighter",scale:.85,speed:.2,mass:5,health:5500,range:60,damage:25,attackDelay:1E3,bonus:1E4,healthbar:!0,deaddrop:{type:BONUS_COIN,data:1E3}
+}
+;
+EnemiesData.miniboss_spider={sprite:"pak_actors",frame:"miniboss_spider",scale:.85,speed:.3,mass:5,health:5E3,range:60,damage:40,attackDelay:1E3,bonus:1E4,healthbar:!0,deaddrop:{type:BONUS_TREASURE,data:3}
+}
+;
+
+EnemiesData.miniboss_reptile={sprite:"pak_actors",frame:"miniboss_reptile",scale:.85,speed:.3,mass:5,health:3500,range:60,damage:30,attackDelay:1E3,bonus:1E4,healthbar:!0,deaddrop:{type:BONUS_TREASURE,data:1}
+}
+;
+const MINIBOSS_SOLDIER_SHOT={speed:.25,damage:5,attackDelay:3E3,range:6E3,angleInc:0,life:1500}
+;
+
+EnemiesData.miniboss_soldier={sprite:"pak_actors",frame:"miniboss_soldier",scale:.85,speed:.1,mass:5,health:4500,range:60,damage:7,attackDelay:1E3,bonus:1E4,healthbar:!0,deaddrop:{type:BONUS_BOMB}
+,shots:[Object.assign({}
+,MINIBOSS_SOLDIER_SHOT,{angleInc:-45}
+),Object.assign({}
+,MINIBOSS_SOLDIER_SHOT,{angleInc:-90}
+),Object.assign({}
+,MINIBOSS_SOLDIER_SHOT,{angleInc:-135}
+),Object.assign({}
+,MINIBOSS_SOLDIER_SHOT,{angleInc:0}
+),Object.assign({}
+,MINIBOSS_SOLDIER_SHOT,{angleInc:45}
+),Object.assign({}
+,MINIBOSS_SOLDIER_SHOT,
+{angleInc:90}
+),Object.assign({}
+,MINIBOSS_SOLDIER_SHOT,{angleInc:135}
+),Object.assign({}
+,MINIBOSS_SOLDIER_SHOT,{angleInc:180}
+)]}
+;
+const MINIBOSS_TOWER_SHOT={speed:.25,damage:5,attackDelay:3E3,range:1E3,angleInc:0,life:1500}
+;
+
+EnemiesData.miniboss_tower={sprite:"pak_actors",frame:"miniboss_tower",scale:.9,speed:0,health:6E3,range:125,damage:5,attackDelay:450,bonus:1E4,static:!0,healthbar:!0,deaddrop:{type:BONUS_COIN,data:1500}
+,collSize2:50,shots:[Object.assign({}
+,MINIBOSS_TOWER_SHOT,{sound:"rifle2",angleInc:-45}
+),Object.assign({}
+,MINIBOSS_TOWER_SHOT,{angleInc:-90}
+),Object.assign({}
+,MINIBOSS_TOWER_SHOT,{angleInc:-135}
+),Object.assign({}
+,MINIBOSS_TOWER_SHOT,{angleInc:0}
+),Object.assign({}
+,MINIBOSS_TOWER_SHOT,{sound:"rifle2",
+angleInc:45}
+),Object.assign({}
+,MINIBOSS_TOWER_SHOT,{angleInc:90}
+),Object.assign({}
+,MINIBOSS_TOWER_SHOT,{angleInc:135}
+),Object.assign({}
+,MINIBOSS_TOWER_SHOT,{angleInc:180}
+)]}
+;
+EnemiesData.miniboss_toxic1={sprite:"pak_actors",frame:"miniboss_toxic1",scale:.85,speed:.3,mass:5,health:2500,range:60,damage:20,attackDelay:1E3,bonus:1E4,healthbar:!0,deaddrop:{type:BONUS_MEDKIT}
+,deadshot:{frame:"#effect_acid",speed:0,damage:7,life:3E3,tgtsCount:-1,alphaInTime:{start:1,end:.1}
+}
+}
+;
+
+EnemiesData.miniboss_toxic2={sprite:"pak_actors",frame:"miniboss_toxic2",scale:.85,speed:.25,mass:5,health:3E3,range:60,damage:20,attackDelay:1E3,bonus:1E4,healthbar:!0,deaddrop:{type:BONUS_COIN,data:500}
+,deadshot:{frame:"#effect_acid",speed:0,damage:7,life:3E3,tgtsCount:-1,alphaInTime:{start:1,end:.1}
+}
+,shots:[Object.assign({}
+,ASSAULT1_SHOT,{attackDelay:2500}
+),Object.assign({}
+,ASSAULT1_SHOT,{attackDelay:2800}
+),Object.assign({}
+,ASSAULT1_SHOT,{attackDelay:3100}
+)]}
+;
+var BOSS_MOVEMENT_CHASE=0,BOSS_MOVEMENT_CHARGE=1,BOSS_MOVEMENT_ROAM=2,BOSS_MOVEMENT_RETREAT=3,BOSS_MOVEMENT_TELEPORT=4,BOSS_MOVEMENT_SPAWN=5,BOSS_MOVEMENT_ATTACK=10;
+var BOSS_TOWER_ATTACK1_SHOT={sprite:"#shot_bounce",scale:1.2,speed:.4,damage:10,angleInc:0,bounceBossZn:!0,life:1E4}
+,BOSS_TOWER_ATTACK2_SHOT={sprite:"#shot_orange",scale:.7,speed:.4,damage:5,angleInc:0,life:3E3}
+,BOSS_SOLDIER_ATTACK1_SHOT={sprite:"#shot_orange",scale:1.1,speed:.55,damage:10,angleInc:0,life:3E3,offset:{x:40,y:-20}
+}
+,BOSS_ATTACK_TYPE9_SHOT={sprite:"#effect_egg1",scale:1,speed:0,radius:190,rotation:0,life:2E3,damage:20,explosive:!0,explosionAnim:"explosion_egg",grenade:!0,target:null}
+,
+BOSS_ATTACK_TYPE9_SHOT2={sprite:"shot_poison.png",scale:1,speed:.45,life:1E3,radius:80,damage:0,rotationSpeed:.01,target:null,fragment:!0,fragmentCnt:1,fragmentSpd:0,fragmentSpr:"#effect_acid",fragmentDmg:10,fragmentScl:1,fragmentLif:1E3,fragmentAIT:{start:.1,end:.01}
+,explosive:!0,explosionAnim:"explosion_egg",grenade:!0}
+,BOSS_TOWER_ATTACK1={tag:"BOSS_TOWER_ATTACK1",movement:BOSS_MOVEMENT_ATTACK,duration:[0,1500,100],shots:[Object.assign({}
+,BOSS_TOWER_ATTACK1_SHOT,{angleInc:0}
+),Object.assign({}
+,BOSS_TOWER_ATTACK1_SHOT,
+{angleInc:30}
+),Object.assign({}
+,BOSS_TOWER_ATTACK1_SHOT,{angleInc:-30}
+)]}
+,BOSS_TOWER_ATTACK2={tag:"BOSS ATTACK 2",movement:BOSS_MOVEMENT_ATTACK,duration:[0,1500,100],shots:[Object.assign({}
+,BOSS_TOWER_ATTACK2_SHOT,{angleInc:0}
+),Object.assign({}
+,BOSS_TOWER_ATTACK2_SHOT,{angleInc:30}
+),Object.assign({}
+,BOSS_TOWER_ATTACK2_SHOT,{angleInc:60}
+),Object.assign({}
+,BOSS_TOWER_ATTACK2_SHOT,{angleInc:90}
+),Object.assign({}
+,BOSS_TOWER_ATTACK2_SHOT,{angleInc:120}
+),Object.assign({}
+,BOSS_TOWER_ATTACK2_SHOT,{angleInc:150}
+),
+Object.assign({}
+,BOSS_TOWER_ATTACK2_SHOT,{angleInc:180}
+),Object.assign({}
+,BOSS_TOWER_ATTACK2_SHOT,{angleInc:210}
+),Object.assign({}
+,BOSS_TOWER_ATTACK2_SHOT,{angleInc:240}
+),Object.assign({}
+,BOSS_TOWER_ATTACK2_SHOT,{angleInc:270}
+),Object.assign({}
+,BOSS_TOWER_ATTACK2_SHOT,{angleInc:300}
+),Object.assign({}
+,BOSS_TOWER_ATTACK2_SHOT,{angleInc:330}
+)]}
+,BOSS_TOWER_ATTACK3={tag:"BOSS TOWER ATTACK 3",movement:BOSS_MOVEMENT_ATTACK,duration:[0,1500,100],shots:[{sprite:"shot_cluster.png",fragment:!0,fragmentSpd:.3,
+fragmentSpr:"shot_cluster_shard.png",fragmentScl:1,scale:1,speed:.3,damage:20,tgtsCount:-1,life:1300}
+]}
+,BOSS_SOLDIER_ATTACK1={tag:"BOSS ATTACK 4",movement:BOSS_MOVEMENT_ATTACK,duration:[0,1500,100],shots:[Object.assign({}
+,BOSS_SOLDIER_ATTACK1_SHOT,{angleInc:-40}
+),Object.assign({}
+,BOSS_SOLDIER_ATTACK1_SHOT,{angleInc:-20}
+),Object.assign({}
+,BOSS_SOLDIER_ATTACK1_SHOT,{angleInc:0}
+),Object.assign({}
+,BOSS_SOLDIER_ATTACK1_SHOT,{angleInc:20}
+),Object.assign({}
+,BOSS_SOLDIER_ATTACK1_SHOT,{angleInc:40}
+),Object.assign({}
+,
+BOSS_SOLDIER_ATTACK1_SHOT,{delay:500,angleInc:-40}
+),Object.assign({}
+,BOSS_SOLDIER_ATTACK1_SHOT,{delay:500,angleInc:-20}
+),Object.assign({}
+,BOSS_SOLDIER_ATTACK1_SHOT,{delay:500,angleInc:0}
+),Object.assign({}
+,BOSS_SOLDIER_ATTACK1_SHOT,{delay:500,angleInc:20}
+),Object.assign({}
+,BOSS_SOLDIER_ATTACK1_SHOT,{delay:500,angleInc:40}
+)]}
+,BOSS_ATTACK_TYPE5={tag:"BOSS ATTACK 5",movement:BOSS_MOVEMENT_ATTACK,duration:[50,1E3,10],shots:[{delay:1,sprite:"weapon_rocket.png",scale:1,speed:.4,radius:120,homing:!0,damage:10,
+life:2E3}
+]}
+,BOSS_SOLDIER_ATTACK2={tag:"BOSS ATTACK 6",movement:BOSS_MOVEMENT_ATTACK,duration:[0,1500,100],shots:[{sprite:"shot_grenade.png",scale:1,speed:.45,life:800,explosive:!0,radius:80,damage:30,rotationSpeed:.01,grenade:!0}
+]}
+,BOSS_ATTACK_TYPE8={tag:"BOSS ATTACK 8",movement:BOSS_MOVEMENT_ATTACK,duration:[50,50,10],shots:[{sprite:"#effect_acid",scale:1,speed:0,radius:120,rotation:0,life:3E3,damage:30}
+]}
+,BOSS_ATTACK_TYPE9={tag:"BOSS ATTACK 8",movement:BOSS_MOVEMENT_ATTACK,duration:[50,50,10],shots:[Object.assign({}
+,
+BOSS_ATTACK_TYPE9_SHOT,{}
+)]}
+,BOSS_ATTACK_TYPE10={tag:"BOSS ATTACK 10",movement:BOSS_MOVEMENT_ATTACK,duration:[50,50,10],spawns:[{enemy:"zombik",count:3}
+]}
+,BOSS_ATTACK_SPIDER2={tag:"BOSS ATTACK SPIDER 2",movement:BOSS_MOVEMENT_ATTACK,duration:[50,50,10],shots:[Object.assign({}
+,BOSS_ATTACK_TYPE9_SHOT2,{angle:-90,angleInc:-37}
+),Object.assign({}
+,BOSS_ATTACK_TYPE9_SHOT2,{angle:-90,angleInc:0}
+),Object.assign({}
+,BOSS_ATTACK_TYPE9_SHOT2,{angle:-90,angleInc:37}
+)]}
+,BOSS_ATTACK_SPIDER3={tag:"BOSS_ATTACK_SPIDER3",
+movement:BOSS_MOVEMENT_ATTACK,duration:[50,50,10],spawns:[{enemy:"spider1",radius:220,effect:"effect_slug"}
+,{enemy:"spider1",radius:220,effect:"effect_slug"}
+,{enemy:"spider1",radius:220,effect:"effect_slug"}
+]}
+;
+var BOSS_DRAGON_SHOT_DELAY=350,BOSS_DRAGON_SHOT_SPEED=.4,BOSS_DRAGON_SHOT={delay:0,sprite:"shot_dragon.png",scale:1,speed:BOSS_DRAGON_SHOT_SPEED,explosive:!1,radius:80,damage:20,offset:{x:30,y:-20}
+,effect:"effect_dragon"}
+,BOSS_REPTILE_SPAWN={enemy:"reptile",radius:200,effect:"effect_slug",delay:0*BOSS_DRAGON_SHOT_DELAY}
+,BOSS_MUTANT_SPAWN={enemy:"slime2",radius:200,effect:"effect_slug",delay:0*BOSS_DRAGON_SHOT_DELAY}
+,BossesData=[];
+
+BossesData.boss_tower={sprite:"pak_actors",frame:"boss_tower",scale:.85,speed:0,static:!0,health:1E4,range:60,damage:20,attackDelay:1500,meleeDelay:200,deaddrop:{bonus:BONUS_TREASURE,data:5}
+,behaviour:[Object.assign({}
+,BOSS_TOWER_ATTACK1,{duration:[1E3,1500,1E3]}
+),Object.assign({}
+,BOSS_TOWER_ATTACK1,{duration:[0,1

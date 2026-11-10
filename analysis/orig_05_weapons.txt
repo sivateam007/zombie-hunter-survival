@@ -1,0 +1,1717 @@
+ene,0,0);
+this.create(e,f,h);
+this.createKeyboardControls();
+b.add(this)},onPause:function(){null!=this.getWeaponOrSupplyObj("Forcefield")&&pauseSound(SceneGame.instance,"forcefield")},onResume:function(){null!=this.getWeaponOrSupplyObj("Forcefield")&&resumeSound(SceneGame.instance,"forcefield")},onGameOver:function(){stopSound(SceneGame.instance,
+"forcefield")},reset:function(){this.level=1;
+this.exps=0;
+this.expsToLevelUp=this.getExpsToLevelUp();
+this.timeInvincible=TIME_INVINCIBLE;
+this.weapons=[];
+this.supplies=[];
+this.resetAttribs();
+this.resetHealth();
+this.setPosition(levelWidth/2,levelHeight/2);
+this.vectr=new Phaser.Math.Vector2(0,0);
+this.z=1;
+containerGameTop.setExpValue(0);
+containerGameTop.setPlayerLevel(this.level);
+this.setHealthBarValue(1);
+this.onGameOver();
+this.sprForceField.play("effect_forcefield");
+this.sprForceField.visible=!1;
+this.collSize2=
+this.sprBody.displayWidth*this.sprBody.originX},getSnapshot:function(){var b={};
+b.level=this.level;
+b.exps=this.exps;
+b.expsToLevelUp=this.expsToLevelUp;
+b.healthMax=this.healthMax;
+b.health=this.health;
+b.attribs=cloneObject(this.attribs);
+b.position={x:this.x,y:this.y};
+b.weapons=this._getSnapshotWeapons();
+b.supplies=this._getSnapshotSupplies();
+return b},_getSnapshotWeapons:function(){var b=[],e;
+for(e in this.weapons)"contains"!=e&&b.push({weapon:e,level:this.weapons[e].level});
+return b},_getSnapshotSupplies:function(){var b=
+[],e;
+for(e in this.supplies)"contains"!=e&&b.push({supply:e,level:this.supplies[e].level});
+return b},loadSnapshot:function(b){this.reset();
+this.level=b.level;
+this.exps=b.exps;
+this.expsToLevelUp=b.expsToLevelUp;
+this.healthMax=b.healthMax;
+this.health=b.health;
+this.attribs=cloneObject(b.attribs);
+this.x=b.position.x;
+this.y=b.position.y;
+for(var e=0;
+e<b.supplies.length;
+e++)for(var f=this.addSupply(b.supplies[e].supply);
+f.level<b.supplies[e].level;)f.levelUp();
+for(e=0;
+e<b.weapons.length;
+e++)for(f=this.addWeapon(b.weapons[e].weapon);
+f.level<
+b.weapons[e].level;)f.levelUp();
+ContainerGameTop.instance.setExpValue(this.exps/this.getExpsToLevelUp())},addWeapon:function(b){if(!this.weapons.hasOwnProperty(b)){var e=Object.create(window[b].prototype);
+e.constructor.apply(e);
+if(e.hasOwnProperty("consumable")&&e.consumable)e.consume();
+else return this.weapons[b]=e}},addSupply:function(b){if(!this.supplies.hasOwnProperty(b)){var e=Object.create(window[b].prototype);
+e.constructor.apply(e);
+if(e.hasOwnProperty("consumable")&&e.consumable)e.consume();
+else return this.supplies[b]=e}},weaponOrSupplyActive:function(b){return this.weapons.hasOwnProperty(b)||this.supplies.hasOwnProperty(b)?!0:!1},getWeaponOrSupplyObj:function(b){if(this.weapons.hasOwnProperty(b))return this.weapons[b];
+if(this.supplies.hasOwnProperty(b))return this.supplies[b];
+b=Object.create(window[b].prototype);
+b.constructor.apply(b);
+return b},createKeyboardControls:function(){this.scene.input.keyboard.removeKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
+this.scene.input.keyboard.removeKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
+this.scene.input.keyboard.removeKey(Phaser.Input.Keyboard.KeyCodes.UP);
+this.scene.input.keyboard.removeKey(Phaser.Input.Keyboard.KeyCodes.DOWN);
+this.scene.input.keyboard.removeKey(Phaser.Input.Keyboard.KeyCodes.A);
+this.scene.input.keyboard.removeKey(Phaser.Input.Keyboard.KeyCodes.S);
+this.scene.input.keyboard.removeKey(Phaser.Input.Keyboard.KeyCodes.W);
+this.scene.input.keyboard.removeKey(Phaser.Input.Keyboard.KeyCodes.D);
+this.key_Left=this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
+this.key_Right=this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
+this.key_Up=this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
+this.key_Down=this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN);
+this.key_A=this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+this.key_D=this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+this.key_W=this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+this.key_S=this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+this.key_T=this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
+this.key_F=this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
+this.key_G=this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
+this.key_H=this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H)},initAnimations:function(){this.scene.anims.create({key:"hero_walk",frames:[{key:"pak_actors",frame:"hero_0.png"},
+{key:"pak_actors",frame:"hero_1.png"},
+{key:"pak_actors",frame:"hero_0.png"},
+{key:"pak_actors",frame:"hero_2.png"}],frameRate:5,repeat:-1})},create:function(b,e){this.playerSprite="hero";
+this.initAnimations();
+this.createDirectionArrow();
+this.createForceField();
+this.createPlayerSprite();
+this.createPlayerHealthBar();
+this.setPosition(b,e)},createDirectionArrow:function(){this.sprDirArrow=this.scene.add.sprite(0,0,"pak_game","man_arrow.png");
+this.sprDirArrow.setOrigin(.25,.5);
+this.sprDirArrow.setScale(1.5);
+this.sprDirArrow.setAlpha(1);
+this.add(this.sprDirArrow)},createForceField:function(){this.sprForceField=
+this.scene.add.sprite(0,0,"pak_game","effect_forcefield_0.png");
+this.sprForceField.setOrigin(.5,.6);
+this.sprForceField.play("effect_forcefield");
+this.sprForceField.visible=!1;
+this.add(this.sprForceField)},createPlayerSprite:function(){this.sprBody=this.scene.add.sprite(0,0,"pak_actors","hero_0.png");
+this.sprBody.setOrigin(.4,.8);
+this.sprBody.setTint(16777215);
+this.add(this.sprBody);
+this.sprBody.setScale(PLAYER_SCALE)},createPlayerHealthBar:function(){this.imgHealthFrame=this.scene.add.image(-26,-70,
+"pak_game","blank.png");
+this.imgHealthFrame.setTint(0);
+this.imgHealthFrame.displayWidth=56;
+this.imgHealthFrame.displayHeight=11;
+this.imgHealthFrame.setOrigin(0,.5);
+this.imgHealthFrame.setAlpha(1);
+this.add(this.imgHealthFrame);
+this.imgHealthBar=this.scene.add.image(-24,-70,"pak_game","blank.png");
+this.imgHealthBar.setTint(11209740);
+this.imgHealthBar.MAX_WIDTH=52;
+this.imgHealthBar.displayWidth=40;
+this.imgHealthBar.displayHeight=7;
+this.imgHealthBar.setOrigin(0,.5);
+this.imgHealthBar.setAlpha(1);
+this.add(this.imgHealthBar)},
+createPlayerNavigationArrow:function(){this.imgNavigationArrow=this.scene.add.image(0,0,"pak_game","shot_orange.png");
+this.imgNavigationArrow.setOrigin(.5,.5);
+this.imgNavigationArrow.visible=!0;
+this.imgNavigationArrow.z=1E4;
+ContainerGame.instance.add(this.imgNavigationArrow)},OnPointerDown:function(b,e){},spawnProjectiles:function(){containerGame.projectiles.spawnProjectile("s1",this.x,this.y,-2,-2);
+containerGame.projectiles.spawnProjectile("s1",this.x,this.y,-2,0);
+containerGame.projectiles.spawnProjectile("s1",
+this.x,this.y,-2,2);
+containerGame.projectiles.spawnProjectile("s1",this.x,this.y,0,2);
+containerGame.projectiles.spawnProjectile("s1",this.x,this.y,2,2);
+containerGame.projectiles.spawnProjectile("s1",this.x,this.y,2,0);
+containerGame.projectiles.spawnProjectile("s1",this.x,this.y,2,-2);
+containerGame.projectiles.spawnProjectile("s1",this.x,this.y,0,-2)},update:function(b,e){this.updateMovement(b,e);
+this.updatePlayerVsBonuses(b,e);
+this.updatePlayerInvincibility(b,e);0<gameWonDelay||(this.updatePlayerVsExps(b,
+e),this.updateWeapons(b,e),this.updateRegen(b,e))},updateMovement:function(b,e){b=this.speed*e;
+e=!1;
+this.vectr.x=0;
+this.vectr.y=0;
+if(this.key_Left.isDown||this.key_A.isDown||this.key_F.isDown)this.vectr.x=-1;
+if(this.key_Right.isDown||this.key_D.isDown||this.key_H.isDown)this.vectr.x=1;
+if(this.key_Up.isDown||this.key_W.isDown||this.key_T.isDown)this.vectr.y=-1;
+if(this.key_Down.isDown||this.key_S.isDown||this.key_G.isDown)this.vectr.y=1;0!=this.vectr.x&&0!=this.vectr.y&&(this.vectr.x*=.707,this.vectr.y*=
+.707);
+var f=joyStick.touchCursor.pointer;
+void 0!==f&&f.isDown&&(this.vectr.x=joyStick.thumb.x-joyStick.base.x,this.vectr.y=joyStick.thumb.y-joyStick.base.y,this.vectr.length()<joyStick.radius3&&this.vectr.reset(),f=(this.vectr.length()-joyStick.radius3)/(2*joyStick.radius3),this.vectr.normalize(),this.vectr.scale(f));
+this.vectr.scale(b);
+if(0<Math.abs(this.vectr.x)||0<Math.abs(this.vectr.y))this.sprDirArrow.rotation=this.vectr.angle(),e=!0;
+e?(b=this.x,e=this.y,this.sprBody.play("hero_walk",!0),this.x+=
+this.vectr.x,BossZone.instance.spriteInCollisionWithZone(this)&&(this.x=b),null!=Enemies.instance.getStaticEnemyInCollsionWithSprite(this)&&(this.x=b),null!=Bosses.instance.getStaticBossInCollsionWithSprite(this)&&(this.x=b),this.y+=this.vectr.y,BossZone.instance.spriteInCollisionWithZone(this)&&(this.y=e),null!=Enemies.instance.getStaticEnemyInCollsionWithSprite(this)&&(this.y=e),null!=Bosses.instance.getStaticBossInCollsionWithSprite(this)&&(this.y=e),0<this.vectr.x&&this.sprBody.setScale(PLAYER_SCALE,
+PLAYER_SCALE),0>this.vectr.x&&this.sprBody.setScale(-PLAYER_SCALE,PLAYER_SCALE)):this.sprBody.stop()},updatePlayerVsExps:function(b,e){b=containerGame.exps.getExpsInCollsionWithSprite(this,this.attribs.pickup_range2);
+if(0!=b.length)for(e=0;
+e<b.length;
+e++)Exps.instance.grid.remove(b[e].exp),b[e].exp.pullup=!0},updatePlayerVsBonuses:function(b,e){b=containerGame.bonuses.getBonusesInCollsionWithSprite(this,this.attribs.pickup_range2);
+if(0!=b.length)for(e=0;
+e<b.length;
+e++)Bonuses.instance.grid.remove(b[e].bonus),
+b[e].bonus.pullup=!0,0<gameWonDelay&&(b[e].bonus.type==BONUS_MAGNET||b[e].bonus.type==BONUS_BOMB||b[e].bonus.type==BONUS_TREASURE)&&(b[e].bonus.pullup=!1)},updatePlayerInvincibility:function(b,e){0>=this.timeInvincible?this.sprBody.alpha=1:(this.timeInvincible-=e,this.sprBody.alpha=.5+Math.abs(this.timeInvincible%500-250)/250*.5)},updateWeapons:function(b,e){for(var f in this.weapons)"contains"!=f&&this.weapons[f].update(b,e)},updateRegen:function(b,e){b=this.attribs.regen_bonus;0!=b&&(this.regenTime-=
+e,0<this.regenTime||(this.regenTime=this.attribs.regen_time,e=Math.ceil(this.getHealth()*b),this.incHealth(e)))},incExps:function(b){b=3*Math.floor(b+b*this.attribs.exp_bonus/100+b*this.attribs.learning/100);
+MissionUpdate(MISSION_TYPE_COLLECT_X_EXPS,b);
+this.exps+=b;
+this.exps>=this.getExpsToLevelUp()?(containerGameTop.setNewExpValue(1),this.exps-=this.getExpsToLevelUp(),SceneGame.instance.LevelUp()):containerGameTop.setNewExpValue(this.exps/this.getExpsToLevelUp())},getExpsToLevelUp:function(){for(var b=
+1E3,e=this.level-1,f=0;
+f<e;
+f++)b*=1.25;
+return b=Math.floor(b)},damagePlayer:function(b){0<this.timeInvincible||(b=b*Level.instance.getLevelMultiplier()*GetDifficultyMulForEnemyDMG(Level.instance.difficulty),b-=b*this.attribs.defense/100,0>b&&(b=0),MissionUpdate(MISSION_TYPE_RECEIVE_X_DMG,b),ContainerGame.instance.textPrtcls.CreateTextParticle1(this.x,this.y-60,""+Math.ceil(b+.5),25,"#AA0000"),this.health-=b,0>this.health&&(this.health=0),this.setHealthBarValue(this.health/this.healthMax),0==this.health&&
+(playSound(SceneGame.instance,"player_death"),SceneGame.instance.GameOver()))},damagePlayerInRadius:function(b,e,f,h){Phaser.Math.Distance.Between(this.x,this.y,b,e)>f||this.damagePlayer(h)},revive:function(){this.incHealth(this.getHealth());
+this.timeInvincible=TIME_INVINCIBLE;
+Enemies.instance.killAllEnemies()},incHealth:function(b){var e=this.getHealth();
+ContainerGame.instance.textPrtcls.CreateTextParticle1(this.x,this.y-60,"+"+Math.ceil(b+.5),30,"#00E000");
+this.health+=b;
+this.health>e&&(b-=e,0>
+b&&(b=0),this.health=e);0<b&&MissionUpdate(MISSION_TYPE_HEAL_X_PTS,b);
+this.setHealthBarValue(this.health/this.healthMax)},setHealthBarValue:function(b){this.imgHealthBar.displayWidth=this.imgHealthBar.MAX_WIDTH*b},playerInCollsionWithSprite:function(b){return 50<Math.abs(this.x-b.x)||50<Math.abs(this.y-b.y)?!1:!0},resetAttribs:function(){this.attribs={};
+this.attribs.attack=PlayerSkillsData[SKILL_POWER].valueAtLevel(PlayerSkills[SKILL_POWER]);
+this.attribs.health=PlayerSkillsData[SKILL_HEALTH].valueAtLevel(PlayerSkills[SKILL_HEALTH]);
+this.attribs.defense=PlayerSkillsData[SKILL_DEFENSE].valueAtLevel(PlayerSkills[SKILL_DEFENSE]);
+this.attribs.firstaid=PlayerSkillsData[SKILL_FIRSTAID].valueAtLevel(PlayerSkills[SKILL_FIRSTAID]);
+this.attribs.fortune=PlayerSkillsData[SKILL_FORTUNE].valueAtLevel(PlayerSkills[SKILL_FORTUNE]);
+this.attribs.learning=PlayerSkillsData[SKILL_LEARNING].valueAtLevel(PlayerSkills[SKILL_LEARNING]);
+this.attribs.speed=.3;
+this.attribs.pickup_range=50;
+this.attribs.regen_time=5E3;
+this.attribs.attack_bonus=0;
+this.attribs.exp_bonus=
+0;
+this.attribs.shot_range_bonus=0;
+this.attribs.shot_speed_bonus=0;
+this.attribs.pickup_range_bonus=0;
+this.attribs.duration_bonus=0;
+this.attribs.regen_bonus=0;
+this.attribs.cooldown_bonus=0;
+this.attribs.speed_bonus=0;
+this.attribs.cash_bonus=0;
+this.attribs.health_bonus=0;
+this.applySupplies();
+this.healthMax=this.getHealth();
+this.regenTime=this.attribs.regen_time;
+this.speed=this.getAttrib("speed")},resetHealth:function(){this.health=this.healthMax},levelUp:function(){this.level++;
+this.expsToLevelUp=this.getExpsToLevelUp();
+containerGameTop.setExpValue(this.exps/this.getExpsToLevelUp());
+containerGameTop.setPlayerLevel(this.level);
+this.resetAttribs()},applySupplies:function(){for(var b in this.supplies)if("contains"!=b){var e=this.supplies[b],f;
+for(f in e.attribs)this.attribs[f]+=e.attribs[f]}
+b=this.getAttrib("pickup_range");
+this.attribs.pickup_range2=b*b},getAttrib:function(b){var e=this.attribs[b];-1==b.indexOf("_bonus")&&this.attribs.hasOwnProperty(b+"_bonus")&&(e+=e*this.attribs[b+"_bonus"]);
+return e},getHealth:function(){return this.getAttrib("health")},
+movePlayerFromOuterLimits:function(){90>this.x&&(this.x=90);90>this.y&&(this.y=90);
+this.x>levelWidth-90&&(this.x=levelWidth-90);
+this.y>levelHeight-90&&(this.y=levelHeight-90)},testEvo:function(b){this.addWeapon(b);
+b=this.getWeaponOrSupplyObj(b);
+b.level=5;
+b.levelUp();
+this.addSupply(b.evoSupp)},testMaxUpgrade:function(){for(var b="Magnet ActionGloves Detector Scope Chronometer Handbook".split(" "),e=0;
+e<b.length;
+e++){this.addSupply(b[e]);
+var f=this.getWeaponOrSupplyObj(b[e]);
+f.level=4;
+f.levelUp();
+this.levelUp()}
+b=
+["Boomerang","Tesla","Molotov","Drill","Circular"];
+for(var h in this.weapons)"contains"!=h&&(f=this.weapons[h],f.level=4,f.levelUp(),this.levelUp());
+for(e=0;
+e<b.length;
+e++)this.addWeapon(b[e]),f=this.getWeaponOrSupplyObj(b[e]),f.level=5,f.levelUp(),this.levelUp()}});
+var MAX_VISIBLE_EXPS=1500,Exps=new Phaser.Class({Extends:Phaser.GameObjects.Group,initialize:function Exps(b,e){Exps.instance=this;
+Phaser.GameObjects.Group.call(this,b.scene,0,0);
+this.parentContainer=b;
+this.createExps()},createExps:function(){for(var b=0;
+b<MAX_VISIBLE_EXPS;
+b++){var e=this.scene.add.sprite(0,0,"s1.png");
+e.setScale(.9);
+e.setOrigin(.5,.8);
+e.setTint(16777215);
+e.visible=!1;
+e.active=!1;
+this.parentContainer.add(e);
+this.add(e)}
+this.grid=new Grid(50);
+this.exps=[];
+this.spawnedExps=0},reset:function(){for(;0<
+this.exps.length;)this.invalidateExp(this.exps[0]);
+this.grid.reset();
+this.exps=[];
+this.spawnedExps=0;
+this.testActive=!0;
+this.testTmp=0},getSnapshot:function(){var b={};
+b.exps=cloneObject(this.exps);
+b.spawnedExps=this.spawnedExps;
+return b},loadSnapshot:function(b){this.reset();
+this.exps=cloneObject(b.exps);
+this.spawnedExps=b.spawnedExps;
+for(b=0;
+b<this.exps.length;
+b++)this.exps[b].obj=null,this.grid.add(this.exps[b]);
+this.showOnScreenExps()},findFreeSpaceInGrid:function(b,e){var f=[-this.grid.gridSize,
+-this.grid.gridSize2,this.grid.gridSize2,this.grid.gridSize],h=[-this.grid.gridSize,-this.grid.gridSize2,this.grid.gridSize2,this.grid.gridSize];
+Phaser.Utils.Array.Shuffle(f);
+Phaser.Utils.Array.Shuffle(h);
+for(var n=f.length-1;0<=n;
+n--)for(var r=h.length-1;0<=r;
+r--)if(!this.grid.exist(b+f[n],e+h[r]))return{x:b+f[n],y:e+h[r]};
+return null},spawnExp:function(b,e,f){b<LEVEL_GAP&&(b=LEVEL_GAP);
+b>levelWidth-LEVEL_GAP&&(b=levelWidth-LEVEL_GAP);
+e<LEVEL_TOP&&(e=LEVEL_TOP);
+e>levelHeight-LEVEL_GAP&&(e=levelHeight-
+LEVEL_GAP);
+var h=this.findFreeSpaceInGrid(b,e);
+null!=h?(b=h.x,e=h.y,this.exps.push({spr:this.getExpSprite(f),obj:null,x:b,y:e,exps:f,pullup:!1,speed:1,mass:0}),f=this.exps[this.exps.length-1],this._showOnScreenExp(f),this.grid.add(f),this.spawnedExps++):(b=this.grid.getElementAt(b,e),b.exps+=f,null!=b.obj&&b.obj.setTexture("pak_game",this.getExpSprite(b.exps)),this._showOnScreenExp(b))},getExpSprite:function(b){var e="item_exp_0.png";300<=b&&(e="item_exp_1.png");1E3<=b&&(e="item_exp_2.png");3E3<=
+b&&(e="item_exp_3.png");1E4<=b&&(e="item_exp_4.png");
+return e},invalidateExp:function(b){null!=b.obj&&(b.obj.visible=!1,b.obj.active=!1,b.obj=null);
+b=this.exps.indexOf(b);
+this.exps.splice(b,1)},expInCollsionWithSprite:function(b,e,f){b.distSq=Phaser.Math.Distance.BetweenPointsSquared(b,e);
+return b.distSq<f},getExpsInCollsionWithSprite:function(b,e){for(var f=[],h=this.getMatching("visible",!0),n=h.length-1;0<=n;
+n--)h[n]!=b&&this.expInCollsionWithSprite(h[n],b,e)&&f.push(h[n]);
+return f},_hideOffScreenExp:function(b){null!=
+b.obj&&(b.obj.visible=!1,b.obj.active=!1,b.obj=null)},_showOnScreenExp:function(b){if(null==b.obj&&SceneGame.instance.cameras.main.worldView.contains(b.x,b.y)){var e=this.getFirstDead();
+null!=e&&(e.expSprite=b.spr,e.setTexture("pak_game",b.spr),e.setPosition(b.x,b.y),e.z=-20,e.visible=!0,e.active=!0,e.exp=b,b.obj=e)}},_hideOrShowExp:function(b){SceneGame.instance.cameras.main.worldView.contains(b.x,b.y)?this._showOnScreenExp(b):this._hideOffScreenExp(b)},updateExpsVisibility:function(){for(var b=
+this.exps.length-1;0<=b;
+b--)this._hideOrShowExp(this.exps[b])},moveExp:function(b,e,f){b.x+=e;
+b.y+=f;
+null!=b.obj&&(b.obj.x=b.x,b.obj.y=b.y)},update:function(b,e){this.updateExpsVisibility();
+this.updateExpsBeingPulledUp(b,e);
+GameData.BuildDebug&&(b=this.getMatching("visible",!0),containerGameTop.txtDebugInfo.text+="\nexps: [ "+b.length+", "+this.exps.length+" ]")},updateTestUnit:function(b,e){containerGameTop.txtDebugInfo.text="vexps : "+this.exps.length;
+this.testActive&&(this.testTmp-=e,0<this.testTmp||
+(this.testTmp=1,this.spawnExp(Phaser.Math.Between(LEVEL_GAP,levelWidth),Phaser.Math.Between(LEVEL_GAP,levelHeight),100),this.spawnExp(Phaser.Math.Between(LEVEL_GAP,levelWidth),Phaser.Math.Between(LEVEL_GAP,levelHeight),100),this.spawnExp(Phaser.Math.Between(LEVEL_GAP,levelWidth),Phaser.Math.Between(LEVEL_GAP,levelHeight),100),this.spawnExp(Phaser.Math.Between(LEVEL_GAP,levelWidth),Phaser.Math.Between(LEVEL_GAP,levelHeight),100),this.spawnExp(Phaser.Math.Between(LEVEL_GAP,levelWidth),Phaser.Math.Between(LEVEL_GAP,
+levelHeight),100)))},updateExpsBeingPulledUp:function(b,e){b=[];
+for(var f=this.exps.length-1;0<=f;
+f--)if(this.exps[f].pullup)if(null!=this.exps[f].obj&&2400>=this.exps[f].obj.distSq)this.expPickedUp(this.exps[f]),b.push(this.exps[f]);
+else{var h=new Phaser.Math.Vector2(Player.instance.x-this.exps[f].x,Player.instance.y-this.exps[f].y);
+h.normalize();
+h.scale(this.exps[f].speed*e);
+this.moveExp(this.exps[f],h.x,h.y);0==this.scene.sys.game.loop.frame%4&&this._showOnScreenExp(this.exps[f])}
+for(;0<b.length;)this.grid.remove(b[0]),
+this.invalidateExp(b[0]),b.splice(0,1)},pullUpExps:function(){this.grid;
+for(var b=this.exps.length-1;0<=b;
+b--)this.exps[b].pullup=!0,this.exps[b].speed=3;
+this.grid.reset()},expPickedUp:function(b){soundIsPlaying(SceneGame.instance,"exp")||playSound(SceneGame.instance,"exp");
+Player.instance.incExps(b.exps)}});
+var MAX_VISIBLE_BONUSES=50,Bonuses=new Phaser.Class({Extends:Phaser.GameObjects.Group,initialize:function Bonuses(b,e){Bonuses.instance=this;
+Phaser.GameObjects.Group.call(this,b.scene,0,0);
+this.parentContainer=b;
+this.createBonuses()},createBonuses:function(){for(var b=0;
+b<MAX_VISIBLE_BONUSES;
+b++){var e=this.scene.add.container(0,0);
+e.imgChestLight=this.scene.add.image(0,-23,"pak_game","chest_light.png");
+e.imgChestLight.setOrigin(.5,.8);
+e.imgChestLight.visible=!1;
+e.add(e.imgChestLight);
+e.sprBonus=
+this.scene.add.image(0,0,"s1.png");
+e.sprBonus.setOrigin(.5,.8);
+e.sprBonus.setTint(16777215);
+e.add(e.sprBonus);
+e.visible=!1;
+e.active=!1;
+this.parentContainer.add(e);
+this.add(e)}
+this.grid=new Grid(40);
+this.bonuses=[];
+this.spawnedBonuses=0},reset:function(){for(;0<this.bonuses.length;)this.invalidateBonus(this.bonuses[0]);
+this.grid.reset();
+this.bonuses=[];
+this.spawnedBonuses=0},getSnapshot:function(){var b={};
+b.bonuses=cloneObject(this.bonuses);
+b.spawnedBonuses=this.spawnedBonuses;
+return b},loadSnapshot:function(b){this.reset();
+this.bonuses=cloneObject(b.bonuses);
+this.spawnedBonuses=b.spawnedBonuses;
+for(b=0;
+b<this.bonuses.length;
+b++)this.bonuses[b].obj=null,this.grid.add(this.bonuses[b]);
+this.showOnScreenBonuses()},findFreeSpaceInGrid:function(b,e){var f=[-this.grid.gridSize,-this.grid.gridSize2,this.grid.gridSize2,this.grid.gridSize],h=[-this.grid.gridSize,-this.grid.gridSize2,this.grid.gridSize2,this.grid.gridSize];
+Phaser.Utils.Array.Shuffle(f);
+Phaser.Utils.Array.Shuffle(h);
+f.push(0);
+h.push(0);
+for(var n=f.length-1;0<=
+n;
+n--)for(var r=h.length-1;0<=r;
+r--)if(!this.grid.exist(b+f[n],e+h[r]))return{x:b+f[n],y:e+h[r]};
+return null},spawnBonus:function(b,e,f,h){f=this.findFreeSpaceInGrid(e,f);
+if(null==f)return LOG("!!! spawnBonus: failed"),null;
+e=f.x;
+f=f.y;
+this.bonuses.push({type:b,spr:this.getBonusSprite(b,h),obj:null,x:e,y:f,data:h,pullup:!1,speed:1,mass:0});
+b=this.bonuses[this.bonuses.length-1];
+this._showOnScreenBonus(b);
+this.grid.add(b);
+this.spawnedBonuses++},spawnBonusAnimated:function(b,e,f,h){if(this.grid.exist(e,
+f))return null;
+e<LEVEL_GAP&&(e=LEVEL_GAP);
+e>levelWidth-LEVEL_GAP&&(e=levelWidth-LEVEL_GAP);
+f<LEVEL_TOP&&(f=LEVEL_TOP);
+f>levelHeight-LEVEL_GAP&&(f=levelHeight-LEVEL_GAP);
+e=Explosions.instance.spawnPopupBonusAnim(this.getBonusSprite(b,h),e,f);
+null!=e&&(e.bonus={type:b,data:h},e.callback=function(n){this.bonuses.push({type:n.bonus.type,spr:this.getBonusSprite(n.bonus.type,n.bonus.data),obj:null,x:n.x,y:n.y,data:n.bonus.data,pullup:!1,speed:1});
+n=this.bonuses[this.bonuses.length-1];
+this.grid.add(n);
+this._showOnScreenBonus(n);
+this.spawnedBonuses++}
+.bind(this))},getBonusSprite:function(b,e){if(b==BONUS_COIN)return 300==e?"item_coin_1.png":500==e?"item_coin_2.png":1E3==e?"item_coin_3.png":1500==e?"item_coin_4.png":"item_coin_0.png";
+if(b==BONUS_MAGNET)return"item_magnet.png";
+if(b==BONUS_BOMB)return"item_grenade.png";
+if(b==BONUS_FOOD)return"item_food.png";
+if(b==BONUS_MEDKIT)return"item_medikit.png";
+if(b==BONUS_TREASURE)return 1==e?"open_chest1.png":3==e?"open_chest2.png":5==e?"open_chest3.png":"item_treasure.png"},invalidateBonus:function(b){null!=
+b.obj&&(b.obj.visible=!1,b.obj.active=!1,b.obj=null);
+this.grid.remove(b);
+b=this.bonuses.indexOf(b);
+this.bonuses.splice(b,1)},bonusInCollsionWithSprite:function(b,e,f){b.distSq=Phaser.Math.Distance.BetweenPointsSquared(b,e);
+return b.distSq<f},getBonusesInCollsionWithSprite:function(b,e){for(var f=[],h=this.getMatching("visible",!0),n=h.length-1;0<=n;
+n--)h[n]!=b&&this.bonusInCollsionWithSprite(h[n],b,e)&&f.push(h[n]);
+return f},_showOnScreenBonus:function(b){if(null==b.obj){var e=this.getFirstDead();
+null!=e&&(e.bonusSprite=b.spr,e.sprBonus.setTexture("pak_game",b.spr),e.setPosition(b.x,b.y),e.visible=!0,e.active=!0,e.bonus=b,e.imgChestLight.visible=!1,this.scene.tweens.killTweensOf(e.imgChestLight),b.type==BONUS_TREASURE&&(e.imgChestLight.setAlpha(.6),this.scene.tweens.add({targets:e.imgChestLight,alpha:1,duration:700,ease:"Sine.easeIn",yoyo:!0,repeat:-1}),e.imgChestLight.visible=!0),b.obj=e)}},_hideOffScreenBonus:function(b){null!=b.obj&&(b.obj.visible=!1,b.obj.active=!1,b.obj.imgChestLight.visible=
+!1,this.scene.tweens.killTweensOf(b.obj.imgChestLight),b.obj=null)},_hideOrShowBonus:function(b){SceneGame.instance.cameras.main.worldView.contains(b.x,b.y)?this._showOnScreenBonus(b):this._hideOffScreenBonus(b)},updateBonusesVisibility:function(){for(var b=this.bonuses.length-1;0<=b;
+b--)this._hideOrShowBonus(this.bonuses[b])},moveBonus:function(b,e,f){b.x+=e;
+b.y+=f;
+null!=b.obj&&(b.obj.x=b.x,b.obj.y=b.y)},update:function(b,e){this.updateBonusesVisibility();
+this.updateChestBonusesNavi(b,e);
+this.updateBonusesBeingPulledUp(b,
+e);
+GameData.BuildDebug&&(b=this.getMatching("visible",!0),containerGameTop.txtDebugInfo.text+="\nbonuses: [ "+b.length+", "+this.bonuses.length+" ]")},updateChestBonusesNavi:function(b,e){ContainerGameTop.instance.naviTarget=null;
+for(b=this.bonuses.length-1;0<=b;
+b--)this.bonuses[b].type==BONUS_TREASURE&&null==this.bonuses[b].obj&&(null==ContainerGameTop.instance.naviTarget&&(ContainerGameTop.instance.naviTarget=this.bonuses[b]),this.bonuses[b].distSq=Phaser.Math.Distance.BetweenPointsSquared(this.bonuses[b],
+Player.instance),this.bonuses[b].distSq<ContainerGameTop.instance.naviTarget.distSq&&(ContainerGameTop.instance.naviTarget=this.bonuses[b]))},updateBonusesBeingPulledUp:function(b,e){for(b=this.bonuses.length-1;0<=b;
+b--)if(this.bonuses[b].pullup)if(null!=this.bonuses[b].obj&&2400>=this.bonuses[b].obj.distSq)playSound(SceneGame.instance,"exp"),this.bonusPickedUp(this.bonuses[b]),this.invalidateBonus(this.bonuses[b]);
+else{var f=new Phaser.Math.Vector2(Player.instance.x-this.bonuses[b].x,Player.instance.y-
+this.bonuses[b].y);
+f.normalize();
+f.scale(this.bonuses[b].speed*e);
+this.moveBonus(this.bonuses[b],f.x,f.y)}},bonusPickedUp:function(b){b.type==BONUS_COIN&&Level.instance.incLevelMoney(b.data);
+if(b.type==BONUS_MAGNET){if(0<gameWonDelay)return;
+playSound(SceneGame.instance,"magnet");
+Exps.instance.pullUpExps()}
+if(b.type==BONUS_BOMB){if(0<gameWonDelay)return;
+SceneGame.instance.cameras.main.shake(100,.02);
+Enemies.instance.damageEnemiesInRadius(Player.instance.x,Player.instance.y,BOMB_BONUS_RADIUS,10*Player.instance.getAttrib("attack"))}
+b.type==
+BONUS_FOOD&&Player.instance.incHealth(100);
+b.type==BONUS_MEDKIT&&(playSound(SceneGame.instance,"medkit"),Player.instance.incHealth(Player.instance.attribs.firstaid));
+b.type!=BONUS_TREASURE||0<gameWonDelay||SceneGame.instance.ShowSkillSlots(b.data)}});
+var MAX_ENEMIES=500,Enemies=new Phaser.Class({Extends:Phaser.GameObjects.Group,initialize:function Enemies(b,e){Enemies.instance=this;
+Phaser.GameObjects.Group.call(this,b.scene);
+this.parentContainer=b;
+this.initAnimations("pak_actors","zombieA");
+this.initAnimations("pak_actors","zombieB");
+this.initAnimations("pak_actors","zombieC");
+this.initAnimations("pak_actors","zombieD");
+this.initAnimations("pak_actors","reptile");
+this.initAnimations("pak_actors","cop");
+this.initAnimations("pak_actors","bat");
+this.initAnimations("pak_actors","builder");
+this.initAnimations("pak_actors","spider1");
+this.initAnimations("pak_actors","spider2");
+this.initAnimations("pak_actors","toxic1");
+this.initAnimations("pak_actors","toxic2");
+this.initAnimations("pak_actors","slug");
+this.initAnimations("pak_actors","assault1");
+this.initAnimations("pak_actors","manager");
+this.initAnimations("pak_actors","assault2");
+this.initAnimations("pak_actors","slime1");
+this.initAnimations("pak_actors","slime2");
+this.initAnimations("pak_actors",
+"heli1",4);
+this.initAnimations("pak_actors","heli2",4);
+this.initAnimations("pak_actors","heli3",4);
+this.initAnimations("pak_actors","heli4",4);
+this.initAnimations("pak_actors","miniboss_builder");
+this.initAnimations("pak_actors","miniboss_reptile");
+this.initAnimations("pak_actors","miniboss_soldier");
+this.initAnimations("pak_actors","miniboss_fighter");
+this.initAnimations("pak_actors","miniboss_spider");
+this.initAnimations("pak_actors","miniboss_toxic1",4);
+this.initAnimations("pak_actors","miniboss_toxic2",
+4);
+this.createEnemies()},initAnimations:function(b,e,f){void 0===f&&(f=3);
+b=this.scene.anims.generateFrameNames(b,{start:0,end:f-1,prefix:e+"_",suffix:".png",zeroPad:1});
+this.scene.anims.create({key:e+"_walk",frames:b,frameRate:6,repeat:-1})},createEnemies:function(b,e,f){for(b=0;
+b<MAX_ENEMIES;
+b++)e=this.scene.add.container(0,0),e.sprEnemy=this.scene.add.sprite(0,0,"pak_actors","zombieA_0.png"),e.sprEnemy.setOrigin(.5,.9),e.sprEnemy.setTint(16777215),e.sprEnemy.setScale(1),e.visible=!1,e.active=!1,
+e.enemyType="zombieA",e.add(e.sprEnemy),e.imgHealthFrame=this.scene.add.sprite(-50,0,"pak_game","blank.png"),e.imgHealthFrame.displayWidth=100,e.imgHealthFrame.displayHeight=10,e.imgHealthFrame.setOrigin(0,.5),e.imgHealthFrame.setTint(0),e.add(e.imgHealthFrame),e.imgHealthBar=this.scene.add.sprite(e.imgHealthFrame.x+2,0,"pak_game","blank.png"),e.imgHealthBar.displayWidth=e.imgHealthFrame.displayWidth-4,e.imgHealthBar.displayHeight=e.imgHealthFrame.displayHeight-4,e.imgHealthBar.setOrigin(0,.5),e.imgHealthBar.setTint(16711680),
+e.add(e.imgHealthBar),this.parentContainer.add(e),this.add(e);
+this.grid=new Grid(37);
+this.boxDropoutItems=[];
+for(b=0;
+b<BOX_BONUS_DROP_CHANCE_COIN;
+b++)this.boxDropoutItems.push({type:BONUS_COIN,data:100});
+for(b=0;
+b<BOX_BONUS_DROP_CHANCE_COINx3;
+b++)this.boxDropoutItems.push({type:BONUS_COIN,data:300});
+for(b=0;
+b<BOX_BONUS_DROP_CHANCE_PILE;
+b++)this.boxDropoutItems.push({type:BONUS_COIN,data:500});
+for(b=0;
+b<BOX_BONUS_DROP_CHANCE_POUCH;
+b++)this.boxDropoutItems.push({type:BONUS_COIN,data:1E3});
+for(b=0;
+b<
+BOX_BONUS_DROP_CHANCE_MAGNET;
+b++)this.boxDropoutItems.push({type:BONUS_MAGNET,data:null});
+for(b=0;
+b<BOX_BONUS_DROP_CHANCE_MEDKIT;
+b++)this.boxDropoutItems.push({type:BONUS_MEDKIT,data:null});
+for(b=0;
+b<BOX_BONUS_DROP_CHANCE_BOMB;
+b++)this.boxDropoutItems.push({type:BONUS_BOMB,data:null})},reset:function(){for(var b=this.getChildren(),e=b.length-1;0<=e;
+e--)b[e].visible=!1,b[e].active=!1,b[e].y=-1E3;
+this.grid.reset()},getSnapshot:function(){for(var b=[],e=this.getChildren(),f=0;
+f<e.length;
+f++){var h=e[f],
+n={};
+h.visible&&(n.enemyType=h.enemyType,n.position={x:h.x,y:h.y},n.health=h.health,n.attackDelay=h.attackDelay,n.spawnDelay=h.spawnDelay,b.push(n))}
+return b},loadSnapshot:function(b){this.reset();
+for(var e=0;
+e<b.length;
+e++){var f=b[e];
+if(!(0>=f.health)){var h=this.spawnEnemy(f.enemyType,f.position.x,f.position.y);
+h.health=f.health;
+h.imgHealthBar.displayWidth=h.imgHealthBar.maxWidth*h.health/h.healthMax;
+h.attackDelay=f.attackDelay;
+h.spawnDelay=f.spawnDelay}}},spawnEnemy:function(b,e,f){var h=this.getFirst(!1);
+if(null==h){if(!this.destroyEnemyOfTypeFarAway(b)&&!this.destroyEnemyFarAway())return null;
+h=this.getFirst(!1);
+if(null==h)return null}
+null==ContainerGameTop.instance.naviTarget&&(ContainerGameTop.instance.naviTarget=h);
+h.enemyType=b;
+h.enemyData=cloneObject(EnemiesData[b]);
+h.sprEnemy.stop();0<h.enemyData.speed?(h.enemyData.speed*=GetDifficultyMulForEnemySpeed(Level.instance.difficulty),h.sprEnemy.setTexture(h.enemyData.sprite,h.enemyData.frame+"_0.png"),h.sprEnemy.playAfterDelay(h.enemyData.frame+
+"_walk",10*Phaser.Math.Between(-20,20))):h.sprEnemy.setTexture(h.enemyData.sprite,h.enemyData.frame+".png");
+h.setPosition(e,f);
+h.sprEnemy.setScale(h.enemyData.scale);
+h.visible=!0;
+h.active=!0;
+h.rangeSq=Math.pow(h.enemyData.range,2);
+h.attackDelay=Phaser.Math.Between(1,10)*h.enemyData.attackDelay/10;
+h.mass=0;
+h.shots=null;
+h.deadshot=null;
+h.deadspawn=null;
+h.deaddrop=null;
+h.vectr=null;
+h.collSize2=h.sprEnemy.displayWidth*h.sprEnemy.originX;
+h.spawnDelay=0;
+h.static=!1;
+h.imgHealthFrame.visible=!1;
+h.imgHealthFrame.y=
+-h.sprEnemy.displayHeight*h.sprEnemy.originY-5;
+h.imgHealthFrame.displayWidth=.8*h.sprEnemy.displayWidth;
+h.imgHealthFrame.x=-h.imgHealthFrame.displayWidth/2;
+h.imgHealthBar.visible=!1;
+h.imgHealthBar.y=h.imgHealthFrame.y;
+h.imgHealthBar.maxWidth=h.imgHealthFrame.displayWidth-4;
+h.imgHealthBar.displayWidth=h.imgHealthBar.maxWidth;
+h.imgHealthBar.x=-h.imgHealthBar.maxWidth/2;
+this._applyExtraAttribsFromData(h);
+if(this.grid.exist(h.x,h.y))return h.visible=!1,h.active=!1,null;
+this.resetHealth(h,this.getEnemyHealth(h));
+return h},resetHealth:function(b,e){b.healthMax=e;
+b.health=b.healthMax;
+b.imgHealthBar.displayWidth=b.imgHealthBar.maxWidth*b.health/b.healthMax},_applyExtraAttribsFromData:function(b){if(b.enemyData.hasOwnProperty("shots")){b.shots=[];
+for(var e=20*Phaser.Math.Between(-10,10),f=0;
+f<b.enemyData.shots.length;
+f++)b.shots[f]=cloneObject(b.enemyData.shots[f]),b.shots[f].rangeSq=Math.pow(b.enemyData.shots[f].range,2),b.shots[f].attackDelay+=e}
+b.enemyData.hasOwnProperty("deadshot")&&(b.deadshot={},b.deadshot.rangeSq=
+Math.pow(b.enemyData.deadshot.range,2));
+b.enemyData.hasOwnProperty("deadspawn")&&(b.deadspawn=cloneObject(b.enemyData.deadspawn));
+b.enemyData.hasOwnProperty("deaddrop")&&(b.deaddrop=cloneObject(b.enemyData.deaddrop));
+b.enemyData.hasOwnProperty("healthbar")&&(b.imgHealthFrame.visible=b.enemyData.healthbar,b.imgHealthBar.visible=b.enemyData.healthbar);
+b.enemyData.hasOwnProperty("mass")&&(b.mass=b.enemyData.mass);
+b.enemyData.hasOwnProperty("static")&&(b.static=b.enemyData.static);
+b.enemyData.hasOwnProperty("collSize2")&&
+(b.collSize2=b.enemyData.collSize2)},spawnEnemyAnimated:function(b,e,f){var h=ContainerGame.instance.particles.CreateBonusPopup(e,f,EnemiesData[b].frame+".png");
+null!=h&&(h.sprite.setOrigin(.5,.9),h.data.enemy={type:b,x:e,y:f},h.data.callback=function(n){this.spawnEnemy(n.data.enemy.type,n.data.enemy.x,n.data.enemy.y)}
+.bind(this))},getEnemyHealth:function(b){return b.enemyData.health},damageEnemy:function(b,e){if(0<b.spawnDelay||0>=b.health)return!1;
+if(b.visible){MissionUpdate(MISSION_TYPE_DEAL_X_DMG,
+e);
+Phaser.Math.Between(-b.sprEnemy.displayWidth,b.sprEnemy.displayWidth);
+Phaser.Math.Between(-b.sprEnemy.displayHeight,b.sprEnemy.displayHeight);
+ContainerGame.instance.textPrtcls.CreateTextParticle1(b.x,b.y,""+Math.floor(e),GetDmgTextFontSize(e),"#FFFFFF");
+b.health-=e;
+if(0>=b.health)return this.killEnemy(b,!0),this.playDyingSound(),!1===dlgContinue.visible&&containerGame.level.incKilledEnemies(1),!0;
+b.imgHealthBar.displayWidth=b.imgHealthBar.maxWidth*b.health/b.healthMax;
+return!1}},playDyingSound:function(){for(var b=
+[],e=1;5>=e;
+e++)soundIsPlaying(SceneGame.instance,"zd"+e)||b.push("zd"+e);0!=b.length&&(Phaser.Utils.Array.Shuffle(b),playSound(SceneGame.instance,b[0]))},killEnemy:function(b,e){void 0===e&&(e=!0);
+var f=containerGame.explosions.spawnExplosion("blood",b.x,b.y);
+null!=f&&b.hasOwnProperty("vectr")&&null!=b.vectr&&(f.rotation=b.vectr.angle());
+e&&("box"==b.enemyType?this.spawnBoxBonuses(b):this.spawnEnemyBonuses(b));"box"==b.enemyType&&MissionUpdate(MISSION_TYPE_OPEN_X_CRATES,1);0==b.enemyType.indexOf("miniboss")&&
+MissionUpdate(MISSION_TYPE_KILL_MINI_BOSSES,1);
+this.shootOnPlayerAtDying(b,b.vectr);
+this.spawnEnemiesOnDying(b);
+this.spawnBonusAtDying(b);
+this.invalidateEnemy(b)},killAllEnemiesAtBoss:function(){do{var b=this.getFirst(!0);
+null!=b&&this.killEnemy(b,!1)}
+while(null!=b)},spawnEnemyBonuses:function(b){Exps.instance.spawnExp(b.x,b.y,b.enemyData.bonus)},spawnBoxBonuses:function(b){Phaser.Utils.Array.Shuffle(this.boxDropoutItems);
+Phaser.Utils.Array.Shuffle(this.boxDropoutItems);
+Bonuses.instance.spawnBonusAnimated(this.boxDropoutItems[0].type,
+b.x,b.y,this.boxDropoutItems[0].data)},invalidateEnemy:function(b){this.grid.remove(b);
+b.visible=!1;
+b.active=!1;
+MissionUpdate(MISSION_TYPE_KILL_ENEMIES,1,b.enemyType)},updateEnemyMovement:function(b,e,f){0<b.attackDelay&&(b.attackDelay-=f);0<b.spawnDelay&&(b.spawnDelay-=f);
+b.target=Player.instance;
+var h=b.enemyData.speed*f/2;
+e=new Phaser.Math.Vector2(b.target.x-b.x,b.target.y-b.y);
+var n=e.x,r=b.enemyData.range,t=b.rangeSq;
+b.distToPlayerSq=Phaser.Math.Distance.BetweenPointsSquared({x:Player.instance.x,
+y:Player.instance.y},b);
+e.normalize();
+var w=e.x*h;
+h*=e.y;
+var x=b.x,z=b.y;
+b.vectr=e;
+b.vx=e.x;
+b.vy=e.y;
+if(0==b.enemyData.speed)this.attackPlayerOnTouch(b,f),this.shootOnPlayer(b,e,f);
+else{var aa=!0;
+this.grid.remove(b);
+b.distToPlayerSq>t&&(aa=!1,Math.abs(w)>Math.abs(h)?(b.x+=w,this.grid.exist(b.x,b.y,b.mass)&&(b.x=x),b.y+=h,this.grid.exist(b.x,b.y,b.mass)&&(b.y=z)):(b.y+=h,this.grid.exist(b.x,b.y,b.mass)&&(b.y=z),b.x+=w,this.grid.exist(b.x,b.y,b.mass)&&(b.x=x)));
+aa&&this.attackPlayerOnTouch(b,f);
+this.shootOnPlayer(b,
+e,f);
+n<-r&&(b.sprEnemy.scaleX=-b.enemyData.scale);
+n>r&&(b.sprEnemy.scaleX=b.enemyData.scale);
+this.grid.add(b)}},attackPlayerOnTouch:function(b,e){b.distToPlayerSq>b.rangeSq||0<b.attackDelay||(b.attackDelay=b.enemyData.attackDelay,Player.instance.damagePlayer(b.enemyData.damage))},shootOnPlayer:function(b,e,f){if(null!=b.shots&&!(b.distToPlayerSq>b.shots[0].rangeSq))for(var h=0;
+h<b.shots.length;
+h++){var n=new Phaser.Math.Vector2(e.x,e.y);
+b.shots[h].attackDelay-=f;
+if(!(0<b.shots[h].attackDelay)){if(b.enemyData.shots[h].hasOwnProperty("angleInc")){var r=
+Phaser.Math.DegToRad(b.enemyData.shots[h].angleInc);
+n.rotate(r)}
+r=n.x;
+n=n.y;
+b.shots[h].attackDelay=b.enemyData.shots[h].attackDelay;
+var t="shot_bullet.png";
+b.enemyData.shots[h].hasOwnProperty("sprite")&&(t=b.enemyData.shots[h].sprite);
+r=Projectiles.instance.spawnProjectile(t,b.x,b.y,r,n,b.enemyData.shots[h].speed,b.enemyData.shots[h].damage);
+null!=r&&(r.playerShot=!1,b.enemyData.shots[h].hasOwnProperty("life")&&(r.life=b.enemyData.shots[h].life),b.enemyData.shots[h].hasOwnProperty("destroyable")&&
+(r.destroyable=b.enemyData.shots[h].destroyable),b.enemyData.shots[h].hasOwnProperty("sound")&&playSound(SceneGame.instance,b.enemyData.shots[h].sound))}}},shootOnPlayerAtDying:function(b){if(null!=b.deadshot){var e=new Phaser.Math.Vector2(Player.instance.x-b.x,Player.instance.y-b.y);
+e.normalize();
+e=Projectiles.instance.spawnProjectile(b.enemyData.deadshot.frame,b.x,b.y,e.x,e.y,b.enemyData.deadshot.speed,b.enemyData.deadshot.damage);
+null!=e&&(e.playerShot=!1,b.enemyData.deadshot.hasOwnProperty("rotationSpeed")&&
+(e.rotationSpeed=b.enemyData.deadshot.rotationSpeed),b.enemyData.deadshot.hasOwnProperty("life")&&(e.life=b.enemyData.deadshot.life,e.lifeInit=e.life),b.enemyData.deadshot.hasOwnProperty("alphaInTime")&&(e.alphaInTime=b.enemyData.deadshot.alphaInTime),b.enemyData.deadshot.hasOwnProperty("tgtsCount")&&(e.tgtsCount=b.enemyData.deadshot.tgtsCount),b.enemyData.deadshot.hasOwnProperty("scale")&&e.setScale(b.enemyData.deadshot.scale),b.enemyData.deadshot.hasOwnProperty("destroyable")&&(e.destroyable=b.enemyData.deadshot.destroyable))}},
+spawnEnemiesOnDying:function(b){if(null!=b.deadspawn){var e=1;
+b.deadspawn.hasOwnProperty("count")&&(e=b.deadspawn.count);
+for(var f=0;
+f<e;
+f++){var h=b.sprEnemy.displayWidth,n=Phaser.Math.Between(0,360);
+b.deadspawn.hasOwnProperty("radius")&&(h=b.deadspawn.radius);
+var r=b.x+Math.cos(n)*h+Phaser.Math.Between(-10,10);
+h=b.y+Math.sin(n)*h+Phaser.Math.Between(-10,10);
+n=Enemies.instance.spawnEnemy(b.deadspawn.enemy,r,h);
+null!=n&&(n.spawnDelay=350);
+b.deadspawn.hasOwnProperty("effect")&&(r=containerGame.explosions.spawnExplosion(b.deadspawn.effect,
+r,h),null!=r&&(r.z=1))}}},spawnBonusAtDying:function(b){if(null!=b.deaddrop){var e=null;
+b.deaddrop.hasOwnProperty("data")&&(e=b.deaddrop.data);
+Bonuses.instance.spawnBonusAnimated(b.deaddrop.type,b.x,b.y,e)}},enemyInCollsionWithSprite:function(b,e){return Math.abs(b.x-e.x)>b.collSize2+e.collSize2||Math.abs(b.y-e.y)>b.collSize2+e.collSize2?!1:!0},getEnemyInCollsionWithSprite:function(b,e){for(var f=this.getMatching("visible",!0),h=f.length-1;0<=h;
+h--)if(b!=f[h]&&f[h].visible&&!(null!=e&&0<=e.indexOf(f[h]))&&
+this.enemyInCollsionWithSprite(f[h],b))return f[h];
+return null},getStaticEnemyInCollsionWithSprite:function(b){for(var e=this.getMatching("visible",!0),f=e.length-1;0<=f;
+f--)if(b!=e[f]&&e[f].visible&&e[f].static&&this.enemyInCollsionWithSprite(e[f],b))return e[f];
+return null},update:function(b,e){for(var f=this.getChildren(),h=0,n=f.length-1;0<=n;
+n--)f[n].visible&&(h++,this.updateEnemyMovement(f[n],b,e));
+GameData.BuildDebug&&(containerGameTop.txtDebugInfo.text+="\nenemies: "+h)},findEnemyClosestToPlayer:function(){for(var b=
+this.getChildren(),e=1E12,f=null,h=b.length-1;0<=h;
+h--)if(b[h].visible){var n=b[h].distToPlayerSq;
+n<e&&(e=n,f=b[h])}
+return f},destroyEnemyOfTypeFarAway:function(b){for(var e=this.getChildren(),f=e.length-1;0<=f;
+f--)if(!(e[f].enemyType!=b&&!e[f].static||e[f].distToPlayerSq<RES_SCREEN_DISTSQ))return e[f].active=!1,e[f].visible=!1,!0;
+return!1},destroyEnemyFarAway:function(b){b=this.getChildren();
+for(var e=b.length-1;0<=e;
+e--)if(!(b[e].distToPlayerSq<RES_SCREEN_DISTSQ))return b[e].active=!1,b[e].visible=
+!1,!0;
+return!1},countEnemiesOfType:function(b){for(var e=this.getChildren(),f=0,h=e.length-1;0<=h;
+h--)e[h].visible&&e[h].enemyType==b&&f++;
+return f},countEnemies:function(){return this.getMatching("visible",!0).length},getEnemiesInRadius:function(b,e,f,h){void 0===h&&(h=null);
+var n=this.getChildren();
+f*=f;
+for(var r=[],t=n.length-1;0<=t;
+t--)n[t].visible&&(null!=h&&0<=h.indexOf(n[t])||Phaser.Math.Distance.Squared(n[t].x,n[t].y,b,e)>f||r.push(n[t]));
+return r},damageEnemiesInRadius:function(b,e,f,h){b=
+this.getEnemiesInRadius(b,e,f);
+for(e=0;
+e<b.length;
+e++)this.damageEnemy(b[e],h)},damageAllEnemies:function(b){for(var e=this.getChildren(),f=0;
+f<e.length;
+f++)e[f].visible&&this.damageEnemy(e[f],b)},killAllEnemies:function(){var b=this.getChildren();
+let e=0;
+for(var f=0;
+f<b.length;
+f++)b[f].visible&&(e++,this.damageEnemy(b[f],b[f].health));
+containerGame.level.incKilledEnemies(e)}});
+var MAX_BOSSES=4,BEHAV_STATE_CHARGING=0,BEHAV_STATE_EXECUTING=1,BEHAV_STATE_COOLDOWN=2,DEFAULT_BOSS_BEHAV_DURATION=1500,DEFAULT_BOSS_MELEE_DELAY=200,Bosses=new Phaser.Class({Extends:Phaser.GameObjects.Group,initialize:function Bosses(b,e){Bosses.instance=this;
+Phaser.GameObjects.Group.call(this,b.scene);
+this.parentContainer=b;
+this.initAnimations("pak_actors","boss_reptile");
+this.initAnimations("pak_actors","boss_soldier");
+this.initAnimations("pak_actors","boss_soldier","attack",[3,2,3,2],10);
+this.initAnimations("pak_actors",
+"boss_dragon");
+this.initAnimations("pak_actors","boss_spider");
+this.initAnimations("pak_actors","boss_spider","attack",[0,1,2,3,4],10);
+this.initAnimations("pak_actors","boss_mutant");
+this.createBosses()},initAnimations:function(b,e,f,h,n,r){void 0===f&&(f="walk");
+void 0===h&&(h=[0,1,0,2]);
+void 0===n&&(n=6);
+void 0===r&&(r=-1);
+for(var t=[],w=0;
+w<h.length;
+w++)t.push({key:b,frame:e+"_"+h[w]+".png"});
+this.scene.anims.create({key:e+"_"+f,frames:t,frameRate:n,repeat:r})},createBosses:function(b,e,f){for(b=
+0;
+b<MAX_BOSSES;
+b++){var h=this.scene.add.container(e,f);
+h.sprTarget=this.scene.add.sprite(0,0,"pak_game","boss_point.png");
+h.sprTarget.setOrigin(.5,.5);
+h.sprTarget.setScale(1);
+h.sprTarget.setTint(16777215);
+h.sprTarget.visible=!1;
+h.sprTarget.alpha=.5;
+h.add(h.sprTarget);
+this.scene.tweens.add({targets:[h.sprTarget],alpha:1,duration:300,ease:"Sine.easeIn",yoyo:!0,repeat:-1});
+h.sprBoss=this.scene.add.sprite(0,0,"pak_actors","zombieA_0.png");
+h.sprBoss.setOrigin(.5,.9);
+h.sprBoss.setTint(16777215);
+h.add(h.sprBoss);
+h.imgHealthFrame=this.scene.add.sprite(-50,0,"pak_game","blank.png");
+h.imgHealthFrame.displayWidth=100;
+h.imgHealthFrame.displayHeight=15;
+h.imgHealthFrame.setOrigin(0,.5);
+h.imgHealthFrame.setTint(0);
+h.add(h.imgHealthFrame);
+h.imgHealthBar=this.scene.add.sprite(h.imgHealthFrame.x+2,0,"pak_game","blank.png");
+h.imgHealthBar.maxWidth=h.imgHealthFrame.displayWidth-4;
+h.imgHealthBar.displayWidth=h.imgHealthFrame.displayWidth-4;
+h.imgHealthBar.displayHeight=h.imgHealthFrame.displayHeight-4;
+h.imgHealthBar.setOrigin(0,
+.5);
+h.imgHealthBar.setTint(16711680);
+h.add(h.imgHealthBar);
+h.sprWarning=this.scene.add.sprite(0,0,"pak_game","boss_point.png");
+h.sprWarning.setOrigin(.5,.5);
+h.sprWarning.setScale(1);
+h.sprWarning.setTint(16777215);
+h.sprWarning.setAlpha(.6);
+h.add(h.sprWarning);
+this.scene.tweens.add({targets:h.sprWarning,alpha:1,duration:400,ease:"Sine.easeIn",yoyo:-1,repeat:-1});
+h.visible=!1;
+h.active=!1;
+h.setScale(1);
+this.parentContainer.add(h);
+this.add(h)}
+this.grid=new Grid(BOSS_ZONE_GRID_SIZE)},reset:function(){for(var b=
+this.getChildren(),e=b.length-1;0<=e;
+e--)b[e].visible=!1,b[e].active=!1,b[e].y=-1E3;
+this.grid.reset()},getSnapshot:function(){for(var b=[],e=this.getChildren(),f=0;
+f<e.length;
+f++){var h=e[f],n={};
+h.visible&&(n.bossType=h.bossType,n.position={x:this.x,y:this.y},n.health=h.health,n.healthMax=h.healthMax,n.spawnRadius=h.spawnRadius,n.attackDelay=h.attackDelay,n.spawnDelay=h.spawnDelay,b.push(n))}
+return b},loadSnapshot:function(b){this.reset();
+for(var e=0;
+e<b.length;
+e++){var f=b[e],h=this.spawnBoss(f.bossType,
+f.position.x,f.position.y);
+h.health=f.health;
+h.healthMax=f.healthMax;
+h.imgHealthBar.displayWidth=h.imgHealthBar.maxWidth*h.health/h.healthMax;
+h.spawnRadius=f.spawnRadius;
+h.attackDelay=f.attackDelay;
+h.spawnDelay=f.spawnDelay}},spawnBoss:function(b,e,f){var h=this.getFirst(!1);
+if(null==h)return null;
+h.bossType=b;
+h.bossData=BossesData[b];
+h.bossIdx=-1;
+h.bossData.hasOwnProperty("meleeDelay")||(console.warn("Bosses.spawnBoss( "+b+" ) -> meleeDelay undefined -> using default value : "+DEFAULT_BOSS_MELEE_DELAY),
+h.bossData.meleeDelay=DEFAULT_BOSS_MELEE_DELAY);
+this._updateBossSprite(h);
+h.setPosition(e,f);
+h.z=0;
+h.setScale(h.bossData.scale);
+h.visible=!0;
+h.active=!0;
+h.rangeSq=Math.pow(h.bossData.range,2);
+h.meleeDelay=Phaser.Math.Between(1,10)*h.bossData.meleeDelay/10;
+h.shot=null;
+h.vectr=null;
+h.static=!1;
+h.warningDelay=2500;
+h.sprBoss.setOrigin(.5,.8);
+h.bossData.hasOwnProperty("originX")&&(h.sprBoss.originX=h.bossData.originX);
+h.bossData.hasOwnProperty("originY")&&(h.sprBoss.originY=h.bossData.originY);
+h.bossData.hasOwnProperty("static")&&
+(h.static=h.bossData.static);
+h.imgHealthFrame.y=.85*-h.sprBoss.displayHeight;
+h.bossData.hasOwnProperty("healthBar")&&h.bossData.healthBar.hasOwnProperty("offset")&&(h.bossData.healthBar.offset.hasOwnProperty("x")&&(h.imgHealthFrame.x=h.bossData.healthBar.offset.x),h.bossData.healthBar.offset.hasOwnProperty("y")&&(h.imgHealthFrame.y=h.bossData.healthBar.offset.y));
+h.imgHealthBar.x=h.imgHealthFrame.x+2;
+h.imgHealthBar.y=h.imgHealthFrame.y;
+this.setBossHealthBar(h,h.health/h.healthMax);
+h.bossData.hasOwnProperty("shot")&&
+(h.shot={},h.shot.rangeSq=Math.pow(h.bossData.shot.range,2),h.shot.attackDelay=Phaser.Math.Between(Math.floor(h.bossData.shot.attackDelay/2),h.bossData.shot.attackDelay),h.shot.offset={x:0,y:0},h.shot.effect=null,h.bossData.shot.hasOwnProperty("offset")&&(h.shot.offset=h.bossData.shot.offset),h.bossData.shot.hasOwnProperty("effect")&&(h.shot.effect=h.bossData.shot.effect));
+h.activeBehavIdx=0;
+this.selectActiveBehav(h,h.bossData.behaviour[h.activeBehavIdx]);
+if(this.grid.exist(h.x,h.y))return h.visible=
+!1,h.active=!1,null;
+this.resetHealth(h,this.getBossHealth(h));
+return h},resetHealth:function(b,e){b.healthMax=e;
+b.health=b.healthMax;
+e=b.health/b.healthMax;
+b.imgHealthBar.displayWidth=b.imgHealthBar.maxWidth*e;-1!=b.bossIdx&&(containerGameTop.bossProgressBar[b.bossIdx].imgBar.displayWidth=containerGameTop.bossProgressBar[b.bossIdx].imgBar.MAX_WIDTH*e)},_updateBossSprite:function(b){b.sprBoss.stop();0<b.bossData.speed?b.sprBoss.play(b.bossData.frame+"_walk"):b.sprBoss.setTexture(b.bossData.sprite,
+b.bossData.frame+".png")},selectActiveBehav:function(b,e){b.activeBehav=e;
+b.activeBehav.hasOwnProperty("duration")||(b.activeBehav.duration=[DEFAULT_BOSS_BEHAV_DURATION,DEFAULT_BOSS_BEHAV_DURATION,DEFAULT_BOSS_BEHAV_DURATION]);
+Array.isArray(b.activeBehav.duration)||(e=b.activeBehav.duration,b.activeBehav.duration=[e,e,e]);
+b.behavState=BEHAV_STATE_CHARGING;
+b.behavDuration=b.activeBehav.duration[BEHAV_STATE_CHARGING];
+b.activeBehav.movement==BOSS_MOVEMENT_CHASE&&(b.sprTarget.visible=!1,this._updateBossSprite(b));
+b.activeBehav.movement==BOSS_MOVEMENT_CHARGE&&(b.sprBoss.stop(),b.sprTarget.setTexture("pak_game","blank.png"),b.sprTarget.setOrigin(-.1,.5),b.sprTarget.setScale(2),b.sprTarget.setTint(16711680),b.sprTarget.setPosition(0,0),b.sprTarget.visible=!0);
+b.activeBehav.movement==BOSS_MOVEMENT_ROAM&&(b.sprTarget.visible=!1,b.vectr=new Phaser.Math.Vector2(1,1),b.vectr.setAngle(Phaser.Math.FloatBetween(0,2*Math.PI)),this._updateBossSprite(b));
+b.activeBehav.movement==BOSS_MOVEMENT_RETREAT&&(b.sprTarget.visible=
+!1,this._updateBossSprite(b));
+b.activeBehav.movement==BOSS_MOVEMENT_TELEPORT&&(b.sprBoss.stop(),b.minTeleportDistanceSq=.45*(.45*Math.pow(BossZone.instance.bossZoneWidth,2)+Math.pow(BossZone.instance.bossZoneHeight,2)),b.behavTarget=this.getNextTeleportTarget(b),b.sprTarget.setTexture("pak_game","boss_point.png"),b.sprTarget.rotation=0,b.sprTarget.setOrigin(.5),b.sprTarget.setScale(1),b.sprTarget.setTint(16777215),b.sprTarget.setPosition(b.behavTarget.x-b.x,b.behavTarget.y-b.y),b.sprTarget.visible=
+!0);
+if(b.activeBehav.movement==BOSS_MOVEMENT_ATTACK){b.shots=[];
+if(b.activeBehav.hasOwnProperty("shots"))for(e=0;
+e<b.activeBehav.shots.length;
+e++)b.shots.push(cloneObject(b.activeBehav.shots[e]));
+b.spawns=[];
+if(b.activeBehav.hasOwnProperty("spawns"))for(e=0;
+e<b.activeBehav.spawns.length;
+e++)b.spawns.push(cloneObject(b.activeBehav.spawns[e]));
+b.sprTarget.visible=!1}},selectNextBehav:function(b){b.activeBehavIdx++;
+b.activeBehavIdx>=b.bossData.behaviour.length&&(b.activeBehavIdx=0);
+this.selectActiveBehav(b,
+b.bossData.behaviour[b.activeBehavIdx])},getNextTeleportTarget:function(b){var e=0;
+do{var f=BossZone.instance.bossZoneWidth/2;
+f-=Phaser.Math.Between(0,.8*f);
+var h=BossZone.instance.bossZoneHeight/2*.8;
+h-=Phaser.Math.Between(0,.8*h);
+var n=this._getBaseTeleportAngleFromPLayerPositionWithinBossZone()+Phaser.Math.Between(-Math.PI,Math.PI)/5;
+f={x:BossZone.instance.bossZoneCenter.x+Math.cos(n)*f,y:BossZone.instance.bossZoneCenter.y+Math.sin(n)*h};
+distSq=Phaser.Math.Distance.BetweenPointsSquared({x:f.x,
+y:f.y},
+{x:b.x,y:b.y});
+e++}
+while(distSq<b.minTeleportDistanceSq&&3>e);
+return f},_getBaseTeleportAngleFromPLayerPositionWithinBossZone:function(){var b=Math.PI/4;
+if(Player.instance.x>=BossZone.instance.bossZoneCenter.x)return Player.instance.y>=BossZone.instance.bossZoneCenter.y&&(b-=Math.PI/2),b;
+if(Player.instance.x<BossZone.instance.bossZoneCenter.x)return Player.instance.y>=BossZone.instance.bossZoneCenter.y&&(b-=Math.PI),b+Math.PI/2;
+throw"This should not happen...";},getBossHealth:function(b){b=
+b.bossData.health;
+Level.instance.bossesExistInNextWaves()||(b*=2);
+return b},setBossHealthBar:function(b,e){b.imgHealthBar.displayWidth=(b.imgHealthFrame.displayWidth-4)*e;-1!=b.bossIdx&&(containerGameTop.bossProgressBar[b.bossIdx].imgBar.displayWidth=containerGameTop.bossProgressBar[b.bossIdx].imgBar.MAX_WIDTH*e)},damageBoss:function(b,e){if(0<b.warningDelay)return!1;
+MissionUpdate(MISSION_TYPE_DEAL_X_DMG,e);
+var f=Phaser.Math.Between(-b.sprBoss.displayWidth,b.sprBoss.displayWidth)/5,h=Phaser.Math.Between(-b.sprBoss.displayHeight,
+b.sprBoss.displayHeight)/10;
+ContainerGame.instance.textPrtcls.CreateTextParticle1(b.x+f,b.y+h,""+Math.floor(e),GetDmgTextFontSize(e),"#FFFFFF");
+b.health-=e;
+this.setBossHealthBar(b,b.health/b.healthMax);
+return 0>=b.health?(containerGameTop.bossProgressBar[b.bossIdx].imgBar.displayWidth=0,e=containerGame.explosions.spawnExplosion("effect_bossdeath",b.x,b.y),null!=e&&(e.setScale(1.5),e.rotation=0),this.spawnBossBonuses(b),playSound(SceneGame.instance,"hit"),this.invalidateBoss(b),containerGame.level.incKilledEnemies(1),
+containerGame.level.incKilledEnemies(1),0==this.countBosses()&&(playMusic(SceneGame.instance,"music_ingame"),BossZone.instance.closeAll(),containerGameTop.bossProgressBar[0].visible=!1,containerGameTop.bossProgressBar[1].visible=!1),0!=this.countBosses()||Level.instance.bossesExistInNextWaves()||(Enemies.instance.killAllEnemiesAtBoss(),SetRecordLevelTime(SelectedLevel,TIME_LEVEL_COMPLETED+1,Level.instance.difficulty),gameWonDelay=DELAY_GAME_WON*LEVEL_TIMES_MUL),!0):!1},spawnBossBonuses:function(b){var e=
+.4*b.sprBoss.displayWidth,f=[{bonus:BONUS_COIN,data:1500},
+{bonus:BONUS_COIN,data:1E3},
+{bonus:BONUS_COIN,data:500}];
+Level.instance.bossesExistInNextWaves()&&(f=[{bonus:BONUS_MAGNET,data:null},
+{bonus:BONUS_MEDKIT,data:null},
+{bonus:BONUS_COIN,data:1500}],b.bossData.hasOwnProperty("deaddrop")&&f.push(b.bossData.deaddrop));
+for(var h=0;
+h<f.length;
+h++){var n=Phaser.Math.Between(0,360),r=b.x+Math.cos(n)*e+Phaser.Math.Between(-15,15);
+n=b.y+Math.sin(n)*e+Phaser.Math.Between(-15,15);
+Bonuses.instance.spawnBonusAnimated(f[h].bonus,
+r,n,f[h].data,250*(h+1))}},spawnBoxBonuses:function(b){Phaser.Utils.Array.Shuffle(this.boxDropoutItems);
+Bonuses.instance.spawnBonusAnimated(this.boxDropoutItems[0].type,b.x,b.y,this.boxDropoutItems[0].data)},invalidateBoss:function(b){this.grid.remove(b);
+b.visible=!1;
+b.active=!1;
+MissionUpdate(MISSION_TYPE_KILL_BOSSES,1,b.enemyType)},updateBoss:function(b,e,f){if(0<b.warningDelay)b.warningDelay-=f,b.sprBoss.visible=!1,b.imgHealthFrame.visible=!1,b.imgHealthBar.visible=!1,b.sprWarning.visible=!0,0>=
+b.warningDelay&&(b.sprBoss.visible=!0,b.imgHealthFrame.visible=!0,b.imgHealthBar.visible=!0,b.sprWarning.visible=!1);
+else{b.distToPlayerSq=Phaser.Math.Distance.BetweenPointsSquared({x:Player.instance.x,y:Player.instance.y},b);
+b.inTouchRange=b.distToPlayerSq<=b.rangeSq;0<b.meleeDelay&&(b.meleeDelay-=f);
+var h=b.activeBehav.movement;
+h==BOSS_MOVEMENT_CHASE&&this.updateBossMovement_Chase(b,e,f);
+h==BOSS_MOVEMENT_CHARGE&&this.updateBossMovement_Charge(b,e,f);
+h==BOSS_MOVEMENT_ROAM&&this.updateBossMovement_Roam(b,
+e,f);
+h==BOSS_MOVEMENT_RETREAT&&this.updateBossMovement_Retreat(b,e,f);
+h==BOSS_MOVEMENT_TELEPORT&&this.updateBossMovement_Teleport(b,e,f);
+h==BOSS_MOVEMENT_ATTACK&&this.updateBossMovement_Attack(b,e,f);
+b.inTouchRange&&this.attackPlayerOnTouch(f,b,b.bossData.damage)}},updateBossAttack:function(b,e,f){null!=b.shot&&b.distToPlayerSq<=b.shot.rangeSq&&this.shootOnPlayer(b,vectr,f)},updateBossMovement_Chase:function(b,e,f){b.target=Player.instance;
+var h=this._getSpeed(b)*f;
+e=new Phaser.Math.Vector2(b.target.x-
+b.x,b.target.y-b.y);
+var n=e.x,r=b.bossData.range;
+e.normalize();
+var t=e.x*h;
+h*=e.y;
+b.vectr=e;
+b.vx=e.x;
+b.vy=e.y;0!=b.bossData.speed&&(b.inTouchRange||this._moveBoss(b,t,h),n<-r&&(b.sprBoss.scaleX=-b.bossData.scale),n>r&&(b.sprBoss.scaleX=b.bossData.scale),b.behavDuration-=f,0>=b.behavDuration&&this.selectNextBehav(b))},updateBossMovement_Charge:function(b,e,f){if(b.behavState==BEHAV_STATE_CHARGING){b.sprTarget.setPosition(0,0);
+e=Phaser.Math.Distance.Between(Player.instance.x,Player.instance.y,b.x,b.y);
+var h=Phaser.Math.Angle.Between(Player.instance.x,Player.instance.y,b.x,b.y);
+b.sprTarget.displayHeight=40;
+b.sprTarget.displayWidth=.8*e;
+b.sprTarget.rotation=h+Math.PI;
+this._facePlayer(b);
+b.behavDuration-=f;0>=b.behavDuration&&(b.sprTarget.visible=!1,b.behavTarget={x:Player.instance.x,y:Player.instance.y},b.behavState=BEHAV_STATE_EXECUTING,b.behavDuration=b.activeBehav.duration[BEHAV_STATE_EXECUTING],this._updateBossSprite(b))}
+else b.behavState==BEHAV_STATE_EXECUTING?(e=this._getSpeed(b)*f,h=new Phaser.Math.Vector2(b.behavTarget.x-
+b.x,b.behavTarget.y-b.y),h.normalize(),this._moveBoss(b,h.x*e,h.y*e),b.distToTarget=Phaser.Math.Distance.Between(b.x,b.y,b.behavTarget.x,b.behavTarget.y),30>=b.distToTarget&&(b.behavDuration=0),b.behavDuration-=f,0>=b.behavDuration&&(b.behavState=BEHAV_STATE_COOLDOWN,b.behavDuration=b.activeBehav.duration[BEHAV_STATE_COOLDOWN],b.sprBoss.stop())):b.behavState==BEHAV_STATE_COOLDOWN&&(this._facePlayer(b),b.behavDuration-=f,0>=b.behavDuration&&this.selectNextBehav(b))},updateBossMovement_Roam:function(b,
+e,f){b.target=Player.instance;
+var h=this._getSpeed(b)*f;
+e=b.vectr.x*h;
+h*=b.vectr.y;
+var n=b.x,r=b.y;
+b.vx=b.vectr.x;
+b.vy=b.vectr.y;0!=b.bossData.speed&&(this.grid.remove(b),0!=b.bossData.speed&&(b.inTouchRange||(Math.abs(e)>Math.abs(h)?(b.x+=e,this.grid.exist(b.x,b.y)&&(b.x=n,b.vectr.x*=-1),BossZone.instance.spriteInCollisionWithZone(b)&&(b.x=n,b.vectr.x*=-1),b.y+=h,this.grid.exist(b.x,b.y)&&(b.y=r,b.vectr.y*=-1),BossZone.instance.spriteInCollisionWithZone(b)&&(b.y=r,b.vectr.y*=-1)):(b.y+=h,this.grid.exist(b.x,
+b.y)&&(b.y=r,b.vectr.y*=-1),BossZone.instance.spriteInCollisionWithZone(b)&&(b.y=r,b.vectr.y*=-1),b.x+=e,this.grid.exist(b.x,b.y)&&(b.x=n,b.vectr.x*=-1),BossZone.instance.spriteInCollisionWithZone(b)&&(b.x=n,b.vectr.x*=-1))),0>=b.vectr.x&&(b.sprBoss.scaleX=-b.bossData.scale),0<b.vectr.x&&(b.sprBoss.scaleX=b.bossData.scale),this.grid.add(b),b.behavDuration-=f,0>=b.behavDuration&&this.selectNextBehav(b)))},updateBossMovement_Retreat:function(b,e,f){b.target=Player.instance;
+var h=this._getSpeed(b)*f,
+n=new Phaser.Math.Vector2(b.x-b.target.x,b.y-b.target.y);
+e=n.x;
+var r=b.bossData.range;
+n.normalize();
+var t=n.x*h;
+h*=n.y;
+b.vectr=n;
+b.vx=n.x;
+b.vy=n.y;0!=b.bossData.speed&&(n=!1,b.inTouchRange||(n=this._moveBoss(b,t,h)),e<-r&&(b.sprBoss.scaleX=-b.bossData.scale),e>r&&(b.sprBoss.scaleX=b.bossData.scale),b.behavDuration-=f,(0>=b.behavDuration||n)&&this.selectNextBehav(b))},updateBossMovement_Teleport:function(b,e,f){b.behavState==BEHAV_STATE_CHARGING?(b.behavDuration-=f,0>=b.behavDuration&&(b.behavState=
+BEHAV_STATE_EXECUTING,b.behavDuration=b.activeBehav.duration[BEHAV_STATE_EXECUTING]),this._facePlayer(b)):b.behavState==BEHAV_STATE_EXECUTING?(b.behavDuration-=f,0>=b.behavDuration&&(b.behavState=BEHAV_STATE_COOLDOWN,b.behavDuration=b.activeBehav.duration[BEHAV_STATE_COOLDOWN],e=Explosions.instance.spawnExplosion("effect_slug",b.x,b.y),null!=e&&(e.displayWidth=1.2*b.sprBoss.displayWidth,e.scaleY=e.scaleX),this.grid.remove(b),b.setPosition(b.behavTarget.x,b.behavTarget.y),this.grid.add(b),b.behavTarget=
+this.getNextTeleportTarget(b),b.sprTarget.setPosition(b.behavTarget.x-b.x,b.behavTarget.y-b.y),b.sprTarget.visible=!1,e=Explosions.instance.spawnExplosion("effect_slug",b.x,b.y),null!=e&&(e.displayWidth=1.2*b.sprBoss.displayWidth,e.scaleY=e.scaleX),Player.instance.damagePlayerInRadius(b.x,b.y,1.2*b.sprBoss.displayWidth,30))):b.behavState==BEHAV_STATE_COOLDOWN&&(this._facePlayer(b),b.behavDuration-=f,0>=b.behavDuration&&this.selectNextBehav(b))},updateBossMovement_Attack:function(b,e,f){if(b.behavState==
+BEHAV_STATE_CHARGING)this._facePlayer(b),b.behavDuration-=f,0>=b.behavDuration&&(b.behavTarget={x:Player.instance.x,y:Player.instance.y},b.behavState=BEHAV_STATE_EXECUTING,b.behavDuration=b.activeBehav.duration[BEHAV_STATE_EXECUTING],this._updateBossSprite(b));
+else if(b.behavState==BEHAV_STATE_EXECUTING){for(e=0;
+e<b.shots.length;
+e++){var h=b.shots[e];
+h.hasOwnProperty("delay")||(h.delay=1);
+if(!(0>=h.delay||(h.delay-=f,0<h.delay))){b.activeBehav.hasOwnProperty("anim")&&b.sprBoss.play(b.bossData.frame+
+"_"+b.activeBehav.anim);
+b.behavTarget={x:Player.instance.x,y:Player.instance.y};
+this._facePlayer(b);
+var n=new Phaser.Math.Vector2(b.behavTarget.x-b.x,b.behavTarget.y-b.y);
+n.normalize();
+h.hasOwnProperty("angle")&&n.setAngle(Phaser.Math.DegToRad(h.angle));
+if(h.hasOwnProperty("angleInc")){var r=Phaser.Math.DegToRad(h.angleInc);
+n.rotate(r)}
+var t={x:0,y:0};
+h.hasOwnProperty("offset")&&(t=h.offset);
+var w=b.sprBoss.scaleX/Math.abs(b.sprBoss.scaleX);
+h.hasOwnProperty("effect")&&(r=containerGame.explosions.spawnExplosion(h.effect,
+b.x+t.x*w,b.y+t.y),r.z=-t.y+1,null!=r&&(r.scaleX*=w));
+r=Projectiles.instance.spawnProjectile(h.sprite,b.x+t.x*w,b.y+t.y,n.x,n.y,h.speed,h.damage);
+null!=r&&(r.playerShot=!1,r.rotation=n.angle(),h.hasOwnProperty("scale")&&r.setScale(h.scale),h.hasOwnProperty("tgtsCount")&&(r.tgtsCount=h.tgtsCount),h.hasOwnProperty("life")&&(r.life=h.life),h.hasOwnProperty("radius")&&(r.radius=h.radius),h.hasOwnProperty("bounceBossZn")&&(r.bounceBossZn=h.bounceBossZn),h.hasOwnProperty("rotation")&&(r.rotation=h.rotation),
+h.hasOwnProperty("homing")&&(r.homing=h.homing,r.target={x:Player.instance.x,y:Player.instance.y}),h.hasOwnProperty("rotationSpeed")&&(r.rotationSpeed=h.rotationSpeed),h.hasOwnProperty("explosive")&&(r.explosive=h.explosive),h.hasOwnProperty("explosionAnim")&&(r.explosionAnim=h.explosionAnim),h.hasOwnProperty("fragment")&&(r.fragment=h.fragment),h.hasOwnProperty("fragmentsCnt")&&(r.fragmentsCnt=h.fragmentsCnt),h.hasOwnProperty("fragmentDmg")&&(r.fragmentDmg=h.fragmentDmg),h.hasOwnProperty("fragmentSpd")&&
+(r.fragmentSpd=h.fragmentSpd),h.hasOwnProperty("fragmentSpr")&&(r.fragmentSpr=h.fragmentSpr),h.hasOwnProperty("fragmentScl")&&(r.fragmentScl=h.fragmentScl),h.hasOwnProperty("fragmentLif")&&(r.fragmentLif=h.fragmentLif),h.hasOwnProperty("fragmentAIT")&&(r.fragmentAIT=h.fragmentAIT),h.hasOwnProperty("grenade")&&(r.grenade=!0,r.target={x:Player.instance.x,y:Player.instance.y},r.distToTgt=Phaser.Math.Distance.BetweenPointsSquared(r,r.target)),h.hasOwnProperty("target")&&(r.target=h.target))}}
+for(e=0;
+e<
+b.spawns.length;
+e++)h=b.spawns[e],h.hasOwnProperty("delay")||(h.delay=1),0>=h.delay||(h.delay-=f,0<h.delay||(r=60,h.hasOwnProperty("radius")&&(r=h.radius),t=Phaser.Math.Between(0,360),n=b.x+Math.cos(t)*r+Phaser.Math.Between(-10,10),t=b.y+Math.sin(t)*r+Phaser.Math.Between(-10,10),h.hasOwnProperty("effect")&&(r=containerGame.explosions.spawnExplosion(h.effect,n,t),null!=r&&(r.z=1)),Enemies.instance.spawnEnemy(h.enemy,n,t)));
+b.behavDuration-=f;0>=b.behavDuration&&(b.behavState=BEHAV_STATE_COOLDOWN,b.behavDuration=
+b.activeBehav.duration[BEHAV_STATE_COOLDOWN],this._updateBossSprite(b),b.sprBoss.stop())}
+else b.behavState==BEHAV_STATE_COOLDOWN&&(b.behavDuration-=f,0>=b.behavDuration&&this.selectNextBehav(b))},_facePlayer:function(b){0!=b.bossData.speed&&(Player.instance.x>=b.x&&(b.sprBoss.scaleX=b.bossData.scale),Player.instance.x<b.x&&(b.sprBoss.scaleX=-b.bossData.scale))},_getSpeed:function(b){var e=b.bossData.speed;
+b.activeBehav.hasOwnProperty("speed")&&(e=b.activeBehav.speed);
+return e},_moveBoss:function(b,
+e,f){var h=!1,n=b.x,r=b.y;
+this.grid.remove(b);
+Math.abs(e)>Math.abs(f)?(b.x+=e,this.grid.exist(b.x,b.y)&&(h=!0,b.x=n),BossZone.instance.spriteInCollisionWithZone(b)&&(h=!0,b.x=n),b.y+=f,this.grid.exist(b.x,b.y)&&(h=!0,b.y=r),BossZone.instance.spriteInCollisionWithZone(b)&&(h=!0,b.y=r)):(b.y+=f,this.grid.exist(b.x,b.y)&&(h=!0,b.y=r),BossZone.instance.spriteInCollisionWithZone(b)&&(h=!0,b.y=r),b.x+=e,this.grid.exist(b.x,b.y)&&(h=!0,b.x=n),BossZone.instance.spriteInCollisionWithZone(b)&&(h=!0,b.x=n));
+this.grid.add(b);
+return h},attackPlayerOnTouch:function(b,e,f){0<e.meleeDelay||(e.meleeDelay=e.bossData.meleeDelay,Player.instance.damagePlayer(f))},shootOnPlayer:function(b,e,f){b.shot.attackDelay-=f;0<b.shot.attackDelay||(f=e.x,e=e.y,b.shot.attackDelay=b.bossData.shot.attackDelay,b=Projectiles.instance.spawnProjectile("s3.png",b.x,b.y,f,e,b.bossData.shot.speed,b.bossData.shot.damage),null!=b&&(b.playerShot=!1))},enemyInCollsionWithSprite:function(b,e,f,h){void 0===f&&(f=60);
+var n=Math.abs(b.x-e.x);
+let r=f;
+null!=h&&(r=h);
+return n>r||Math.abs(b.y-e.y)>f?!1:!0},getBossInCollsionWithSprite:function(b,e,f){void 0===f&&(f=50);
+for(var h=this.getChildren(),n=h.length-1;0<=n;
+n--)if(b!=h[n]&&h[n].visible&&!(null!=e&&0<=e.indexOf(h[n]))&&this.enemyInCollsionWithSprite(h[n],b,f))return h[n];
+return null},getStaticBossInCollsionWithSprite:function(b){for(var e=this.getChildren(),f=e.length-1;0<=f;
+f--)if(b!=e[f]&&e[f].visible&&e[f].static&&this.enemyInCollsionWithSprite(e[f],b,50,130))return e[f];
+return null},
+update:function(b,e){for(var f=this.getChildren(),h=f.length-1;0<=h;
+h--)f[h].visible&&this.updateBoss(f[h],b,e)},findBossClosestToPlayer:function(){for(var b=this.getChildren(),e=1E12,f=null,h=b.length-1;0<=h;
+h--)if(b[h].visible){var n=b[h].distToPlayerSq;
+n<e&&(e=n,f=b[h])}
+return f},countBossesOfType:function(b){for(var e=this.getChildren(),f=0,h=e.length-1;0<=h;
+h--)e[h].visible&&e[h].enemySprite==b&&f++;
+return 0},countBosses:function(){return this.getMatching("visible",!0).length},getBossesInRadius:function(b,
+e,f){var h=this.getChildren();
+f*=f;
+for(var n=[],r=h.length-1;0<=r;
+r--)h[r].visible&&(Phaser.Math.Distance.Squared(h[r].x,h[r].y,b,e)>f||n.push(h[r]));
+return n},damageBossesInRadius:function(b,e,f,h){b=this.getBossesInRadius(b,e,f);
+for(e=0;
+e<b.length;
+e++)this.damageBoss(b[e],h)},damageAllBosses:function(b){for(var e=this.getChildren(),f=0;
+f<e.length;
+f++)e[f].visible&&this.damageBoss(e[f],b)}});
+var MAX_PROJECTILES=200,HOMING_MISSILE_TURN=10,Projectiles=new Phaser.Class({Extends:Phaser.GameObjects.Group,initialize:function Projectiles(b,e){Projectiles.instance=this;
+Phaser.GameObjects.Group.call(this,b.scene);
+this.parentContainer=b;
+this.createProjectiles()},createProjectiles:function(){for(var b=0;
+b<MAX_PROJECTILES;
+b++){var e=this.scene.add.sprite(0,0,"s1.png");
+e.setOrigin(.5,.5);
+e.setTint(16777215);
+e.visible=!1;
+e.active=!1;
+e.setAlpha(1);
+this.parentContainer.add(e);
+this.add(e)}},reset:function(){for(var b=
+this.getChildren(),e=b.length-1;0<=e;
+e--)b[e].visible=!1,b[e].active=!1,b[e].y=-1E3;
+this.tempCnt=0},getSnapshot:function(){var b={};
+b.tempCnt=this.tempCnt;
+return b},loadSnapshot:function(b){this.reset();
+this.tempCnt=b.tempCnt},spawnProjectile:function(b,e,f,h,n,r,t){var w=this.getFirst(!1);
+if(null==w)return null;
+w.projectileSprite=b;
+w.stop();0==b.indexOf("#")?(b=b.slice(1),w.play(b),w.once(Phaser.Animations.Events.ANIMATION_COMPLETE,function(x,z,aa,y){aa.visible=!1;
+aa.active=!1},this)):w.setTexture("pak_game",
+b);
+w.setAlpha(1);
+w.setScale(1);
+w.setTint(16777215);
+w.setPosition(e,f);
+w.z=0;
+w.visible=!0;
+w.active=!0;
+w.vx=h;
+w.vy=n;
+w.speed=r;
+w.dmg=t;
+w.life=1200;
+w.lifeInit=null;
+w.playerShot=!0;
+w.startPos=null;
+w.target=null;
+w.distToTgt=null;
+w.oldPos=null;
+w.realPos=null;
+w.sinMax=null;
+w.tgtsHit=[];
+w.tgtsHitTimers=[];
+w.tgtsCount=1;
+w.lightning=!1;
+w.bounceBossZn=!1;
+w.bounceScreen=!1;
+w.bounceEnemy=!1;
+w.explosive=!1;
+w.fire=!1;
+w.homing=!1;
+w.grenade=!1;
+w.fragment=!1;
+w.elastic=!1;
+w.killEnmShots=!1;
+w.destroyable=!1;
+w.fragmentsCnt=
+8;
+w.fragmentDmg=5;
+w.fragmentSpd=.6;
+w.fragmentScl=1;
+w.fragmentSpr="effect_flame_0.png";
+w.fragmentLif=1E3;
+w.fragmentAIT=null;
+w.explosionAnim="explosion3";
+w.explosionRot=null;
+w.radius=10;
+w.angle=0;
+w.rotationSpeed=0;
+w.anchor=null;
+w.anchorRadius=0;
+w.anchorRadSpd=0;
+w.anchorSpeed=0;
+w.anchorAngle=0;
+w.anchorTotal=2*Math.PI;
+w.scaleInTime=null;
+w.alphaInTime=null;
+w.collSize2=w.displayWidth*w.originX;
+w.sound=null;
+w.onSpawn=null;
+w.onUpdate=null;
+w.onFinish=null;
+return w},updateProjectile:function(b,e,f){if(null!=
+b.onUpdate)b.onUpdate(b);
+this._updateProjectileMovement(b,f);
+this._updateProjectileAnchoredMovement(b,f);
+this._updateProjectileLife(b,f);
+this._updateProjectileTargetsHitTimers(b,f);
+this._updateElasticProjectile(b,f);
+this._updateProjectileBouncingOfScreen(b);
+this._updatePlayerProjectile(b);
+this._updateEnemyProjectile(b)},_updateProjectileTargetsHitTimers:function(b,e){for(var f=0;
+f<b.tgtsHitTimers.length;
+f++)b.tgtsHitTimers[f]-=e,0>=b.tgtsHitTimers[f]&&(b.tgtsHit.splice(f,1),b.tgtsHitTimers.splice(f,
+1))},_updateProjectileMovement:function(b,e){if(b.visible&&null==b.anchor){null!=b.realPos&&(b.x=b.realPos.x,b.y=b.realPos.y);
+var f=b.vx*b.speed*e,h=b.vy*b.speed*e;
+b.orgX=b.x;
+b.orgY=b.y;
+b.x+=f;
+this._projectileBouncingOfBossZn(b)&&(b.x=b.orgX,b.vx*=-1);
+b.y+=h;
+this._projectileBouncingOfBossZn(b)&&(b.y=b.orgY,b.vy*=-1);
+b.rotation+=b.rotationSpeed*e;
+this._updateProjectileHomingOnTarget(b,e);
+this._updateProjectileFlyingOnTarget(b,e)}},_updateProjectileHomingOnTarget:function(b,e){if(null!=b.target&&b.homing){var f=
+(new Phaser.Math.Vector2(b.target.x-b.x,b.target.y-b.y)).angle(),h=Phaser.Math.Angle.Wrap(f-b.rotation);
+e=HOMING_MISSILE_TURN*e/16;
+Math.abs(h)*Phaser.Math.RAD_TO_DEG<Phaser.Math.DegToRad(e)?(b.rotation=f,b.vx=Math.cos(f),b.vy=Math.sin(f)):(f=b.angle,b.rotation=Phaser.Math.DEG_TO_RAD*(0<h?f+e:f-e),b.vx=Math.cos(b.rotation),b.vy=Math.sin(b.rotation))}},_updateProjectileFlyingOnTarget:function(b,e){null==b.target||b.homing||(b.distSq=Phaser.Math.Distance.BetweenPointsSquared(b,b.target),null!=b.distToTgt&&
+(null==b.oldPos&&(b.oldPos={x:b.x,y:b.y}),null==b.sinMax&&(this.tempCnt++,b.sinMax=7*Phaser.Math.Between(7,10)*(0==this.tempCnt%2?1:-1)),b.realPos={x:b.x,y:b.y},b.perc=(b.distToTgt-b.distSq)/b.distToTgt,e=new Phaser.Math.Vector2(b.vx,b.vy),e.angle(),e.rotate(Math.PI/2),e.normalize(),e.scale(b.sinMax*Math.sin(Math.PI*b.perc)),b.x=b.realPos.x+e.x,b.y=b.realPos.y+e.y,e=new Phaser.Math.Vector2(b.oldPos.x-b.x,b.oldPos.y-b.y),0==b.rotationSpeed&&(b.rotation=e.angle()+Math.PI/2),b.oldPos={x:b.x,y:b.y}),
+2500>=b.distSq&&(this.explodeProjectile(b),this.fireProjectile(b),this._projectileFinished(b)))},_updateProjectileAnchoredMovement(b,e){b.visible&&null!=b.anchor&&(b.x=b.anchor.x+Math.cos(b.anchorAngle)*b.anchorRadius,b.y=b.anchor.y+Math.sin(b.anchorAngle)*b.anchorRadius,b.anchorAngle+=b.anchorSpeed*e,b.rotation+=b.rotationSpeed*e,b.anchorRadius+=e/16*b.anchorRadSpd,null!=b.anchorTotal&&(b.anchorTotal-=b.anchorSpeed*e,0>=b.anchorTotal&&(b.life=0)))},_updateProjectileLife:function(b,e){if(b.visible&&
+null==b.target){if(null!=b.scaleInTime||null!=b.alphaInTime){null==b.lifeInit&&(b.lifeInit=b.life);
+var f=1-b.life/b.lifeInit;
+null!=b.scaleInTime&&(b.scaleInTime.hasOwnProperty("delta")||(b.scaleInTime.delta=b.scaleInTime.end-b.scaleInTime.start),b.setScale(b.scaleInTime.start+b.scaleInTime.delta*f),b.collSize2=b.displayWidth*b.originX);
+null!=b.alphaInTime&&(b.alphaInTime.hasOwnProperty("delta")||(b.alphaInTime.delta=b.alphaInTime.end-b.alphaInTime.start),b.setAlpha(b.alphaInTime.start+b.alphaInTime.delta*
+f))}
+b.life-=e;0<b.life||(this.explodeProjectile(b),this.fireProjectile(b),this.fragmentProjectile(b),this._projectileFinished(b),b.explosive||b.fire||b.fragment||null!=b.scaleInTime||null!=b.alphaInTime||containerGame.explosions.spawnExplosion("effect_smoke",b.x,b.y))}},_projectileFinished:function(b){if(null!=b.onFinish)b.onFinish(b);
+b.visible=!1;
+b.active=!1},_updateElasticProjectile:function(b,e){b.elastic&&b.visible&&(e=b.lifeInit/2,b.life>=e&&(b.speed=b.elasticSpeed*Math.cos(Math.PI*(1-(b.life-
+e)/e))))},_updateProjectileBouncingOfScreen:function(b){if(b.bounceScreen&&b.visible){if(this._updateProjectileBouncingOfLevel(b))return!0;
+var e=Player.instance.x-b.x,f=Player.instance.y-b.y;
+e>RES_SCREEN_WIDTH2&&(b.x=Player.instance.x-RES_SCREEN_WIDTH2+1,b.vx*=-1,this.setProjectileRotationFromVector(b,b.vx,b.vy));
+f>RES_SCREEN_HEIGHT2&&(b.y=Player.instance.y-RES_SCREEN_HEIGHT2+1,b.vy*=-1,this.setProjectileRotationFromVector(b,b.vx,b.vy));
+e<-RES_SCREEN_WIDTH2&&(b.x=Player.instance.x+RES_SCREEN_WIDTH2-
+1,b.vx*=-1,this.setProjectileRotationFromVector(b,b.vx,b.vy));
+f<-RES_SCREEN_HEIGHT2&&(b.y=Player.instance.y+RES_SCREEN_HEIGHT2-1,b.vy*=-1,this.setProjectileRotationFromVector(b,b.vx,b.vy))}},_updateProjectileBouncingOfLevel:function(b){return b.x>levelWidth?(b.x=levelWidth-1,b.vx*=-1,this.setProjectileRotationFromVector(b,b.vx,b.vy),!0):b.y>levelHeight?(b.y=levelHeight-1,b.vy*=-1,this.setProjectileRotationFromVector(b,b.vx,b.vy),!0):0>b.x?(b.x=1,b.vx*=-1,this.setProjectileRotationFromVector(b,b.vx,
+b.vy),!0):0>b.y?(b.y=1,b.vy*=-1,this.setProjectileRotationFromVector(b,b.vx,b.vy),!0):!1},_projectileBouncingOfBossZn:function(b){return b.bounceBossZn&&b.visible&&BossZone.instance.bossZoneActive?this._updateProjectileBouncingOfLevel(b)||BossZone.instance.spriteInCollisionWithZone(b)?!0:!1:!1},_updatePlayerProjectile:function(b){if(b.playerShot&&b.visible&&null==b.target&&!b.grenade){var e=b.displayWidth;0!=b.rotationSpeed&&b.displayHeight>e&&(e=b.displayHeight);
+var f=containerGame.enemies.getEnemyInCollsionWithSprite(b,
+b.tgtsHit,e);
+null!=f?this.hitEnemy(b,f):(f=containerGame.bosses.getBossInCollsionWithSprite(b,b.tgtsHit,e),null!=f?this.hitBoss(b,f):b.killEnmShots&&(b=this.getEnemyProjectilesInRadius(b.x,b.y,e),this.invalidateProjectiles(b)))}},hitEnemy:function(b,e){b.tgtsCount--;
+if(b.explosive||b.fire)b.tgtsCount=0;0==b.tgtsCount?this._projectileFinished(b):(b.tgtsHit.push(e),b.tgtsHitTimers.push(500));
+this.explodeProjectile(b)||this.fireProjectile(b)||(containerGame.enemies.damageEnemy(e,b.dmg),this._updatePlayerProjectileBouncingOfEnemy(b,
+e))},hitBoss:function(b,e){b.tgtsCount--;
+if(b.explosive||b.fire)b.tgtsCount=0;0==b.tgtsCount?this._projectileFinished(b):(b.tgtsHit.push(e),b.tgtsHitTimers.push(500));
+this.explodeProjectile(b)||this.fireProjectile(b)||(containerGame.bosses.damageBoss(e,b.dmg),this._updatePlayerProjectileBouncingOfEnemy(b,e))},_updatePlayerProjectileBouncingOfEnemy:function(b,e){if(b.bounceEnemy){if(this._updateProjectileBouncingOfLevel(b))return!0;
+this.resolveBallsCollision(b,e);
+this.updateBouncedProjectileVelocity(b);
+this.setProjectileRotationFromVector(b,b.vx,b.vy)}},explodeProjectile:function(b){if(!b.explosive)return!1;
+var e=containerGame.explosions.spawnExplosion(b.explosionAnim,b.x,b.y);
+null!=e&&(e.displayWidth=2*b.radius,e.scaleY=e.scaleX,e.z=2,e.rotation=b.rotation,null!=b.explosionRot&&(e.rotation=b.explosionRot));
+null!=b.sound&&playSound(SceneGame.instance,b.sound);
+b.playerShot?(containerGame.enemies.damageEnemiesInRadius(b.x,b.y,b.radius,b.dmg),containerGame.bosses.damageBossesInRadius(b.x,b.y,b.radius,
+b.dmg)):containerGame.player.damagePlayerInRadius(b.x,b.y,b.radius,b.dmg);
+return!0},fireProjectile:function(b){if(!b.fire)return!1;
+var e=containerGame.explosions.spawnExplosion("effect_fire",b.x,b.y);
+null!=e&&(e.setOrigin(.5,.7),e.displayWidth=1.45*b.radius,e.scaleY=e.scaleX,e.rotation=0,e.life=b.life,e.dmg=b.dmg);
+null!=b.sound&&playSound(SceneGame.instance,b.sound);
+containerGame.enemies.damageEnemiesInRadius(b.x,b.y,b.radius,b.dmg);
+containerGame.bosses.damageBossesInRadius(b.x,b.y,b.radius,b.dmg);
+return!0},fragmentProjectile:function(b){if(!b.fragment)return!1;
+for(var e=0,f=2*Math.PI/b.fragmentsCnt,h=b.fragmentsCnt-1;0<=h;
+h--){var n=new Phaser.Math.Vector2(1,1);
+n.setAngle(e);
+var r=Projectiles.instance.spawnProjectile(b.fragmentSpr,b.x,b.y,n.x,n.y,b.fragmentSpd,b.fragmentDmg);
+null!=r&&(r.rotation=n.angle(),r.setScale(b.fragmentScl),r.playerShot=b.playerShot,b.hasOwnProperty("fragmentAIT")&&(r.alphaInTime=b.fragmentAIT),b.hasOwnProperty("fragmentLif")&&(r.life=b.fragmentLif));
+e+=f}
+return!0},
+resolveBallsCollision:function(b,e){b.r=10;
+e.r=10;
+e.hasOwnProperty("vx")||(e.vx=0);
+e.hasOwnProperty("vy")||(e.vy=0);
+var f=[e.vx-b.vx,e.vy-b.vy],h=[e.x-b.x,e.y-b.y],n=Math.sqrt(h[0]*h[0]+h[1]*h[1]);
+h=[h[0]/n,h[1]/n];
+f=f[0]*h[0]+f[1]*h[1];0<f||(e=-2*f/(1/b.r+1/e.r),h=[e*h[0],e*h[1]],b.vx-=1/b.r*h[0],b.vy-=1/b.r*h[1])},_updateEnemyProjectile:function(b){b.playerShot||!b.visible||b.grenade||0<=b.tgtsHit.indexOf(Player.instance)||!Player.instance.playerInCollsionWithSprite(b)||(Player.instance.damagePlayer(b.dmg),
+b.tgtsCount--,0==b.tgtsCount?this._projectileFinished(b):(b.tgtsHit.push(Player.instance),b.tgtsHitTimers.push(500)))},updateBouncedProjectileVelocity:function(b){var e=new Phaser.Math.Vector2(b.vx,b.vy);
+e.normalize();
+e.scale(b.speed);
+b.vx=e.x;
+b.vy=e.y},setProjectileRotationFromVector:function(b,e,f){e=new Phaser.Math.Vector2(e,f);
+b.rotation=e.angle()},update:function(b,e){for(var f=this.getChildren(),h=f.length-1;0<=h;
+h--)f[h].active&&(this.updateProjectile(f[h],b,e),f[h].lightning&&this.updateProjectile(f[h],
+b,e))},removeProjectilesInCollisionWithSprite:function(b){b=this.getProjectilesInCollsionWithSprite(b);
+for(var e=0;
+e<b.length;
+e++)this._projectileFinished(b[e])},getProjectilesInCollsionWithSprite:function(b){for(var e=this.getChildren(),f=[],h=e.length-1;0<=h;
+h--)b!=e[h]&&e[h].visible&&this.projectileInCollsionWithSprite(e[h],b)&&f.push(e[h]);
+return f},projectileInCollsionWithSprite:function(b,e){return Math.abs(b.x-e.x)>b.collSize2+e.collSize2||Math.abs(b.y-e.y)>b.collSize2+e.collSize2?!1:!0},getEnemyProjectilesInRadius:function(b,
+e,f){var h=this.getChildren();
+f*=f;
+for(var n=[],r=h.length-1;0<=r;
+r--)h[r].visible&&(h[r].playerShot||h[r].destroyable&&(Phaser.Math.Distance.Squared(h[r].x,h[r].y,b,e)>f||n.push(h[r])));
+return n},invalidateProjectiles:function(b){for(var e=b.length-1;0<=e;
+e--)b[e].visible&&(containerGame.explosions.spawnExplosion("effect_smoke",b[e].x,b[e].y),this._projectileFinished(b[e]))}});
+var MAX_EXPLOSIONS=800,Explosions=new Phaser.Class({Extends:Phaser.GameObjects.Group,initialize:function(b,e){Explosions.instance=this;
+Phaser.GameObjects.Group.call(this,b.scene);
+this.parentContainer=b;
+this.createExplosions()},createExplosions:function(){for(var b=0;
+b<MAX_EXPLOSIONS;
+b++){var e=this.scene.add.sprite(0,0,"explosion2_0.png");
+e.setOrigin(.5,.5);
+e.setTint(16777215);
+e.visible=!1;
+e.active=!1;
+e.life=null;
+e.setAlpha(1);
+this.parentContainer.add(e);
+this.add(e)}},reset:function(){for(var b=this.getChildren(),
+e=b.length-1;0<=e;
+e--)b[e].visible=!1,b[e].active=!1,b[e].y=-1E3},getSnapshot:function(){return{}},loadSnapshot:function(b){this.reset()},spawnExplosion:function(b,e,f){var h=this.getFirst(!1);
+null==h&&(h=this.recycleOldestExplosion());
+h.setOrigin(.5);
+h.setTint(16777215);
+h.setRotation(0);
+h.setScale(1);
+h.setPosition(e,f);
+if(Array.isArray(b))for(h.play(b[0]),b.splice(0,1);0<b.length;)h.chain(b[0]),b.splice(0,1);
+else h.play(b);
+h.alpha=1;
+h.visible=!0;
+h.active=!0;
+h.life=null;
+h.timeToDmg=0;
+h.z=0;
+return h},
+recycleOldestExplosion:function(){for(var b=this.getChildren(),e=1E4,f=null,h=b.length-1;0<=h;
+h--){if(!b[h].active)return b[h];
+if(null==b[h].life){if(null==b[h].anims.currentAnim)continue;
+b[h].anims.currentAnim.duration<e&&(f=b[h],e=b[h].anims.currentAnim.duration)}
+else b[h].life<e&&(f=b[h],e=b[h].life);
+if(0>=e)break}
+return f},spawnPopupBonusAnim:function(b,e,f,h){void 0===h&&(h=0);
+var n=this.getFirst(!1);
+null==n&&(n=this.recycleOldestExplosion());
+n.setTint(16777215);
+n.setOrigin(.5,.8);
+n.setRotation(0);
+n.setScale(.2);
+n.setPosition(e,f);
+n.stop();
+n.setTexture("pak_game",b);
+n.alpha=.4;
+n.visible=!0;
+n.active=!0;
+n.life=null;
+n.timeToDmg=0;
+n.z=1;
+n.callback=null;
+SceneGame.instance.tweens.chain({targets:n,tweens:[{delay:h,scaleX:1,scaleY:1,y:f-35,alpha:1,duration:350,ease:"Linear"},
+{y:f,duration:350,ease:"Bounce.easeOut"}],onComplete:function(r){r.data[1].targets[0].active=!1;
+r.data[1].targets[0].visible=!1;
+null!=r.data[1].targets[0].callback&&r.data[1].targets[0].callback(r.data[1].targets[0])}
+.bind(this)});
+return n},spawnLaserRay:function(b,e,f,h){var n=this.getFirst(!1);
+null==n&&(n=this.recycleOldestExplosion());
+LOG("Explosions.spawnLaserRay( "+b+", "+e+", "+h+", "+f+" )");
+n.setTexture("pak_game","blank.png");
+n.setOrigin(0,.5);
+n.displayWidth=h;
+n.setTint(16711680);
+n.setRotation(f);
+n.setPosition(b,e);
+n.visible=!0;
+n.active=!0;
+n.life=null;
+n.timeToDmg=0;
+n.z=100;
+n.callback=null;
+n.alpha=1;
+SceneGame.instance.tweens.add({targets:n,alpha:0,duration:1200,ease:"Sine.easeIn",onComplete:function(r){r.targets[0].visible=
+!1;
+r.targets[0].active=!1}});
+return n},update:function(b,e){for(var f=this.getChildren(),h=f.length-1;0<=h;
+h--)this.updateExplosion(f[h],b,e)},updateExplosion:function(b,e,f){b.visible?null!=b.life&&(b.life-=f,0>=b.life&&(b.visible=!1,b.active=!1),500>=b.life&&(b.alpha=b.life/500),b.timeToDmg-=f,0>=b.timeToDmg&&(b.timeToDmg=200,containerGame.enemies.damageEnemiesInRadius(b.x,b.y,b.displayHeight/2,b.dmg))):b.active=!1}});
+var Particles=new Phaser.Class({Extends:Phaser.GameObjects.Group,initialize:function Particles(b){this.MAX_PARTICLES=10;
+Particles.instance=this;
+Phaser.GameObjects.Group.call(this,b.scene);
+this.parentContainer=b;
+this.create()},create:function(){this.objParticles=[];
+for(var b={tag:"",velX:0,velY:0,accX:0,accY:0,texture:"pak_game",frame:"partikel.png"},e=0;
+e<this.MAX_PARTICLES;
+e++)this.createParticle(0,0,b);
+for(e=0;
+e<this.MAX_PARTICLES;
+e++)this.objParticles[e].sprite.visible=!1},update:function(b,e){for(b=
+0;
+b<this.objParticles.length;
+b++)if(this.objParticles[b].sprite.visible)if(this.objParticles[b].data.life-=e,0>=this.objParticles[b].data.life)null!=this.objParticles[b].data.callback&&this.objParticles[b].data.callback(this.objParticles[b]),this.objParticles[b].sprite.visible=!1;
+else{var f=this.objParticles[b].data.life/this.objParticles[b].data.lifeInit;
+this.objParticles[b].sprite.setScale(this.objParticles[b].data.scale.start-this.objParticles[b].data.scale.delta+f*this.objParticles[b].data.scale.delta);
+this.objParticles[b].sprite.alpha=this.objParticles[b].data.alpha.start-this.objParticles[b].data.alpha.delta+f*this.objParticles[b].data.alpha.delta;
+this.objParticles[b].sprite.angle+=this.objParticles[b].data.rotation;
+this.objParticles[b].sprite.x+=this.objParticles[b].data.velX;
+this.objParticles[b].sprite.y+=this.objParticles[b].data.velY;
+this.objParticles[b].data.velX+=this.objParticles[b].data.accX;
+this.objParticles[b].data.velY+=this.objParticles[b].data.accY}},createParticle:function(b,e,f){f.hasOwnProperty("tag")||
+(f.tag="");
+f.hasOwnProperty("style")||(f.style={});
+f.hasOwnProperty("blendMode")||(f.blendMode=Phaser.BlendModes.NORMAL);
+f.hasOwnProperty("life")||(f.life=500+Phaser.Math.Between(0,200));
+f.hasOwnProperty("velX")||(f.velX=0);
+f.hasOwnProperty("velY")||(f.velY=0);
+f.hasOwnProperty("accX")||(f.accX=0);
+f.hasOwnProperty("accY")||(f.accY=0);
+f.hasOwnProperty("angle")||(f.angle=0);
+f.hasOwnProperty("rotation")||(f.rotation=0);
+f.hasOwnProperty("callback")||(f.callback=null);
+f.hasOwnProperty("scale")?(f.scale.hasOwnProperty("start")||
+(f.scale.start=1),f.scale.hasOwnProperty("end")||(f.scale.end=f.scale.start)):f.scale={start:1,end:1};
+f.scale.delta=f.scale.start-f.scale.end;
+f.hasOwnProperty("alpha")?(f.alpha.hasOwnProperty("start")||(f.alpha.start=1),f.alpha.hasOwnProperty("end")||(f.alpha.end=f.alpha.start)):f.alpha={start:1,end:1};
+f.alpha.delta=f.alpha.start-f.alpha.end;
+for(var h=null,n=0;
+n<this.objParticles.length&&null==h;
+n++)this.objParticles[n].sprite.visible||(h=this.objParticles[n],h.sprite.setTexture(f.texture,f.frame));
+null===h&&(h=this.objParticles[this.objParticles.length]={},h.sprite=this.scene.add.sprite(-1E4,-1E4,f.texture,f.frame),this.parentContainer.add(h.sprite),this.add(h.sprite));
+h.sprite.setOrigin(.5);
+h.sprite.visible=!0;
+h.sprite.alpha=f.alpha.start;
+h.sprite.angle=f.angle;
+h.sprite.x=b;
+h.sprite.y=e;
+h.sprite.z=500;
+h.sprite.setScale(1);
+h.sprite.tint=16777215;
+h.sprite.blendMode=f.blendMode;
+h.data=f;
+h.data.lifeInit=f.life;
+return h},Reset:function(){for(var b=0;
+b<this.objParticles.length;
+b++)this.objParticles[b].sprite.visible=
+!1},GetActiveCount:function(b){b=b||null;
+for(var e=0,f=0;
+f<this.objParticles.length;
+f++)(null==b||this.objParticles[f].data.tag==b)&&this.objParticles[f].sprite.visible&&0<this.objParticles[f].data.life&&e++;
+return e},Destroy:function(){for(var b=0;
+b<this.objParticles.length;
+b++)this.objParticles[b].sprite.Destroy(),this.objParticles[b].sprite=null,this.objParticles[b]=null;
+this.objParticles=null},CreateExhaustParticle:function(b,e){b=this.createParticle(b,e,{velX:0,velY:0,accX:0,accY:0,texture:"pak_game",
+frame:"partikel.png",blendMode:Phaser.BlendModes.NORMAL,angle:0,scale:{start:.55,end:.1},alpha:{start:.6,end:0},life:600});
+null!=b&&b.sprite.setTint(2236962)},CreateSmokeParticle:function(b,e,f){var h=5*Math.cos(f);
+f=5*Math.sin(f);
+h={velX:h,velY:f,accX:.03*-h,accY:.03*-f,texture:"pak_game",frame:"particle_smoke.png",blendMode:Phaser.BlendModes.NORMAL,angle:10*Phaser.Math.Between(0,36),scale:{start:.7,end:4},alpha:{start:.85,end:0},life:700};
+b=this.createParticle(b,e,h);
+null!=b&&b.sprite.setTint(16777215)},
+CreateExplosionParticle:function(b,e){var f=10*Phaser.Math.Between(0,18)*Phaser.Math.DEG_TO_RAD,h=Phaser.Math.Between(10,50)/20,n=Math.cos(f)*h;
+f=Math.sin(f)*h;
+n={velX:n,velY:f,accX:.01*-n,accY:.01*-f,texture:"pak_game",frame:"smoke_"+Phaser.Math.Between(1,4)+".png",blendMode:Phaser.BlendModes.NORMAL,angle:10*Phaser.Math.Between(0,36),scale:{start:.6,end:1.4},alpha:{start:1,end:0},life:700};
+b=this.createParticle(b,e,n);
+null!=b&&(e=[2236962,6710886,8947848,12303291],b.sprite.setTint(e[Phaser.Math.Between(0,
+e.length-1)]))},CreateSpark:function(b,e){for(var f=0;10>f;
+f++){var h=10*Phaser.Math.Between(0,36),n=3*Math.cos(h),r=3*Math.sin(h);
+h={velX:n,velY:r,accX:.03*-n,accY:.03*-r,texture:"pak_game",frame:"particle.png",blendMode:Phaser.BlendModes.ADD,angle:h,scale:{start:.3,end:.6},alpha:{start:1,end:0},life:400+10*Phaser.Math.Between(10,20)};
+h=this.createParticle(b+Phaser.Math.Between(-20,20),e+Phaser.Math.Between(-20,20),h);
+if(null==h)break;
+h.sprite.setTint(16766976)}},CreateBonusPopup:function(b,e,f){Phaser.Math.Between(0,
+36);
+f={velX:0,velY:-4,accX:0,accY:.25,texture:"pak_game",frame:f,blendMode:Phaser.BlendModes.NORMAL,angle:0,scale:{start:.5,end:1},alpha:{start:0,end:1},life:500};
+b=this.createParticle(b+Phaser.Math.Between(-20,20),e+Phaser.Math.Between(-20,20),f);
+return null==b?null:b},CreateExplosion:function(b,e){var f={velX:0,velY:0,accX:0,accY:0,texture:"pak_game",frame:"glow.png",blendMode:Phaser.BlendModes.NORMAL,rotation:6,scale:{start:.3,end:2},alpha:{start:.8,end:0},life:300};
+this.createParticle(b,e,f);
+f={velX:0,velY:0,accX:0,accY:0,texture:"pak_game",frame:"ring.png",blendMode:Phaser.BlendModes.NORMAL,rotation:6,scale:{start:.2,end:1.2},alpha:{start:.8,end:0},life:400};
+this.createParticle(b,e,f)},CreateTrail:function(b,e,f,h){b=this.createParticle(b,e,{velX:0,velY:0,accX:0,accY:0,texture:"pak_game",frame:h,blendMode:Phaser.BlendModes.NORMAL,angle:f,scale:{start:1,end:1},alpha:{start:1,end:0},life:200});
+return null==b?null:b}});
+var TextParticles=new Phaser.Class({Extends:Phaser.GameObjects.Group,initialize:function TextParticles(b){this.MAX_TEXT_PARTICLES=150;
+TextParticles.instance=this;
+Phaser.GameObjects.Group.call(this,b.scene);
+this.parentContainer=b;
+this.create()},create:function(){this.objTextParticles=[];
+for(var b={tag:"",velX:0,velY:0,accX:0,accY:0},e=0;
+e<this.MAX_TEXT_PARTICLES;
+e++)this.createParticle(0,0,"DUMMY",b);
+for(e=0;
+e<this.MAX_TEXT_PARTICLES;
+e++)this.objTextParticles[e].sprite.visible=!1},update:function(b,
+e){for(b=0;
+b<this.objTextParticles.length;
+b++)this.objTextParticles[b].sprite.visible&&(this.objTextParticles[b].data.life-=e,0>=this.objTextParticles[b].data.life?this.objTextParticles[b].sprite.visible=!1:(this.objTextParticles[b].sprite.alpha=this.objTextParticles[b].data.alpha.start-this.objTextParticles[b].data.alpha.delta+this.objTextParticles[b].data.life/this.objTextParticles[b].data.lifeInit*this.objTextParticles[b].data.alpha.delta,this.objTextParticles[b].sprite.setScale(this.objTextParticles[b].data.scale.start-
+this.objTextParticles[b].data.scale.delta+this.objTextParticles[b].data.life/this.objTextParticles[b].data.lifeInit*this.objTextParticles[b].data.scale.delta),this.objTextParticles[b].sprite.angle+=this.objTextParticles[b].data.rotation,this.objTextParticles[b].sprite.x+=this.objTextParticles[b].data.velX,this.objTextParticles[b].sprite.y+=this.objTextParticles[b].data.velY,this.objTextParticles[b].data.velX+=this.objTextParticles[b].data.accX,this.objTextParticles[b].data.velY+=this.objTextParticles[b].data.accY))},
+createParticle:function(b,e,f,h){h.hasOwnProperty("tag")||(h.tag="");
+h.hasOwnProperty("style")||(h.style={});
+h.hasOwnProperty("blendMode")||(h.blendMode=Phaser.BlendModes.NORMAL);
+h.hasOwnProperty("life")||(h.life=500+Phaser.Math.Between(0,200));
+h.hasOwnProperty("velX")||(h.velX=0);
+h.hasOwnProperty("velY")||(h.velY=0);
+h.hasOwnProperty("accX")||(h.accX=0);
+h.hasOwnProperty("accY")||(h.accY=0);
+h.hasOwnProperty("angle")||(h.angle=0);
+h.hasOwnProperty("rotation")||(h.rotation=0);
+h.hasOwnProperty("scale")?
+(h.scale.hasOwnProperty("start")||(h.scale.start=1),h.scale.hasOwnProperty("end")||(h.scale.end=h.scale.start)):h.scale={start:1,end:1};
+h.scale.delta=h.scale.start-h.scale.end;
+h.hasOwnProperty("alpha")?(h.alpha.hasOwnProperty("start")||(h.alpha.start=1),h.alpha.hasOwnProperty("end")||(h.alpha.end=h.alpha.start)):h.alpha={start:1,end:1};
+h.alpha.delta=h.alpha.start-h.alpha.end;
+for(var n=null,r=0;
+r<this.objTextParticles.length&&null==n;
+r++)this.objTextParticles[r].sprite.visible||(n=this.objTextParticles[r],
+n.sprite.text=f,n.sprite.style.setStyle(h.style));
+null===n&&(n=this.objTextParticles[this.objTextParticles.length]={},n.sprite=this.scene.add.text(-1E6,-1E6,f,h.style),n.sprite.setOrigin(.5),this.parentContainer.add(n.sprite),this.add(n.sprite));
+n.sprite.alpha=h.alpha.start;
+n.sprite.angle=h.angle;
+n.sprite.x=b;
+n.sprite.y=e;
+n.sprite.z=1E3;
+n.sprite.setScale(1);
+n.sprite.tint=16777215;
+n.sprite.blendMode=h.blendMode;
+n.data=h;
+n.data.lifeInit=h.life;
+n.sprite.visible=!0;0<h.tag.length&&LOG("TILES : "+Particles.instance.GetActiveCount(h.tag));
+return n},Reset:function(){for(var b=0;
+b<this.objTextParticles.length;
+b++)this.objTextParticles[b].sprite.visible=!1},GetActiveCount:function(b){b=b||null;
+for(var e=0,f=0;
+f<this.objTextParticles.length;
+f++)(null==b||this.objTextParticles[f].data.tag==b)&&this.objTextParticles[f].sprite.visible&&0<this.objTextParticles[f].data.life&&e++;
+return e},Destroy:function(){for(var b=0;
+b<this.objTextParticles.length;
+b++)this.objTextParticles[b].sprite.Destroy(),this.objTextParticles[b].sprite=null,this.objTextParticles[b]=
+null;
+this.objTextParticles=null},CreateTextParticle1:function(b,e,f,h,n,r,t){r=r||Phaser.BlendModes.NORMAL;
+void 0===t&&(t=0);
+tmpY=-2;
+this.createParticle(b,e,f,{velX:0,velY:tmpY,accX:0,accY:0>=tmpY?.02:-.02,style:{font:"bold "+h+"px Arial",fill:n,align:"center"},blendMode:r,angle:t,scale:{start:1.2,end:1},alpha:{start:1,end:.4},life:500})}});
+function GetDmgTextFontSize(b){return 1E4<=b?60:1E3<=b?50:100<=b?40:50<=b?30:10<=b?20:15};
+var MAX_BOSSZONE_SPRITES=300,BossZone=new Phaser.Class({Extends:Phaser.GameObjects.Group,initialize:function(b,e){BossZone.instance=this;
+Phaser.GameObjects.Group.call(this,b.scene);
+this.parentContainer=b;
+this.create()},create:function(){this.grid=new Grid(BOSS_ZONE_GRID_SIZE,!1);
+this.createBossZoneSprites()},createBossZoneSprites:function(){for(var b=0;
+b<MAX_BOSSZONE_SPRITES;
+b++){var e=this.scene.add.sprite(0,0,"explosion2_0.png");
+e.setOrigin(.5,.5);
+e.setTint(16777215);
+e.visible=!1;
+e.active=!1;
+e.setAlpha(1);
+this.parentContainer.add(e);
+this.add(e)}},reset:function(){for(var b=this.getChildren(),e=b.length-1;0<=e;
+e--)b[e].visible=!1,b[e].active=!1;
+this.grid.reset();
+this.bossZoneActive=!1},closeAll:function(){for(var b=this.getChildren(),e=b.length-1;0<=e;
+e--)b[e].visible&&b[e].play("effect_elfence_close");
+this.grid.reset();
+this.bossZoneActive=!1},getSnapshot:function(){for(var b=[],e=this.getChildren(),f=e.length-1;0<=f;
+f--){var h={};
+e[f].visible&&(h.x=e[f].x,h.y=e[f].y,b.push(h))}
+return b},loadSnapshot:function(b){this.reset();
+for(var e=0;
+e<b.length;
+e++){var f=b[e];
+this.grid.add({x:f.x,y:f.x,mass:0});
+this.spawnBossZoneSprite(f.x,f.y)}},createRectangularZone:function(b,e,f,h){this.bossZoneActive=!0;
+this.bossZoneCenter={x:b,y:e};
+this.bossZoneWidth=f;
+this.bossZoneHeight=h;
+var n=f/2,r=h/2,t=b-n,w=e-r;
+b+=n;
+e+=r;50>t&&(t=50,b=t+f,this.bossZoneCenter.x=t+n);100>w&&(w=100,e=w+h,this.bossZoneCenter.y=w+r);
+b>levelWidth-50&&(b=levelWidth-50,this.bossZoneCenter.x=b-n,t=b-f,50>t&&(t=50,this.bossZoneCenter.x=t+(b-t)/2));
+e>levelHeight-
+50&&(e=levelHeight-50,this.bossZoneCenter.y=e-r,w=e-h,100>w&&(w=100,this.bossZoneCenter.y=w+(e-w)/2));
+this.bossZoneWidth=b-t;
+this.bossZoneHeight=e-w;
+this.addBorderZoneV(t,w,this.bossZoneHeight);
+this.addBorderZoneV(b,w,this.bossZoneHeight);
+this.addBorderZoneH(t,w,this.bossZoneWidth);
+this.addBorderZoneH(t,e,this.bossZoneWidth)},addBorderZoneH:function(b,e,f){var h=this.grid.getGridPosY(b)*this.grid.gridSize;
+this.grid.getGridPosX(e,h%2);
+for(h=b;
+h<=b+f;
+h+=this.grid.gridSize)this.grid.add({x:h,y:e,mass:0}),
+this.spawnBossZoneSprite(h,e)},addBorderZoneV:function(b,e,f){var h=this.grid.getGridPosY(b)*this.grid.gridSize;
+this.grid.getGridPosX(e,h%2);
+for(h=e;
+h<=e+f;
+h+=this.grid.gridSize)this.grid.add({x:b,y:h,mass:0}),this.spawnBossZoneSprite(b,h)},spawnBossZoneSprite:function(b,e){var f=this.getFirst(!1);
+if(null==f)return console.error("BossZone.addBorderZoneV : out of zone sprites!"),!1;
+f.setPosition(b,e);
+f.setOrigin(.5,.9);
+f.setRotation(0);
+f.play("effect_elfence_open");
+f.playAfterDelay("effect_elfence_open",
+2*Phaser.Math.Between(1,10));
+f.anims.chain("effect_elfence_loop");
+f.displayWidth=1.2*this.grid.gridSize;
+f.scaleY=f.scaleX;
+f.alpha=1;
+f.visible=!0;
+f.active=!0;
+return f},spriteInCollisionWithZone:function(b){this.bossZoneActive||!1;
+return this.grid.exist(b.x,b.y,0)},update:function(b,e){}});
+var PrimaryWeapons=["Axe","Flamethrower","Crossbow","Gun","Sword"],Weapons="Bazooka Boomerang Drill Launcher SpikedBall Circular Tesla Molotov Forcefield".split(" "),Supplies="Kevlar AmmoBooster Handbook Scope Propane Magnet Chronometer EnergyDrink ActionGloves Sneakers Detector Supplements".split(" ");
+Axe=function(){this.init()};
+Axe.prototype={constructor:Axe,init:function(){this.name="WEAPON_NAME_AXE";
+this.desc="WEAPON_DESC_AXE1";
+this.defFrame="weapon_axe.png";
+this.evoName="WEAPON_NAME_BATTLEAXE";
+this.evoDesc="WEAPON_DESC_BATTLEAXE";
+this.evoFrame="weapon_battleaxe.png";
+this.evoSupp="Supplements";
+this.reset()},getName:function(b){return 5<b?Str(this.evoName):Str(this.name)},getDesc:function(b){if(5<b)return Str(this.evoDesc);
+switch(b){case 1:return Str("WEAPON_DESC_AXE1");
+case 2:case 3:case 4:case 5:return Str("WEAPON_DESC_AXE2345")}},getFrame:function(b){return 5<
+b?this.evoFrame:this.defFrame},reset:function(){this.level=1;
+this.speed=.25;
+this.cooldown=2500;
+this.delay=.1*this.getCooldown();
+this.evoAired=!1},levelUp:function(){this.level++},getCount:function(){return 1},getDamage:function(){var b=5*Player.instance.getAttrib("attack");2==this.level&&(b*=1.25);3==this.level&&(b*=1.5);4==this.level&&(b*=1.75);5==this.level&&(b*=2);5<this.level&&(b*=4);
+return b},getRadius:function(){var b=80;2==this.level&&(b*=1.1);3==this.level&&(b*=1.2);4==this.level&&(b*=1.4);
+5==this.level&&(b*=1.5);5<this.level&&(b*=2.5);
+return b+Math.floor(Player.instance.attribs.shot_range_bonus*b)},getScale:function(){return 2==this.level?1.2:3==this.level?1.4:4==this.level?1.6:5==this.level||5==this.level?1.8:5<this.level?2:1},getSpeed:function(){var b=.005;
+b+=Player.instance.attribs.shot_speed_bonus*b;5<this.level&&(b*=1.3);
+return b},getCooldown:function(){return Math.ceil(this.cooldown-this.cooldown*Player.instance.attribs.cooldown_bonus)},getAnchorTotal:function(){var b=2*Math.PI;
+b+=Player.instance.attribs.duration_bonus*b;5<this.level&&(b*=6E6);
+return b},getProjectileSprite:function(){return 5<this.level?"weapon_battleaxe_shot.png":"weapon_axe.png"},update:function(b,e){this.delay-=e;
+if(0>=this.delay){if(5<this.level){if(this.evoAired)return;
+this.evoAired=!0}
+this.delay=this.getCooldown();
+b=0;
+e=2*Math.PI/this.getCount();
+for(var f=this.getCount()-1;0<=f;
+f--){var h=Projectiles.instance.spawnProjectile(this.getProjectileSprite(),Player.instance.x,Player.instance.y,0,0,this.getSpeed(),
+this.getDamage());
+null!=h&&(h.tgtsCount=-1,h.rotation=Math.PI/2,h.rotationSpeed=this.getSpeed(),h.anchor=Player.instance,h.anchorSpeed=this.getSpeed(),h.anchorAngle=b,h.anchorRadius=this.getRadius(),h.anchorTotal=this.getAnchorTotal(),h.life=5>=this.level?3E3:6E6,h.setScale(this.getScale()),h.collSize2=h.displayWidth*h.originX);
+b+=e}}}};
+Crossbow=function(){this.init()};
+Crossbow.prototype={constructor:Crossbow,init:function(){this.name="WEAPON_NAME_CROSSBOW";
+this.desc="WEAPON_DESC_CROSSBOW1";
+this.defFrame="weapon_crossbow.png";
+this.evoName="WEAPON_NAME_SHOTGUN";
+this.evoDesc="WEAPON_DESC_SHOTGUN";
+this.evoFrame="weapon_shotgun.png";
+this.evoSupp="ActionGloves";
+this.reset()},getName:function(b){return 5<b?Str(this.evoName):Str(this.name)},getDesc:function(b){if(5<b)return Str(this.evoDesc);
+switch(b){case 1:return Str("WEAPON_DESC_CROSSBOW1");
+case 2:case 3:case 4:case 5:return Str("WEAPON_DESC_CROSSBOW2345")}},
+getFrame:function(b){return 5<b?this.evoFrame:this.defFrame},reset:function(){this.level=1;
+this.speed=100;
+this.range=300;
+this.rangeSq=this.range*this.range;
+this.cooldown=1500;
+this.life=2E3;
+this.delay=.1*this.getCooldown();
+this.tmp=0},levelUp:function(){this.level++},getDamage:function(){var b=3*Player.instance.getAttrib("attack");2==this.level&&(b*=1.25);3==this.level&&(b*=1.5);4==this.level&&(b*=1.75);5==this.level&&(b*=2);5<this.level&&(b*=2.5);
+return b},getCount:function(){return 2==this.level?
+4:3==this.level?5:4==this.level?6:5<=this.level?7:3},getLife:function(){return this.life+Math.floor(Player.instance.attribs.shot_range_bonus*this.life)},getSpeed:function(){return(this.speed+Math.floor(Player.instance.attribs.shot_speed_bonus*this.speed))/100},getCooldown:function(){return Math.ceil(this.cooldown-this.cooldown*Player.instance.attribs.cooldown_bonus)},getProjectileSprite:function(){return 5<this.level?"shot5.png":"shot3.png"},update:function(b,e){this.delay-=e;
+if(0>=this.delay){this.delay=
+this.getCooldown();5<this.level&&(this.tmp--,0>=this.tmp?(this.tmp=2,this.delay=this.getCooldown()):this.delay=400);
+b=Player.instance.sprDirArrow.rotation;
+e=2*Math.PI/40;
+b-=(this.getCount()-1)*e/2;
+for(var f=this.getCount()-1;0<=f;
+f--){var h=new Phaser.Math.Vector2(1,1);
+h.setAngle(b);
+h.normalize();
+var n=h.x;
+h=h.y;
+n=Projectiles.instance.spawnProjectile(this.getProjectileSprite(),Player.instance.x,Player.instance.y,n,h,this.getSpeed(),this.getDamage());
+null!=n&&(playSound(SceneGame.instance,"gun2"),
+n.tgtsCount=2,n.life=this.getLife(),n.rotation=b);
+b+=e}}}};
+Flamethrower=function(){this.init()};
+Flamethrower.prototype={constructor:Flamethrower,init:function(){this.name="WEAPON_NAME_FLAMETHROWER";
+this.desc="WEAPON_DESC_FLAMETHROWER1";
+this.defFrame="weapon_flamethrower.png";
+this.evoName="WEAPON_NAME_PLASMAGUN";
+this.evoDesc="WEAPON_DESC_PLASMAGUN";
+this.evoFrame="weapon_plasmarifle.png";
+this.evoSupp="Handbook";
+this.reset()},getName:function(b){return 5<b?Str(this.evoName):Str(this.name)},getDesc:function(b){if(5<b)return Str(this.evoDesc);
+switch(b){case 1:return Str("WEAPON_DESC_FLAMETHROWER1");
+case 2:case 3:case 4:case 5:return Str("WEAPON_DESC_FLAMETHROWER2345")}},
+getFrame:function(b){return 5<b?this.evoFrame:this.defFrame},reset:function(){this.level=1;
+this.speed=.35;
+this.range=300;
+this.cooldown=2E3;
+this.life=400;
+this.delay=50;
+this.tmp=20;
+this.flame=null},levelUp:function(){this.level++},getDamage:function(){var b=2*Player.instance.getAttrib("attack");2==this.level&&(b*=1.25);3==this.level&&(b*=1.5);4==this.level&&(b*=1.75);5==this.level&&(b*=2);5<this.level&&(b*=2.5);
+return b},getTargetsCount:function(){var b=1;3<=this.level&&(b=2);5==this.level&&(b=3);5<
+this.level&&(b=10);
+return b},getLife:function(){var b=this.life+Player.instance.attribs.shot_range_bonus*this.life;5<this.level&&(b*=2.5);
+return b},getSpeed:function(){var b=this.speed+Player.instance.attribs.shot_speed_bonus*this.speed;5<this.level&&(b*=2);
+return b},getProjectileSprite:function(){return 5<this.level?"#plasma":"#effect_flame"},update:function(b,e){this.delay-=e;
+if(0>=this.delay){this.delay=100;
+var f=new Phaser.Math.Vector2(1,1);
+f.setAngle(Player.instance.sprDirArrow.rotation);
+f.normalize();
+b=40*f.x;
+var h=40*f.y,n=f.x+Player.instance.vectr.x/e*2.5;
+e=f.y+Player.instance.vectr.y/e*2.5;
+e=Projectiles.instance.spawnProjectile(this.getProjectileSprite(),Player.instance.x+b,Player.instance.y+h,n,e,this.getSpeed(),this.getDamage());
+null!=e&&(e.scaleInTime={start:.4,end:1},e.alphaInTime={start:1,end:.6},e.life=this.getLife(),e.tgtsCount=this.getTargetsCount(),e.rotation=Player.instance.sprDirArrow.rotation,5<this.level&&(e.rotation=0,e.scaleInTime={start:.6,end:1.1},e.alphaInTime={start:1,end:1}),
+e.setScale(e.scaleInTime.start),e.setAlpha(e.alphaInTime.start))}},updateFlame:function(b,e){null!=this.flame&&(this.flame.rotation=Player.instance.sprDirArrow.rotation,this.flame.setPosition(Player.instance.x,Player.instance.y-10),this.flame.visible||(this.flame=null))}};
+Gun=function(){this.init()};
+Gun.prototype={constructor:Gun,init:function(){this.name="WEAPON_NAME_GUN";
+this.desc="WEAPON_DESC_GUN1";
+this.defFrame="weapon_gun.png";
+this.evoName="WEAPON_NAME_UZI";
+this.evoDesc="WEAPON_DESC_UZI";
+this.evoFrame="weapon_uzi.png";
+this.evoSupp="AmmoBooster";
+this.reset()},getName:function(b){return 5<b?Str(this.evoName):Str(this.name)},getDesc:function(b){if(5<b)return Str(this.evoDesc);
+switch(b){case 1:return Str("WEAPON_DESC_GUN1");
+case 2:case 3:case 4:case 5:return Str("WEAPON_DESC_GUN2345")}},getFrame:function(b){return 5<
+b?this.evoFrame:this.defFrame},reset:function(){this.level=1;
+this.speed=100;
+this.range=600;
+this.rangeSq=this.range*this.range;
+this.cooldown=1E3;
+this.life=2E3;
+this.delay=.1*this.getCooldown();
+this.tmp=this.level},levelUp:function(){this.level++},getDamage:function(){var b=4*Player.instance.getAttrib("attack");2==this.level&&(b*=1.25);3==this.level&&(b*=1.5);4==this.level&&(b*=1.75);5==this.level&&(b*=2);5<this.level&&(b*=2.5);
+return b},getLife:function(){return this.life+Math.floor(Player.instance.attribs.shot_range_bonus*
+this.life)},getSpeed:function(){return(this.speed+Math.floor(Player.instance.attribs.shot_speed_bonus*this.speed))/100},getCooldown:function(){return Math.ceil(this.cooldown-this.cooldown*Player.instance.attribs.cooldown_bonus)},getProjectileSprite:function(){return 5<this.level?"s2.png":"s1.png"},update:function(b,e){this.delay-=e;0>=this.delay&&(5<this.level?this.delay=160:(this.delay=150,this.tmp--,0>=this.tmp&&(this.tmp=this.level+1,this.delay=this.getCooldown())),BossZone.instance.bossZoneActive?
+(b=Bosses.instance.findBossClosestToPlayer(Player.instance.x,Player.instance.y),e=Enemies.instance.findEnemyClosestToPlayer(Player.instance.x,Player.instance.y),null!=e&&(null==b?b=e:e.distToPlayerSq<b.distToPlayerSq&&(b=e))):b=Enemies.instance.findEnemyClosestToPlayer(Player.instance.x,Player.instance.y),null!=b&&b.distToPlayerSq<=this.rangeSq&&(e=new Phaser.Math.Vector2(b.x-Player.instance.x,b.y-Player.instance.y),e.normalize(),b=e.x,e=e.y,b=Projectiles.instance.spawnProjectile(this.getProjectileSprite(),
+Player.instance.x,Player.instance.y,b,e,this.getSpeed(),this.getDamage()),null!=b&&(playSound(SceneGame.instance,"gun2"),b.life=this.getLife())))}};
+Sword=function(){this.init()};
+Sword.prototype={constructor:Sword,init:function(){this.name="WEAPON_NAME_SWORD";
+this.desc="WEAPON_DESC_SWORD1";
+this.defFrame="weapon_sword.png";
+this.evoName="WEAPON_NAME_SCIMITARS";
+this.evoDesc="WEAPON_DESC_SCIMITARS";
+this.evoFrame="weapon_scimitars.png";
+this.evoSupp="Kevlar";
+this.reset()},getName:function(b){return 5<b?Str(this.evoName):Str(this.name)},getFrame:function(b){return 5<b?this.evoFrame:this.defFrame},getDesc:function(b){if(5<b)return Str(this.evoDesc);
+switch(b){case 1:return Str("WEAPON_DESC_SWORD1");
+case 2:case 3:case 4:case 5:return Str("WEAPON_DESC_SWORD2345")}},
+reset:function(){this.speed=this.level=1;
+this.cooldown=500;
+this.life=2E3;
+this.delay=.1*this.getCooldown();
+this.tmp=this.level},levelUp:function(){this.level++},getDamage:function(){var b=5*Player.instance.getAttrib("attack");2==this.level&&(b*=1.25);3==this.level&&(b*=1.5);4==this.level&&(b*=1.75);5==this.level&&(b*=2);5<this.level&&(b*=2.5);
+return b},getRange:function(){return 250*this.getScale()},getScale:function(){var b=.8;2==this.level&&(b*=1);3==this.level&&(b*=1.1);4==this.level&&(b*=1.3);
+5==this.level&&(b*=1.5);5<this.level&&(b*=1.7);
+return b},getLife:function(){return this.life+Math.floor(Player.instance.attribs.shot_range_bonus*this.life)},getSpeed:function(){return this.speed+Math.floor(Player.instance.attribs.shot_speed_bonus*this.speed)},getCooldown:function(){return Math.ceil(this.cooldown-this.cooldown*Player.instance.attribs.cooldown_bonus)},update:function(b,e){this.delay-=e;
+if(0>=this.delay){this.delay=this.getCooldown();
+b=this.getRange();
+this.attackEnemiesInRadius(b);
+this.attackBossesInRadius(b);
+playSound(SceneGame.instance,"sword");
+var f=0>Player.instance.sprBody.scaleX?-1:1;
+e=Explosions.instance.spawnExplosion("effect_swoosh",Player.instance.x+77*f,Player.instance.y-36);
+null!=e&&(e.scaleX=this.getScale()*f);5<this.level&&(this.attackEnemiesInRadius(-b),this.attackBossesInRadius(-b),f*=-1,e=Explosions.instance.spawnExplosion("effect_swoosh",Player.instance.x+77*f,Player.instance.y-36),null!=e&&(e.scaleX=this.getScale()*f))}},attackEnemiesInRadius:function(b){for(var e=Enemies.instance.getEnemiesInRadius(Player.instance.x,
+Player.instance.y,b),f=Math.abs(b/2),h=0;
+h<e.length;
+h++){var n=e[h];
+if(!(Math.abs(Player.instance.y-n.y)>f||Math.abs(Player.instance.y-n.y)>f)){if(0<b){if(0>Player.instance.sprBody.scaleX&&n.x>Player.instance.x)continue;
+if(0<Player.instance.sprBody.scaleX&&n.x<Player.instance.x)continue}
+else{if(0<Player.instance.sprBody.scaleX&&n.x>Player.instance.x)continue;
+if(0>Player.instance.sprBody.scaleX&&n.x<Player.instance.x)continue}
+Enemies.instance.damageEnemy(n,this.getDamage())}}},attackBossesInRadius:function(b){for(var e=
+Bosses.instance.getBossesInRadius(Player.instance.x,Player.instance.y,b),f=Math.abs(b/2),h=0;
+h<e.length;
+h++){var n=e[h];
+if(!(Math.abs(Player.instance.y-n.y)>f||Math.abs(Player.instance.y-n.y)>f)){if(0<b){if(0>Player.instance.sprBody.scaleX&&n.x>Player.instance.x)continue;
+if(0<Player.instance.sprBody.scaleX&&n.x<Player.instance.x)continue}
+else{if(0<Player.instance.sprBody.scaleX&&n.x>Player.instance.x)continue;
+if(0>Player.instance.sprBody.scaleX&&n.x<Player.instance.x)continue}
+Bosses.instance.damageBoss(n,
+this.getDamage())}}}};
+Drill=function(){this.init()};
+Drill.prototype={constructor:Drill,init:function(){this.name="WEAPON_NAME_DRILL";
+this.desc="WEAPON_DESC_DRILL1";
+this.defFrame="weapon_drillgun.png";
+this.evoName="WEAPON_NAME_LASERGUN";
+this.evoDesc="WEAPON_DESC_LASERGUN";
+this.evoFrame="weapon_laser.png";
+this.evoSupp="Scope";
+this.reset()},getName:function(b){return 5<b?Str(this.evoName):Str(this.name)},getDesc:function(b){if(5<b)return Str(this.evoDesc);
+switch(b){case 1:return Str("WEAPON_DESC_DRILL1");
+case 2:case 5:return Str("WEAPON_DESC_DRILL25");
+case 3:return Str("WEAPON_DESC_DRILL3");
+case 4:return Str("WEAPON_DESC_DRILL4")}},getFrame:function(b){return 5<b?this.evoFrame:this.defFrame},reset:function(){this.level=1;
+this.range=300;
+this.rangeSq=this.range*this.range;
+this.cooldown=2E3;
+this.life=3E3;
+this.delay=.1*this.getCooldown();
+this.tmp=this.level},levelUp:function(){this.level++},getDamage:function(){var b=3*Player.instance.getAttrib("attack");4==this.level&&(b*=1.5);5==this.level&&(b*=1.5);5<this.level&&(b*=2.5);
+return b},getLife:function(){return this.life+Math.floor(Player.instance.attribs.shot_range_bonus*
+this.life)},getSpeed:function(){var b=100;3==this.level&&(b=120);3<this.level&&(b=150);5<this.level&&(b=400);
+b+=Math.floor(Player.instance.attribs.shot_speed_bonus*b);
+return b/150},getCooldown:function(){return Math.ceil(this.cooldown-this.cooldown*Player.instance.attribs.cooldown_bonus)},getCount:function(){var b=1;1<this.level&&(b=2);5==this.level&&(b=3);5<this.level&&(b=1);
+return b},update:function(b,e){this.delay-=e;0>=this.delay&&(this.delay=250,this.tmp--,0>=this.tmp&&(this.tmp=this.getCount(),
+this.delay=this.getCooldown()),BossZone.instance.bossZoneActive?(b=Bosses.instance.findBossClosestToPlayer(Player.instance.x,Player.instance.y),e=Enemies.instance.findEnemyClosestToPlayer(Player.instance.x,Player.instance.y),null!=e&&(null==b?b=e:e.distToPlayerSq<b.distToPlayerSq&&(b=e))):b=Enemies.instance.findEnemyClosestToPlayer(Player.instance.x,Player.instance.y),null!=b&&0<=this.rangeSq&&(b=new Phaser.Math.Vector2(b.x-Player.instance.x,b.y-Player.instance.y),b.normalize(),5<this.level?this._launchLightningDrill(b):
+this._launchDrill(b)))},_launchDrill:function(b){var e=Projectiles.instance.spawnProjectile("weapon_drill.png",Player.instance.x,Player.instance.y,b.x,b.y,this.getSpeed(),this.getDamage());
+null!=e&&(playSound(SceneGame.instance,"whoosh1"),e.tgtsCount=-1,e.rotation=b.angle(),e.life=this.getLife(),e.bounceScreen=!0,e.z=100)},_launchLightningDrill:function(b){var e=Projectiles.instance.spawnProjectile("weapon_drill.png",Player.instance.x,Player.instance.y,b.x,b.y,this.getSpeed(),this.getDamage());
+null!=
+e&&(playSound(SceneGame.instance,"whoosh1"),e.lightning=!0,e.tgtsCount=-1,e.rotation=b.angle(),e.life=this.getLife(),e.bounceScreen=!0,e.z=100,e.updateCounter=0,e.onUpdate=function(f){f.updateCounter++;0!=f.updateCounter%2&&ContainerGame.instance.particles.CreateTrail(f.x,f.y,f.angle,"trail.png")})},_fireLaser:function(b){b.normalize();
+for(var e=Player.instance.x,f=Player.instance.y,h=Player.instance.x,n=Player.instance.y,r=RES_SCREEN_WIDTH2,t=RES_SCREEN_HEIGHT2,w=0,x=[],z=3;0<z;){var aa=Math.abs(Player.instance.y-
+n);
+if(Math.abs(Player.instance.x-h)>r){var y=Phaser.Math.Distance.Between(e,f,h,n);
+Explosions.instance.spawnLaserRay(e,f,b.angle(),y);
+e=h;
+f=n;
+b.x*=-1;
+z--}
+aa>t&&(y=Phaser.Math.Distance.Between(e,f,h,n),Explosions.instance.spawnLaserRay(e,f,b.angle(),y),e=h,f=n,b.y*=-1,z--);
+h+=40*b.x;
+n+=40*b.y;
+w++;
+aa=Enemies.instance.getEnemiesInRadius(h,n,60,x);
+x=x.concat(aa)}
+for(b=0;
+b<x.length;
+b++)Enemies.instance.damageEnemy(x[b],this.getDamage());
+LOG("_fireLaser : "+w)}};
+Bazooka=function(){this.init()};
+Bazooka.prototype={constructor:Bazooka,init:function(){this.name="WEAPON_NAME_BAZOOKA";
+this.desc="WEAPON_DESC_BAZOOKA1";
+this.defFrame="weapon_bazooka.png";
+this.evoName="WEAPON_NAME_NUKE";
+this.evoDesc="WEAPON_DESC_NUKE";
+this.evoFrame="weapon_nuke.png";
+this.evoSupp="Propane";
+this.reset()},getName:function(b){return 5<b?Str(this.evoName):Str(this.name)},getDesc:function(b){if(5<b)return Str(this.evoDesc);
+switch(b){case 1:return Str("WEAPON_DESC_BAZOOKA1");
+case 2:case 4:return Str("WEAPON_DESC_BAZOOKA24");
+case 3:case 5:return Str("WEAPON_DESC_BAZOOKA35")}},
+getFrame:function(b){return 5<b?this.evoFrame:this.defFrame},reset:function(){this.level=1;
+this.radius=100;
+this.speed=.5;
+this.range=1E3;
+this.rangeSq=this.range*this.range;
+this.cooldown=2E3;
+this.delay=.1*this.cooldown;
+this.tmp=this.level},levelUp:function(){this.level++},getDamage:function(){var b=5*Player.instance.getAttrib("attack");2==this.level&&(b*=2);3==this.level&&(b*=2);4==this.level&&(b*=4);5==this.level&&(b*=4);5<this.level&&(b*=8);
+return b},getRadius:function(){var b=this.radius+Math.floor(Player.instance.attribs.shot_range_bonus*
+this.radius);5<this.level&&(b*=2);
+return b},getSpeed:function(){var b=this.speed+Math.floor(Player.instance.attribs.shot_speed_bonus*this.speed);5<this.level&&(b*=.8);
+return b},getCooldown:function(){return Math.ceil(this.cooldown-this.cooldown*Player.instance.attribs.cooldown_bonus)},getCount:function(){var b=1;3==this.level&&(b=2);4==this.level&&(b=2);5==this.level&&(b=3);5<this.level&&(b=1);
+return b},getProjectileSprite:function(){return 5<this.level?"weapon_nuke_shot.png":"weapon_rocket.png"},
+update:function(b,e){this.delay-=e;
+if(0>=this.delay&&(this.delay=250,this.tmp--,0>=this.tmp&&(this.tmp=this.getCount(),this.delay=this.getCooldown()),BossZone.instance.bossZoneActive?(b=Bosses.instance.findBossClosestToPlayer(Player.instance.x,Player.instance.y),e=Enemies.instance.findEnemyClosestToPlayer(Player.instance.x,Player.instance.y),null!=e&&(null==b?b=e:e.distToPlayerSq<b.distToPlayerSq&&(b=e))):b=Enemies.instance.findEnemyClosestToPlayer(Player.instance.x,Player.instance.y),null!=b&&0<=
+this.rangeSq)){e=new Phaser.Math.Vector2(b.x-Player.instance.x,b.y-Player.instance.y);
+e.normalize();
+var f=e.x,h=e.y;
+f=Projectiles.instance.spawnProjectile(this.getProjectileSprite(),Player.instance.x,Player.instance.y,f,h,this.getSpeed(),this.getDamage());
+null!=f&&(playSound(SceneGame.instance,"rocket"),f.explosive=!0,f.radius=this.getRadius(),f.target={x:b.x,y:b.y},f.tgtsCount=100,f.rotation=e.angle(),f.sound="explosion",5<this.level&&(f.explosionAnim="effect_nuke",f.explosionRot=0))}}};
+Boomerang=function(){this.init()};
+Boomerang.prototype={constructor:Boomerang,init:function(){this.name="WEAPON_NAME_BOOMERANG";
+this.desc="WEAPON_DESC_BOOMERANG1";
+this.defFrame="weapon_boomerang.png";
+this.evoName="WEAPON_NAME_NECKBREAKER";
+this.evoDesc="WEAPON_DESC_NECKBREAKER";
+this.evoFrame="weapon_neckbreaker.png";
+this.evoSupp="Magnet";
+this.reset()},getName:function(b){return 5<b?Str(this.evoName):Str(this.name)},getDesc:function(b){if(5<b)return Str(this.evoDesc);
+switch(b){case 1:return Str("WEAPON_DESC_BOOMERANG1");
+case 2:return Str("WEAPON_DESC_BOOMERANG2");
+case 3:case 4:return Str("WEAPON_DESC_BOOMERANG34");
+case 5:return Str("WEAPON_DESC_BOOMERANG5")}},getFrame:function(b){return 5<b?this.evoFrame:this.defFrame},reset:function(){this.level=1;
+this.speed=.7;
+this.cooldown=3E3;
+this.life=2500;
+this.range=300;
+this.rangeSq=Math.pow(this.range,2);
+this.delay=.1*this.getCooldown();
+this.tmp=this.level},levelUp:function(){this.level++},getDamage:function(){var b=6*Player.instance.getAttrib("attack");5==this.level&&(b*=2);5<this.level&&(b*=4);
+return b},getCount:function(){return 5<
+this.level?0:1<this.level?2:1},getLife:function(){return this.life+Math.floor(Player.instance.attribs.shot_range_bonus*this.life)},getSpeed:function(){return this.speed+Math.floor(Player.instance.attribs.shot_speed_bonus*this.speed)},getRotSpeed:function(){var b=100/35E3;
+b+=Player.instance.attribs.shot_speed_bonus*b;5<this.level&&(b*=1.3);
+return b},getCooldown:function(){return Math.ceil(this.cooldown-this.cooldown*Player.instance.attribs.cooldown_bonus)},getScale:function(){var b=1;3==this.level&&
+(b*=1.2);4==this.level&&(b*=1.5);5==this.level&&(b*=2);5<this.level&&(b*=2);
+return b},getProjectileSprite:function(){return 5<this.level?"weapon_neckbreaker_shot.png":"weapon_boomerang.png"},getAnchorTotal:function(){var b=4*Math.PI;
+return b+Player.instance.attribs.duration_bonus*b},update:function(b,e){this.delay-=e;0>=this.delay&&(this.delay=200,this.tmp--,0>=this.tmp&&(this.tmp=this.getCount(),this.delay=this.getCooldown()),BossZone.instance.bossZoneActive?(b=Bosses.instance.findBossClosestToPlayer(Player.instance.x,
+Player.instance.y),e=Enemies.instance.findEnemyClosestToPlayer(Player.instance.x,Player.instance.y),null!=e&&(null==b?b=e:e.distToPlayerSq<b.distToPlayerSq&&(b=e))):b=Enemies.instance.findEnemyClosestToPlayer(Player.instance.x,Player.instance.y),null!=b&&0<=this.rangeSq&&(b=new Phaser.Math.Vector2(b.x-Player.instance.x,b.y-Player.instance.y),b.normalize(),5<this.level?(this._launchNeckbreaker(b,0),this._launchNeckbreaker(b,Math.PI)):this._launchBoomerang(b)))},_launchBoomerang:function(b){var e=Projectiles.instance.spawnProjectile(this.getProjectileSprite(),
+Player.instance.x,Player.instance.y,b.x,b.y,this.getSpeed(),this.getDamage());
+null!=e&&(playSound(SceneGame.instance,"whoosh1"),e.tgtsCount=-1,e.setScale(this.getScale()),e.rotationSpeed=.01,e.rotation=b.angle()+Math.PI/2,e.z=100,e.elastic=!0,e.elasticSpeed=this.getSpeed(),e.life=this.getLife(),e.lifeInit=e.life)},_launchNeckbreaker:function(b,e){b=Projectiles.instance.spawnProjectile(this.getProjectileSprite(),Player.instance.x,Player.instance.y,0,0,this.getSpeed(),this.getDamage());
+null!=b&&(b.tgtsCount=
+-1,b.rotation=Math.PI/2,b.rotationSpeed=.1,b.anchor=Player.instance,b

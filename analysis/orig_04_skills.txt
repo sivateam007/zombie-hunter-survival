@@ -1,0 +1,173 @@
+_POWER=0,SKILL_HEALTH=1,SKILL_DEFENSE=2,SKILL_FIRSTAID=3,SKILL_FORTUNE=4,SKILL_LEARNING=5,MAX_PLAYER_SKILL=30;
+var PlayerSkillsData=[],PlayerSkillsPrices=[0,0,1E3,3E3,6E3,1E4,15E3,21E3,28E3,36E3,45E3,55E3,66E3,78E3,91E3,105E3,12E4,136E3,153E3,171E3,19E4,21E4,231E3,253E3,276E3,3E5,325E3,351E3,378E3,406E3,435E3];
+PlayerSkillsData[SKILL_POWER]={icon:"skill_attack.png",attrib:"attack",name:"POWER",values:[10,10,12,16,22,30,40,52,66,82,100,120,142,166,192,220,250,282,316,352,390,430,472,516,562,610,660,712,766,822,880],valueAtLevel:function(b){return this.values[b]}};
+PlayerSkillsData[SKILL_HEALTH]={icon:"skill_health.png",attrib:"health",name:"HEALTH",values:[100,100,110,130,160,200,250,310,380,460,550,650,760,880,1010,1150,1300,1460,1630,1810,2E3,2200,2410,2630,2860,3100,3350,3610,3880,4160,4450],valueAtLevel:function(b){return this.values[b]}};
+PlayerSkillsData[SKILL_DEFENSE]={icon:"skill_defense.png",attrib:"defense",name:"ARMOR",values:[0,0,.1,.3,.6,1,1.5,2.1,2.8,3.6,4.5,5.5,6.6,7.8,9.1,10.5,12,13.6,15.3,17.1,19,21,23.1,25.3,27.6,30,32.5,35.1,37.8,40.6,43.5],valueAtLevel:function(b){return this.values[b]}};
+PlayerSkillsData[SKILL_FIRSTAID]={icon:"skill_firstaid.png",attrib:"firstaid",name:"AID",values:[25,25,30,40,55,75,100,130,165,205,250,300,355,415,480,550,625,705,790,880,975,1075,1180,1290,1405,1525,1650,1780,1915,2055,2200,2350],valueAtLevel:function(b){return this.values[b]}};
+PlayerSkillsData[SKILL_FORTUNE]={icon:"skill_fortune.png",attrib:"fortune",name:"FORTUNE",values:[0,0,1,3,6,10,15,21,28,36,45,55,66,78,91,105,120,136,153,171,190,210,231,253,276,300,325,351,378,406,435],valueAtLevel:function(b){return this.values[b]}};
+PlayerSkillsData[SKILL_LEARNING]={icon:"skill_learning.png",attrib:"learning",name:"LEARNING",values:[0,0,.5,1.5,3,5,7.5,10.5,14,18,22.5,27.5,33,39,45.5,52.5,60,68,76.5,85.5,95,105,115.5,126.5,138,150,162.5,175.5,189,203,217.5,232.5,248,264,280.5,297.5],valueAtLevel:function(b){return this.values[b]}};
+const MAX_RESETS_LEVELUP=5,MAX_CONTINUES=2,MAX_CHESTS_REROLLS=3;
+function getPriceForLevelUpReset(b){return 500*(b+1)}
+function getPriceForContinue(b){return 2500*b}
+function getPriceForChestsReroll(b){return 1500*(b+1)};
+function GetDifficultyMulForRewards(b){var e=1;
+b==DIFFICULTY_HARD&&(e=1.5);
+b==DIFFICULTY_INSANE&&(e=2.5);
+return e}
+function GetDifficultyMulForEnemySpeed(b){var e=1;
+b==DIFFICULTY_HARD&&(e=1.15);
+b==DIFFICULTY_INSANE&&(e=1.5);
+return e}
+function GetDifficultyMulForEnemyHP(b){var e=1;
+b==DIFFICULTY_HARD&&(e=2);
+b==DIFFICULTY_INSANE&&(e=4);
+return e}
+function GetDifficultyMulForEnemyDMG(b){var e=1;
+b==DIFFICULTY_HARD&&(e=2);
+b==DIFFICULTY_INSANE&&(e=4);
+return e}
+function GetDifficultyMulForMoneyPickups(b){var e=1;
+b==DIFFICULTY_HARD&&(e=1.5);
+b==DIFFICULTY_INSANE&&(e=2.5);
+return e}
+function DifficultyToSTR(b){return STR(["NORMAL","HARD","INSANE"][b])};
+Level=function(){this.init()};
+Level.instance=null;
+Level.prototype={constructor:Level,init:function(){Level.instance=this},reset:function(b){this.data=JSON.parse(JSON.stringify(b));
+this.difficulty=GetLevelDifficulty(SelectedLevel);
+this.enemiesKilled=this.levelMoney=this.time=0;
+this.timeToTreasure=this.time+this.data.timeToTreasure;
+for(b=0;
+b<this.data.waves.length;
+b++)this.updateWaveValuesFromEditor(this.data.waves[b]),this.data.waves[b].active=!1,this.data.waves[b].delay=this.data.waves[b].frequency;
+containerGameTop.setMoneyValue(this.levelMoney);
+containerGameTop.setEnemiesValue(this.enemiesKilled);
+containerGameTop.txtHazardInfo.visible=!1;
+for(b=0;
+b<containerGameTop.bossProgressBar.length;
+b++)containerGameTop.bossProgressBar[b].visible=!1;
+this.timeToHideHazardInfo=0},getLevelMultiplier:function(){return this.data.hasOwnProperty("multiplier")?this.data.multiplier:1},getSnapshot:function(){var b={};
+b.data=this.data;
+b.difficulty=this.difficulty;
+b.time=this.time;
+b.levelMoney=this.levelMoney;
+b.enemiesKilled=this.enemiesKilled;
+b.timeToTreasure=
+this.timeToTreasure;
+return b},loadSnapshot:function(b){this.data=b.data;
+this.difficulty=b.difficulty;
+this.time=b.time;
+this.levelMoney=b.levelMoney;
+this.enemiesKilled=b.enemiesKilled;
+this.timeToTreasure=b.timeToTreasure;
+ContainerGameTop.instance.setMoneyValue(this.levelMoney);
+ContainerGameTop.instance.setEnemiesValue(this.enemiesKilled)},updateWaveValuesFromEditor:function(b){b.hasOwnProperty("freq")&&("HI"==b.freq&&(b.frequency=FREQ_HI),"MID"==b.freq&&(b.frequency=FREQ_MID),"LOW"==b.freq&&(b.frequency=
+FREQ_LOW));
+b.hasOwnProperty("startTime")&&(b.timeOfStart=b.startTime);
+b.hasOwnProperty("max")&&(b.maxEnemies=parseInt(b.max));
+b.hasOwnProperty("total")&&(b.totalEnemies=parseInt(b.total))},getMultipliedMoneySum:function(b){b*=GetDifficultyMulForMoneyPickups(Level.instance.difficulty);
+return b=Math.floor(b+b*Player.instance.attribs.cash_bonus/100+b*Player.instance.attribs.fortune/100)},incLevelMoney:function(b){b=this.getMultipliedMoneySum(b);
+this.levelMoney+=b;
+containerGameTop.incMoneyValue(b);
+PlayerMoney+=
+b;
+MissionUpdate(MISSION_TYPE_EARN_X_GOLD,b)},decLevelMoney:function(b){if(this.levelMoney<b)return!1;
+this.levelMoney-=b;
+containerGameTop.incMoneyValue(-b);
+PlayerMoney-=b;
+return!0},incKilledEnemies:function(b){this.enemiesKilled+=b;
+GameSnacks.score.update(Level.instance.enemiesKilled);
+containerGameTop.incEnemiesValue(b)},update:function(b,e){0<gameWonDelay||(BossZone.instance.bossZoneActive||(this.time+=e*LEVEL_TIMES_MUL),this.updateWaves(b,e),this.updateTreasureSpawn(b,e),this.updateHazardInfo(b,
+e))},updateWaves:function(b,e){for(var f=0;
+f<this.data.waves.length;
+f++){var h=this.data.waves[f];
+h.active?this.updateActiveWave(h,b,e):BossZone.instance.bossZoneActive||this.updateInactiveWave(h,b,e)}},bossesExistInNextWaves:function(){for(var b=0;
+b<this.data.waves.length;
+b++){var e=this.data.waves[b];
+if(!e.active&&e.hasOwnProperty("bosses"))return!0}
+return!1},activateWave:function(b){b.active=!0;
+b.hasOwnProperty("maxEnemies")||(b.maxEnemies=1,b.hasOwnProperty("totalEnemies")&&(b.maxEnemies=b.totalEnemies));
+b.hasOwnProperty("bossZone")&&("rect"==b.bossZone.type&&BossZone.instance.createRectangularZone(Player.instance.x,Player.instance.y,b.bossZone.width,b.bossZone.height),Enemies.instance.killAllEnemiesAtBoss(),Player.instance.movePlayerFromOuterLimits(),this.spawnBosses(b),playMusic(SceneGame.instance,"music_boss"));
+this.time>=b.timeOfEnd&&this.deactivateWave(b)},deactivateWave:function(b){b.active=!1},updateInactiveWave:function(b,e,f){e=b.timeOfStart-this.time;
+e>DELAY_HIDE_HAZARD_INFO*LEVEL_TIMES_MUL||
+(0<e?0>=this.timeToHideHazardInfo&&b.hasOwnProperty("bosses")&&(containerGameTop.txtHazardInfo.text=STR("INCOMING_BOSS"),this.timeToHideHazardInfo=DELAY_HIDE_HAZARD_INFO*LEVEL_TIMES_MUL):(b.hasOwnProperty("timeOfEnd")||(b.timeOfEnd=b.timeOfStart+b.duration),this.activateWave(b)))},updateActiveWave:function(b,e,f){b.hasOwnProperty("bosses")?this.updateWaveBosses(b,e,f):0<Bosses.instance.countBosses()||(b.delay-=f,0<b.delay||(b.delay=b.frequency,this.updateWaveEnemies(b,e,f),this.time>=b.timeOfEnd&&
+this.deactivateWave(b)))},updateWaveEnemies:function(b,e,f){if(b.hasOwnProperty("enemy")&&!(b.hasOwnProperty("totalEnemies")&&0>=b.totalEnemies)){0==b.enemy.indexOf("miniboss")&&LOG(""+JSON.stringify(b));
+if(Enemies.instance.countEnemiesOfType(b.enemy)>=b.maxEnemies){0==b.enemy.indexOf("miniboss")&&(a=10);
+if(!Enemies.instance.destroyEnemyOfTypeFarAway(b.enemy))return;
+b.hasOwnProperty("totalEnemies")&&b.totalEnemies++}
+f=1.3;
+if(Player.instance.x<RES_SCREEN_WIDTH||Player.instance.x>levelWidth-RES_SCREEN_WIDTH)f=
+2.2;
+if(Player.instance.y<RES_SCREEN_HEIGHT||Player.instance.y>levelHeight-RES_SCREEN_HEIGHT)f=2.2;
+do{e=!0;
+var h=(SCREEN_HEIGHT2*f+2*Phaser.Math.Between(-10,10))/Resolution.RESOLUTION_SCALE,n=Phaser.Math.DegToRad(Phaser.Math.Between(0,360)),r=Player.instance.x+Math.cos(n)*h;
+h=Player.instance.y+Math.sin(n)*h;0>r&&(e=!1);
+r>levelWidth&&(e=!1);0>h&&(e=!1);
+h>levelHeight&&(e=!1);
+e||(f=1.6)}
+while(!e);
+e=Enemies.instance.spawnEnemy(b.enemy,r,h);
+null!=e&&(0==b.enemy.indexOf("miniboss")&&(containerGameTop.txtHazardInfo.text=
+STR("INCOMING_MINIBOSS"),this.timeToHideHazardInfo=DELAY_HIDE_HAZARD_INFO),b.hasOwnProperty("health")&&Enemies.instance.resetHealth(e,b.health),Enemies.instance.resetHealth(e,e.healthMax*this.getLevelMultiplier()*GetDifficultyMulForEnemyHP(Level.instance.difficulty)),b.hasOwnProperty("totalEnemies")&&b.totalEnemies--)}},updateWaveBosses:function(b,e,f){b.hasOwnProperty("bosses")},spawnBosses:function(b){1==b.bosses.length&&(containerGameTop.bossProgressBar[0].visible=!0,containerGameTop.bossProgressBar[0].x=
+RES_SCREEN_WIDTH2);2==b.bosses.length&&(containerGameTop.bossProgressBar[0].visible=!0,containerGameTop.bossProgressBar[0].x=RES_SCREEN_WIDTH2-170,containerGameTop.bossProgressBar[0].imgBar.displayWidth=containerGameTop.bossProgressBar[0].imgBar.MAX_WIDTH,containerGameTop.bossProgressBar[1].visible=!0,containerGameTop.bossProgressBar[1].x=RES_SCREEN_WIDTH2+170,containerGameTop.bossProgressBar[1].imgBar.displayWidth=containerGameTop.bossProgressBar[1].imgBar.MAX_WIDTH,game.device.os.desktop||(containerGameTop.bossProgressBar[0].x=
+RES_SCREEN_WIDTH2-215,containerGameTop.bossProgressBar[1].x=RES_SCREEN_WIDTH2+125));
+for(var e=0;
+e<b.bosses.length;
+e++){var f=b.bosses[e];"boss_tower"!=f||f.hasOwnProperty("spawnRadius")||(f.spawnRadius=50);
+var h=BossZone.instance.bossZoneWidth/2*.8;
+h-=Phaser.Math.Between(0,.1*h);
+var n=BossZone.instance.bossZoneHeight/2*.8;
+n-=Phaser.Math.Between(0,.1*n);
+var r=Phaser.Math.Between(0,360);
+f.hasOwnProperty("spawnRadius")&&(n=h=f.spawnRadius);
+h=Bosses.instance.spawnBoss(f.type,BossZone.instance.bossZoneCenter.x+
+Math.cos(r)*h,BossZone.instance.bossZoneCenter.y+Math.sin(r)*n);
+h.bossIdx=e;
+SceneGame.instance.textures.list.pak_actors.frames.hasOwnProperty(f.type+"_0.png")?containerGameTop.bossProgressBar[h.bossIdx].imgBarBoss.setFrame(f.type+"_0.png"):containerGameTop.bossProgressBar[h.bossIdx].imgBarBoss.setFrame(f.type+".png");
+f.hasOwnProperty("health")&&Bosses.instance.resetHealth(h,f.health);
+Bosses.instance.resetHealth(h,h.healthMax*this.getLevelMultiplier()*GetDifficultyMulForEnemyHP(Level.instance.difficulty))}},
+updateTreasureSpawn:function(b,e){if(0<this.timeToTreasure)this.timeToTreasure-=e;
+else{this.timeToTreasure=this.data.timeToTreasure;
+e=(SCREEN_HEIGHT2+2*Phaser.Math.Between(-20,20))/Resolution.RESOLUTION_SCALE;
+var f=Phaser.Math.Between(0,360);
+b=Player.instance.x+Math.cos(f)*e;
+e=Player.instance.y+Math.sin(f)*e;
+b<LEVEL_GAP&&(b=LEVEL_GAP);
+b>levelWidth-LEVEL_GAP&&(b=levelWidth-LEVEL_GAP);
+e<LEVEL_TOP&&(e=LEVEL_TOP);
+e>levelHeight-LEVEL_GAP&&(e=levelHeight-LEVEL_GAP);
+Enemies.instance.spawnEnemyAnimated("box",
+b,e)}},updateHazardInfo:function(b,e){0<this.timeToHideHazardInfo&&(this.timeToHideHazardInfo-=e);
+containerGameTop.txtHazardInfo.visible=0<this.timeToHideHazardInfo}};
+Grid=function(b,e){void 0===e&&(e=!0);
+this.init(b,e)};
+Grid.prototype={constructor:Grid,init:function(b,e){void 0===e&&(e=!0);
+this.gridSize=b;
+this.gridSize2=b/2;
+this.gridSize4=b/4;
+this.griRowsShifted=e;
+this.reset()},reset:function(){this.GRID=[]},getGridPosY:function(b){return Math.floor(b/this.gridSize)},getGridPosX:function(b,e){this.griRowsShifted&&(b+=this.gridSize4*(0==e?1:-1));
+return Math.floor(b/this.gridSize)},getGridAddr:function(b,e){e=this.getGridPosY(e);
+return this.getGridPosX(b,e%2)+"_"+e},exist:function(b,e,f){void 0===f&&(f=0);
+b=this.getGridAddr(b,
+e);
+b=this.GRID[b];
+return void 0===b||null==b?!1:b.mass>=f},getElementAt:function(b,e){b=this.getGridAddr(b,e);
+b=this.GRID[b];
+return void 0===b||null==b?null:b},remove:function(b){b=this.getGridAddr(b.x,b.y);
+void 0!==this.GRID[b]&&(this.GRID[b]=null)},add:function(b){var e=this.getGridAddr(b.x,b.y);
+this.GRID[e]=b}};
+var PLAYER_SCALE=.75,Player=new Phaser.Class({Extends:Phaser.GameObjects.Container,initialize:function Player(b,e,f,h){Player.instance=this;
+Phaser.GameObjects.Container.call(this,b.scene,0,0);
+this.create(e,f,h);
+this.createKeyboardControls();
+b.add(this)},onPause:function(){null!=this.getWeaponOrSupplyObj("Forcefield")&&pauseSound(SceneGame.instance,"forcefield")},onResume:function(){null!=this.getWeaponOrSupplyObj("Forcefield")&&resumeSound(SceneGame.instance,"forcefield")},onGameOver:function(){stopSound(SceneGame.instance,
+"forcefield")},reset:function(){this.level=1;
+this.exps=0;
+this.expsToLevelUp=this.getExpsToLevelUp();
+this.timeInvincible=TIME_INVINCIBLE;
+this.weapons=[];
+this.supplies=[];
+this.resetAttribs();
+this.resetHealth();
+this.setPosition(levelWidth/2,levelHeight/2)
