@@ -18,6 +18,11 @@ effective values.
 | `analysis/missions.json` / `missions.txt` | mission matrix, slot generator, save schema, platform calls |
 | `analysis/orig_01…07*.txt` | raw bundle regions (constants, enemies/bosses, levels, skills, weapons, pickups, systems) |
 
+`teardown.json`, `missions.json` and `weapons_summary.json` are the script's
+machine-readable outputs. This repo git-ignores `*.json`, so they stay local —
+rerunning `node analysis/full_teardown.js` recreates them, and the committed
+Markdown/`.txt` extracts above carry the same numbers.
+
 ---
 
 ## 1. Build, resolution, platform
