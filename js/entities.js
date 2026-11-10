@@ -85,11 +85,11 @@
   };
 
   ZH.SHIELD = ZH.SHIELD || {
-    max: 60,         /* force-field window; also the HUD bar width            */
-    force: 60,       /* a shield cell arms the full 60 s force field          */
+    max: 25,         /* force-field window; also the HUD bar width            */
+    force: 25,       /* a shield cell arms a 25 s force field                 */
     hit: 3.0,        /* after a bite or an enemy round                       */
     revive: 3.0,     /* after spending scrap to get back up                  */
-    levelup: 120,    /* a 2-minute force field while choosing a level-up card */
+    levelup: 3.0,    /* a short window while the level-up cards close        */
     dash: 0.35,      /* during a combat roll                                 */
     dashExit: 0.12   /* the instant after the roll ends                      */
   };
@@ -140,7 +140,23 @@
     nearCap: 6,                                   /* live bodies near the hunter */
     hardCap: 22,                                  /* absolute bodies on the field */
     targetAverage: 4,                             /* the medium target, NOT the cap */
-    swarmCeiling: 6                              /* a run must never exceed this */
+    swarmCeiling: 6,                             /* the opening minutes stay quiet */
+    /* ------------------------- the ramp -------------------------
+       A run opens at the medium budget and grows from there: the field cap,
+       the absolute ceiling, the feed interval and the per-wave cap all drift
+       with the clock, so minute 15 has to be fought differently from minute
+       one. Without this the horde stayed identical for 20 minutes and late
+       waves felt like the opening ones with tougher skins. */
+    ramp: [
+      /* the first two minutes hold the medium field the game was tuned for */
+      { at: 0,    near: 6,  hard: 22, feed: 1.00, wave: 1.00 },
+      { at: 120,  near: 6,  hard: 22, feed: 1.00, wave: 1.00 },
+      { at: 240,  near: 10, hard: 34, feed: 0.85, wave: 1.20 },
+      { at: 420,  near: 14, hard: 46, feed: 0.76, wave: 1.40 },
+      { at: 600,  near: 18, hard: 58, feed: 0.68, wave: 1.60 },
+      { at: 900,  near: 23, hard: 74, feed: 0.60, wave: 1.75 },
+      { at: 1200, near: 27, hard: 88, feed: 0.54, wave: 1.90 }
+    ]
   };
 
   /** is the horde currently feeding or resting? (one clock for the whole run) */
@@ -148,6 +164,31 @@
     var s = ZH.HORDE.surge, span = s.spawn + s.rest;
     var t = Math.max(0, clock || 0) % span;
     return { spawning: t < s.spawn, phase: t < s.spawn ? 'surge' : 'lull', t: t, span: span };
+  };
+
+  /** the horde budget at a given second of the run: near cap, absolute cap,
+      feed-interval multiplier and per-wave cap multiplier, linearly blended
+      between the ramp stops (and clamped at both ends) */
+  ZH.hordeBudget = function (seconds) {
+    var ramp = (ZH.HORDE && ZH.HORDE.ramp) || [];
+    var t = Math.max(0, isFinite(seconds) ? seconds : 0);
+    if (!ramp.length) {
+      return { near: ZH.HORDE.nearCap, hard: ZH.HORDE.hardCap, feed: 1, wave: 1 };
+    }
+    function copy(s) { return { near: s.near, hard: s.hard, feed: s.feed, wave: s.wave }; }
+    if (t <= ramp[0].at) return copy(ramp[0]);
+    for (var i = 1; i < ramp.length; i++) {
+      var a = ramp[i - 1], b = ramp[i];
+      if (t > b.at) continue;
+      var k = (t - a.at) / Math.max(1, b.at - a.at);
+      return {
+        near: a.near + (b.near - a.near) * k,
+        hard: a.hard + (b.hard - a.hard) * k,
+        feed: a.feed + (b.feed - a.feed) * k,
+        wave: a.wave + (b.wave - a.wave) * k
+      };
+    }
+    return copy(ramp[ramp.length - 1]);
   };
 
   /** advance the protection clock by dt (kept separate so it is testable) */
@@ -339,6 +380,26 @@
     if (ZH.onDamage) ZH.onDamage(world, z, dmg);
     z.hp -= dmg;
     z.hurtFlash = 0.2;
+    /* impact impulse: a body that takes a hit moves with it, so shots read as
+       force and not just as a number popping over a sprite. Bosses shrug it
+       off; a knockback is capped so nothing is thrown across the street. */
+    var hp = world.player;
+    if (hp && !z.boss && !z.stationary) {
+      var kAng = Math.atan2(z.y - hp.y, z.x - hp.x);
+      var kB = Math.min(160, 34 + dmg * 1.4);
+      z.kx = (z.kx || 0) + Math.cos(kAng) * kB;
+      z.ky = (z.ky || 0) + Math.sin(kAng) * kB;
+      var kM = Math.hypot(z.kx, z.ky);
+      if (kM > 240) { z.kx = z.kx / kM * 240; z.ky = z.ky / kM * 240; }
+    }
+    /* a fresh splash under the body now and then: the street keeps a record of
+       the fight between the bigger death pools */
+    if (world.decals && world.decals.length < 180 && Math.random() < 0.16) {
+      world.decals.push({
+        x: z.x + rand(-6, 6), y: z.y + rand(-2, 8),
+        r: rand(2.4, 5.2), rot: rand(0, TAU), alpha: 0.3
+      });
+    }
     /* survivor power: burn, chain arcs and splash land after the hit */
     if (ZH.Powers) ZH.Powers.onHit(world, z, dmg);
     /* life discharge: a share of every hit flows back into the hunter, with
@@ -460,6 +521,11 @@
     world.particles.push({
       x: x, y: y, vx: 0, vy: 0, life: 0.35, max: 0.35,
       size: radius * 0.6, color: opts.color || 'rgba(255,140,60,0.5)'
+    });
+    /* expanding shockwave ring: the blast needs an edge, not only a blob */
+    world.particles.push({
+      x: x, y: y, vx: 0, vy: 0, life: 0.3, max: 0.3,
+      size: radius, ring: true, color: opts.color || 'rgba(255,170,90,0.8)'
     });
   }
 
@@ -970,6 +1036,15 @@
         size: def.behaviour === 'rocket' ? 13 : def.behaviour === 'stream' ? 5 : 8,
         color: 'rgba(255,232,170,0.92)'
       });
+      /* the muzzle throws light on the street for a frame or two: additive,
+         not another opaque dot */
+      world.particles.push({
+        x: mx, y: my, vx: 0, vy: 0, life: 0.1, max: 0.1,
+        size: def.behaviour === 'rocket' ? 64 : def.behaviour === 'stream' ? 22 : 36,
+        blend: 'lighter', color: 'rgba(255,206,132,0.30)'
+      });
+      /* and the hunter is pushed back by it */
+      p.recoil = Math.max(p.recoil || 0, def.behaviour === 'rocket' ? 0.18 : 0.1);
       world.particles.push({
         x: mx, y: my, vx: 0, vy: 0, life: 0.16, max: 0.16,
         size: def.behaviour === 'rocket' ? 26 : 17,
@@ -991,6 +1066,8 @@
   /* ------------------------------ simulation ------------------------------ */
   function updateSurvivor(p, dt, world) {
     if (p.dead) { p.deadT += dt; return; }
+    /* recoil kick from the last shot, purely cosmetic: the rig leans back */
+    if (p.recoil) p.recoil = Math.max(0, p.recoil - dt * 1.4);
 
     var mx = p.moveX, my = p.moveY;
     var len = Math.hypot(mx, my);
@@ -1064,6 +1141,16 @@
       z.hurtFlash = Math.max(0, z.hurtFlash - dt * 5);
       z.walkPhase += dt * 4;
 
+      /* knockback: the impulse from the last hit decays fast, so a burst of
+         rounds staggers a walker without launching it down the street */
+      if (z.kx || z.ky) {
+        z.x += z.kx * dt;
+        z.y += z.ky * dt;
+        var kd = Math.pow(0.0009, dt);
+        z.kx *= kd; z.ky *= kd;
+        if (Math.abs(z.kx) < 1 && Math.abs(z.ky) < 1) { z.kx = 0; z.ky = 0; }
+      }
+
       var dx = p.x - z.x;
       var dy = p.y - z.y;
       var dist = Math.hypot(dx, dy) || 1;
@@ -1104,6 +1191,7 @@
               ZH.openShield(p, ZH.SHIELD.hit);   /* force field: one window */
               if (p.hp <= 0) { p.hp = 0; p.dead = true; }
               world.shake = Math.max(world.shake || 0, 5);
+              world.hurtT = 0.3;
               if (ZH.Anim && ZH.Anim.hurt) ZH.Anim.hurt();
             }
           }
@@ -1291,6 +1379,7 @@
               ZH.openShield(p, ZH.SHIELD.hit);   /* force field: one window */
               if (p.hp <= 0) { p.hp = 0; p.dead = true; }
               world.shake = Math.max(world.shake || 0, 5);
+              world.hurtT = 0.3;
               if (ZH.Anim && ZH.Anim.hurt) ZH.Anim.hurt();
             }
           }

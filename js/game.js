@@ -233,6 +233,7 @@ window.ZH = window.ZH || {};
           p.hp = Math.max(0, p.hp - 14);
           if (ZH.openShield) ZH.openShield(p, ZH.SHIELD.hit);
           this.shake = Math.max(this.shake, 9);
+          this.hurtT = 0.3;
           this.floaters.push({
             text: '-14', x: p.x, y: p.y - 46, vy: -46,
             life: 0.8, max: 0.8, size: 16, color: '#ff6b6b'
@@ -369,6 +370,11 @@ window.ZH = window.ZH || {};
     this.hordeClock = (this.hordeClock || 0) + dt;
     var feeding = ZH.hordeWindow(this.hordeClock).spawning;
     var t = this.elapsed; // stage data uses SECONDS for startTime/duration
+    /* the budget drifts with the clock: a late wave is fed faster and is
+       allowed more bodies at once than the opening one (ZH.HORDE.ramp) */
+    var budget = ZH.hordeBudget ? ZH.hordeBudget(this.elapsed) : null;
+    this.hordeNear = budget ? budget.near : ZH.HORDE.nearCap;
+    this.hordeHard = budget ? budget.hard : ZH.HORDE.hardCap;
 
     // The authored waves cover only the opening ~138s, but a stage is won
     // at 1200s (the original runs concurrent waves the whole time). Once
@@ -390,7 +396,12 @@ window.ZH = window.ZH || {};
           /* count only the ones near the hunter: in a 6144 px open city a
              fast survivor leaves the wave behind, and the screen would empty
              out even though `max` zombies are alive somewhere else */
-          if (feeding && !capped && this.waveAliveNear(null, 900) < Math.min(wave.max || 20, ZH.HORDE.nearCap)) {
+          /* the wave's own cap grows with the run too, but never past the
+             field cap: more waves stacked AND more bodies per wave */
+          var waveCap = Math.min(
+            Math.round((wave.max || 20) * (budget ? budget.wave : 1)),
+            this.hordeNear);
+          if (feeding && !capped && this.waveAliveNear(null, 900) < waveCap) {
             wave.spawned = (wave.spawned || 0) + 1;
             this.spawnWaveEnemies(wave);
           }
@@ -418,7 +429,8 @@ window.ZH = window.ZH || {};
           wave.waveT = 0;
           wave.spawned = 0;
           var interval = ZH.HORDE.interval[wave.freq] || ZH.HORDE.interval.LOW;
-          wave.interval = interval / (this.difficultyMul || 1);
+          /* ramp cadence first, then the difficulty's own feed rate */
+          wave.interval = interval * (budget ? budget.feed : 1) / (this.difficultyMul || 1);
           // duration is already in seconds in the stage data
         }
       }
@@ -494,7 +506,7 @@ window.ZH = window.ZH || {};
   };
 
   Game.spawnWaveEnemies = function (wave) {
-    if (this.zombies.length > ZH.HORDE.hardCap) return;
+    if (this.zombies.length > (this.hordeHard || ZH.HORDE.hardCap)) return;
     /* spawn just past the edge of the view, like the original — spawning at a
        fixed 600 px left the screen empty whenever the hunter moved */
     var half = Math.max(this.W, this.H) / (2 * (this.camera.zoom || 1));
@@ -519,6 +531,16 @@ window.ZH = window.ZH || {};
       var b = ZH.createBoss(bosses[i].type, pos.x, pos.y, this.diff,
         (this.stage && this.stage.multiplier) || 1);
       if (b) this.zombies.push(b);
+    }
+    /* a boss never walks in alone: the longer the run, the larger its escort,
+       so a boss zone is a fight and not a duel in an empty street */
+    var escort = 2 + Math.min(8, Math.floor((this.elapsed || 0) / 150));
+    for (var e = 0; e < escort; e++) {
+      if (this.zombies.length >= (this.hordeHard || ZH.HORDE.hardCap)) break;
+      var ep = this.findSpawnPoint(720);
+      var ez = ZH.createEnemy(e % 3 === 0 ? 'zombieB' : 'zombieA', ep.x, ep.y,
+        (this.stage && this.stage.multiplier) || 1, this.diff, this.waveCycle || 0);
+      if (ez) this.zombies.push(ez);
     }
   };
 
@@ -905,6 +927,8 @@ window.ZH = window.ZH || {};
     }
     if (this.state !== 'playing') return;
     this.t += dt;
+    /* the red edge pulse that answers a hit fades on its own */
+    this.hurtT = Math.max(0, (this.hurtT || 0) - dt);
     /* a live boss zone freezes the level clock (original behaviour) */
     if (!this.bossZoneActive) this.elapsed += dt;
 
@@ -1345,8 +1369,12 @@ window.ZH = window.ZH || {};
           ctx.stroke();
           ctx.restore();
         }
+        /* the last shot still pushes the rig back a little */
+        var kick = (e.recoil || 0) * 11;
+        var kAng = e.aimDir || 0;
         ZH.Rig.draw(ctx, {
-          x: e.x, y: e.y - (e.jetLift || 0), s: 1.15, kind: 'hunter', variant: 'hunter',
+          x: e.x - Math.cos(kAng) * kick, y: e.y - (e.jetLift || 0) - Math.sin(kAng) * kick,
+          s: 1.15, kind: 'hunter', variant: 'hunter',
           facing: e.facing, aim: e.aimDir || 0, weapon: e.primaryWeapon,
           alpha: blink,
           palette: ZH.Rig.paletteFor ? ZH.Rig.paletteFor(e.character || 'hunter') : null,
@@ -1394,12 +1422,27 @@ window.ZH = window.ZH || {};
       ctx.beginPath(); ctx.arc(ebl.x, ebl.y, 3.4, 0, TAU); ctx.fill();
     }
 
-    // particles
+    // particles — additive sparks, expanding shockwave rings and soft puffs
     for (var pi = 0; pi < this.particles.length; pi++) {
       var p2 = this.particles[pi];
-      ctx.globalAlpha = p2.life / p2.max;
+      var al = Math.max(0, Math.min(1, p2.life / (p2.max || 1)));
+      if (p2.ring) {
+        /* blast edge: grows as it fades, so a rocket reads as a detonation */
+        ctx.save();
+        ctx.globalAlpha = al * 0.9;
+        ctx.strokeStyle = p2.color || 'rgba(255,170,90,0.8)';
+        ctx.lineWidth = 1.4 + al * 4;
+        ctx.beginPath();
+        ctx.arc(p2.x, p2.y, Math.max(2, (p2.size || 40) * (1 - al)), 0, TAU);
+        ctx.stroke();
+        ctx.restore();
+        continue;
+      }
+      if (p2.blend) ctx.globalCompositeOperation = p2.blend;
+      ctx.globalAlpha = al;
       ctx.fillStyle = p2.color;
       ctx.beginPath(); ctx.arc(p2.x, p2.y, p2.size, 0, TAU); ctx.fill();
+      if (p2.blend) ctx.globalCompositeOperation = 'source-over';
     }
     ctx.globalAlpha = 1;
 
@@ -1493,6 +1536,29 @@ window.ZH = window.ZH || {};
     }
     ctx.fillStyle = this._vig;
     ctx.fillRect(0, 0, this.W, this.H);
+
+    /* damage frame: a red edge pulse on a hit, and a pulsing warning while the
+       hunter is close to death — the screen says what the HP bar says */
+    var hpFrac = this.player.maxHp ? Math.max(0, this.player.hp) / this.player.maxHp : 1;
+    var low = hpFrac < 0.32 ? 1 - hpFrac / 0.32 : 0;
+    var hurt = Math.max(0, Math.min(1, (this.hurtT || 0) / 0.3));
+    var danger = Math.max(hurt, low * (0.5 + 0.5 * Math.sin(t * 7)));
+    if (danger > 0.02) {
+      if (!this._hurtVig || this._hurtW !== this.W || this._hurtH !== this.H) {
+        var hv = ctx.createRadialGradient(
+          this.W / 2, this.H / 2, Math.min(this.W, this.H) * 0.26,
+          this.W / 2, this.H / 2, Math.max(this.W, this.H) * 0.7);
+        hv.addColorStop(0, 'rgba(170,20,20,0)');
+        hv.addColorStop(0.72, 'rgba(170,20,20,0.28)');
+        hv.addColorStop(1, 'rgba(150,12,12,0.72)');
+        this._hurtVig = hv; this._hurtW = this.W; this._hurtH = this.H;
+      }
+      ctx.save();
+      ctx.globalAlpha = danger;
+      ctx.fillStyle = this._hurtVig;
+      ctx.fillRect(0, 0, this.W, this.H);
+      ctx.restore();
+    }
   };
 
   /* tints per weapon family: a shotgun blast should not look like a laser */
@@ -1853,9 +1919,9 @@ window.ZH = window.ZH || {};
          (about a second) between bursts, which on screen reads as the gun
          having stopped. Close threats earn a faster trigger, never faster
          than 0.22 s, while the target lock keeps the rounds on one body. */
-      if (st.timer > 0.22 && def.behaviour === 'target' && this.zombies &&
+      if (st.timer > 0.18 && def.behaviour === 'target' && this.zombies &&
           ZH.acquireTarget && ZH.acquireTarget(this, p, 300)) {
-        st.timer = 0.22;
+        st.timer = 0.18;
       }
       if (st.timer > 0) continue;
 

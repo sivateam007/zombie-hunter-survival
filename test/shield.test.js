@@ -32,13 +32,14 @@ assert.strictEqual(p.shieldT, 3, 'a shorter trigger cannot cut a live window');
 assert.strictEqual(p.invuln, 3, 'the legacy mirror follows the one clock');
 assert.strictEqual(ZH.shielded(p), true);
 
-/* the shield cell now arms the full 60 s force field and disappears at zero */
-assert.strictEqual(ZH.SHIELD.force, 60, 'force field is a 60 s window');
+/* the shield cell arms the (shorter now) force field and disappears at zero */
+assert.strictEqual(ZH.SHIELD.force, 25, 'force field is a 25 s window');
+assert.ok(ZH.SHIELD.levelup <= 5, 'the level-up window is a short buffer, not a 2-minute field');
 const field = { shieldT: 0, shieldMax: 0 };
 ZH.openShield(field, ZH.SHIELD.force);
-assert.strictEqual(field.shieldT, 60, 'force field starts at 60 s');
-for (let i = 0; i < 61; i++) ZH.tickShield(field, 1);
-assert.strictEqual(field.shieldT, 0, 'force field is gone after 60 s');
+assert.strictEqual(field.shieldT, 25, 'force field starts at 25 s');
+for (let i = 0; i < 26; i++) ZH.tickShield(field, 1);
+assert.strictEqual(field.shieldT, 0, 'force field is gone after 25 s');
 assert.strictEqual(ZH.shielded(field), false, 'no protection after the force field ends');
 
 /* ---------------- the clock drains to exactly zero ---------------- */
