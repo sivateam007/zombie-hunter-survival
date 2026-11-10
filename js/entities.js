@@ -484,6 +484,31 @@
       if (world.player) world.player.kills = (world.player.kills || 0) + 1;
       world.score = (world.score || 0) + 10;
       if (ZH.Powers) ZH.Powers.onKill(world, z);
+      /* deadshot: toxic and slime deaths leave a lingering acid pool */
+      var ACID = {
+        toxic1: [5, 2], toxic2: [7, 2], slime1: [3, 1], slime2: [5, 1],
+        miniboss_toxic1: [7, 3], miniboss_toxic2: [7, 3]
+      };
+      if (ACID[z.type]) {
+        world.hazards = world.hazards || [];
+        if (world.hazards.length < 40) {
+          world.hazards.push({
+            x: z.x, y: z.y, r: 42,
+            dmg: ACID[z.type][0], life: ACID[z.type][1], tick: 0
+          });
+        }
+      }
+      /* deadspawn: slime2 breaks into two slime1, slug into two slime2 */
+      var SPLIT = { slime2: 'slime1', slug: 'slime2' };
+      if (SPLIT[z.type] && world.zombies && world.zombies.length < 160) {
+        for (var spn = 0; spn < 2; spn++) {
+          var child = createEnemy(SPLIT[z.type],
+            z.x + rand(-14, 14), z.y + rand(-10, 10),
+            (world.stage && world.stage.multiplier) || 1,
+            world.diff, world.waveCycle || 0);
+          if (child) { child.spawnT = 0.25; world.zombies.push(child); }
+        }
+      }
       // exp gems are the main drop; big enemies always leave scrap too
       world.pickups.push({ type: 'exp', x: z.x, y: z.y, life: 12, value: z.boss ? 40 : 10 });
       /* a dark pool under the body: the street remembers the fight */
@@ -520,13 +545,20 @@
       var DEADDROP = {
         miniboss_builder: 'magnet', miniboss_fighter: 'coin',
         miniboss_spider: 'treasure', miniboss_reptile: 'treasure',
-        miniboss_soldier: 'bomb', miniboss_tower: 'bomb',
+        miniboss_soldier: 'bomb', miniboss_tower: 'coin',
         miniboss_toxic1: 'medikit', miniboss_toxic2: 'coin'
+      };
+      /* exact original payouts: tower 1,500 · toxic2 500 · fighter 1,000;
+         chests carry their card count (reptile 1, spider 3) */
+      var DROP_DATA = {
+        miniboss_tower: 1500, miniboss_toxic2: 500, miniboss_fighter: 1000,
+        miniboss_spider: 3, miniboss_reptile: 1
       };
       if (z.miniboss && DEADDROP[z.type]) {
         var drop = DEADDROP[z.type];
         var dropPk = { type: drop, x: z.x, y: z.y - 8, life: 45 };
-        if (drop === 'coin') dropPk.value = 1000;
+        if (drop === 'coin') dropPk.value = DROP_DATA[z.type] || 1000;
+        if (drop === 'treasure') dropPk.value = DROP_DATA[z.type] || 1;
         if (drop === 'medikit') dropPk.value = 60;
         world.pickups.push(dropPk);
       }
@@ -537,6 +569,8 @@
           world.pickups.push({ type: 'bomb', x: z.x, y: z.y - 6, life: 40 });
         } else if (rollDrop < 0.014) {
           world.pickups.push({ type: 'medikit', x: z.x, y: z.y - 6, life: 40, value: 45 });
+        } else if (rollDrop < 0.022) {
+          world.pickups.push({ type: 'food', x: z.x, y: z.y - 6, life: 40, value: 100 });
         }
       }
       /* supplies drop into the world as real items, so the catalogue (kevlar,
@@ -1131,6 +1165,15 @@
       p.y += my * speed * dt;
       p.walkPhase += dt * 8;
     }
+    /* a live boss zone is a sealed arena: the hunter stays inside the rect */
+    if (world.bossZoneActive && world.bossZoneRect) {
+      var br = world.bossZoneRect;
+      if (p.x < br.x0) p.x = br.x0;
+      if (p.x > br.x1) p.x = br.x1;
+      if (p.y < br.y0) p.y = br.y0;
+      if (p.y > br.y1) p.y = br.y1;
+    }
+
     /* open world: no walls — the city keeps generating in every direction */
 
     /* one clock: the force field drains, the legacy mirror follows it */
@@ -1507,9 +1550,9 @@
           cash = cash + cash * (a.cash_bonus || 0) / 100;
           world.coins = (world.coins || 0) + Math.round(cash);
         } else if (pk.type === 'treasure') {
-          // the original drops a treasure chest that opens the skill slots
+          // the original drops a treasure chest that opens 1/3/5 skill cards
           world.coins = (world.coins || 0) + 500;
-          if (world.ui && world.ui.showLevelUp) world.ui.showLevelUp();
+          if (world.ui && world.ui.showLevelUp) world.ui.showLevelUp(pk.value || 3);
         } else if (pk.type === 'shield') {
           var armed = ZH.openShield(p, pk.value || ZH.SHIELD.force);
           if (armed >= 10 && ZH.Anim && ZH.Anim.toast) {
@@ -1517,17 +1560,28 @@
           }
         } else if (pk.type === 'medikit') {
           p.hp = Math.min(p.maxHp, p.hp + (pk.value || 50));
+        } else if (pk.type === 'food') {
+          /* the original's BONUS_FOOD: a flat +100 HP */
+          p.hp = Math.min(p.maxHp, p.hp + (pk.value || 100));
+          if (world.floaters && world.floaters.length < 70) {
+            world.floaters.push({
+              text: '+' + (pk.value || 100), x: p.x, y: p.y - 46, vy: -44,
+              life: 0.8, max: 0.8, size: 15, color: '#9be15d'
+            });
+          }
         } else if (pk.type === 'bomb') {
           /* screen clear (the original's BONUS_BOMB): every normal body on
              the field dies, bosses only take a bite of their bar */
           world.bombFlash = 0.42;
           world.shake = Math.max(world.shake || 0, 13);
+          /* the original's BOMB_BONUS: 10 x attack inside a 900 px radius */
+          var bombDmg = 10 * ((world.player && world.player.attack) || 10);
           var cleared = 0;
           for (var bz = world.zombies.length - 1; bz >= 0; bz--) {
             var ze = world.zombies[bz];
             if (ze.dead) continue;
-            if (ze.boss) { damageEnemy(world, ze, (ze.maxHp || 0) * 0.08); continue; }
-            damageEnemy(world, ze, (ze.maxHp || 0) + 1);
+            if (Math.hypot(ze.x - pk.x, ze.y - pk.y) > 900) continue;
+            damageEnemy(world, ze, bombDmg);
             cleared++;
           }
           if (world.particles && world.particles.length < 240) {

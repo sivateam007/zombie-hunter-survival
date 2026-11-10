@@ -160,16 +160,48 @@ ZH.WEAPON_ORDER.forEach((id) => {
 
 /* ---------- 10. minibosses keep the original deaddrop table ---------- */
 {
-  const drops = { miniboss_soldier: 'bomb', miniboss_tower: 'bomb', miniboss_builder: 'magnet',
-    miniboss_toxic1: 'medikit', miniboss_fighter: 'coin', miniboss_spider: 'treasure' };
+  /* the original: tower pays 1,500 coins, toxic2 500, fighter 1,000;
+     soldier drops a bomb, builder a magnet, toxic1 a medikit; the reptiles
+     and spiders leave 1- and 3-card chests. */
+  const drops = {
+    miniboss_soldier: 'bomb', miniboss_tower: 'coin', miniboss_builder: 'magnet',
+    miniboss_toxic1: 'medikit', miniboss_toxic2: 'coin', miniboss_fighter: 'coin',
+    miniboss_spider: 'treasure', miniboss_reptile: 'treasure'
+  };
+  const coinValue = { miniboss_tower: 1500, miniboss_toxic2: 500, miniboss_fighter: 1000 };
   Object.keys(drops).forEach((type) => {
     const w = makeWorld();
     const mb = ZH.createEnemy(type, w.player.x + 300, w.player.y, 1);
     w.zombies.push(mb);
     ZH.damageEnemy(w, mb, mb.maxHp + 1);
-    assert.ok(w.pickups.some((p) => p.type === drops[type]),
-      type + ' drops a ' + drops[type]);
+    const matches = w.pickups.filter((p) => p.type === drops[type]);
+    assert.ok(matches.length, type + ' drops a ' + drops[type]);
+    if (coinValue[type]) {
+      assert.ok(matches.some((p) => p.value === coinValue[type]),
+        type + ' pays the original ' + coinValue[type] + ' coins');
+    }
   });
+}
+
+/* ---------- 10b. deadshot acid and deadspawn splits ---------- */
+{
+  const w = makeWorld();
+  const z = ZH.createEnemy('slime2', w.player.x + 40, w.player.y, 1);
+  w.zombies.push(z);
+  ZH.damageEnemy(w, z, z.maxHp + 1);
+  assert.strictEqual(w.hazards.length, 1, 'a slime2 death leaves an acid pool');
+  assert.strictEqual(
+    w.zombies.filter((c) => c !== z && c.type === 'slime1').length, 2,
+    'a slime2 splits into two slime1'
+  );
+}
+{
+  const w = makeWorld();
+  w.player.hp = 10;
+  w.player.maxHp = 200;          /* headroom, or the heal is capped at 100 */
+  w.pickups.push({ type: 'food', x: w.player.x, y: w.player.y, life: 5, value: 100 });
+  ZH.updatePickups(w.pickups, 1 / 60, w);
+  assert.strictEqual(w.player.hp, 110, 'food heals a flat 100 HP');
 }
 
 /* ---------- 11. the horde separates instead of stacking ---------- */

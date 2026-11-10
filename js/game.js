@@ -135,6 +135,8 @@ window.ZH = window.ZH || {};
     this.state = 'playing';
     if (document.body) document.body.classList.add('in-game');
     ZH.Audio.unlock();
+    /* the music bus and startMusic() existed but nothing ever called them */
+    if (ZH.Audio.startMusic) ZH.Audio.startMusic();
     if (this.ui) { this.ui.hideScreens && this.ui.hideScreens(); this.ui.resetHud && this.ui.resetHud(); }
     this.levelUpPending = false;
     this.bossZoneActive = false;
@@ -532,7 +534,18 @@ window.ZH = window.ZH || {};
   Game.activateBossZone = function (wave) {
     this.bossZoneActive = true;
     this.bossZoneT = 0;
-    ZH.Anim.banner('BOSS APPROACHING', 'Get ready!');
+    /* the arena is a real rect, as in the original: the hunter is sealed in
+       for the fight instead of being able to walk out of the boss zone */
+    var bw = (wave.bossZone && wave.bossZone.width) || 1200;
+    var bh = (wave.bossZone && wave.bossZone.height) || 1200;
+    var pc = this.player;
+    if (pc) {
+      this.bossZoneRect = {
+        x0: pc.x - bw / 2, x1: pc.x + bw / 2,
+        y0: pc.y - bh / 2, y1: pc.y + bh / 2, w: bw, h: bh
+      };
+    }
+    ZH.Anim.banner('BOSS APPROACHING', 'The zone is sealed');
     if (ZH.Anim && ZH.Anim.flash) ZH.Anim.flash('214,42,32', { peak: 1, duration: 620 });
     var bosses = wave.bosses || [];
     for (var i = 0; i < bosses.length; i++) {
@@ -994,6 +1007,13 @@ window.ZH = window.ZH || {};
         this.lastTs = performance.now();
       }
     }
+    if (this.state === 'victory') {
+      /* the original's DELAY_GAME_WON: a 5 s beat before the results card */
+      this.t += dt;
+      this.victoryT = Math.max(0, (this.victoryT || 0) - dt);
+      if (this.victoryT <= 0) this.finishStage(true);
+      return;
+    }
     if (this.state !== 'playing') return;
     this.t += dt;
     /* the red edge pulse that answers a hit fades on its own */
@@ -1067,6 +1087,7 @@ window.ZH = window.ZH || {};
       if (!anyBoss || this.bossZoneT > 120) {
         this.bossZoneActive = false;
         this.bossZoneT = 0;
+        this.bossZoneRect = null;
         if (this.ui && ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('ZONE CLEAR', 'The horde resumes');
       }
     }
@@ -1100,7 +1121,12 @@ window.ZH = window.ZH || {};
 
     // check win (TIME_LEVEL_COMPLETED = 1,200,000 ms)
     if (this.elapsed >= (ZH.TIME_LEVEL_COMPLETED || 1200) && !this.bossZoneActive) {
-      this.finishStage(true);
+      if (!this.victoryT) {
+        this.victoryT = 5;
+        this.state = 'victory';
+        if (ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('ZONE CLEARED', 'You survived 20 minutes');
+        if (ZH.Audio) ZH.Audio.play('win');
+      }
       return;
     }
 
@@ -1348,6 +1374,16 @@ window.ZH = window.ZH || {};
         ctx.fillStyle = '#e04b4b';
         ctx.fillRect(-2.5, -6, 5, 12);
         ctx.fillRect(-6, -2.5, 12, 5);
+      } else if (pk.type === 'food') {
+        var fg = ctx.createRadialGradient(0, 0, 3, 0, 0, 30);
+        fg.addColorStop(0, 'rgba(155,225,93,0.35)');
+        fg.addColorStop(1, 'rgba(155,225,93,0)');
+        ctx.fillStyle = fg;
+        ctx.beginPath(); ctx.arc(0, 0, 30, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#9be15d';
+        ctx.beginPath(); ctx.arc(0, 4, 9, 0, TAU); ctx.fill();
+        ctx.strokeStyle = '#5f8f38'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, -6); ctx.lineTo(4, -14); ctx.stroke();
       } else if (pk.type === 'item') {
         var look = ZH.itemLook ? ZH.itemLook(pk.itemId) : ['?', '#ccc'];
         var ig = ctx.createRadialGradient(0, 0, 3, 0, 0, 34);

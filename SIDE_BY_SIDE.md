@@ -13,7 +13,7 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Feature | GameSnacks | Ours | Status | Check 1 (original) | Check 2 (ours) |
 |---|---|---|---|---|---|
 | Run length | 1,200,000 ms | `ZH.TIME_LEVEL_COMPLETED = 1200` | ✅ | `TIME_LEVEL_COMPLETED` | `js/game.js` win gate ~line 1101 |
-| Victory hold | 5,000 ms before results | results immediately | ❌ | `DELAY_GAME_WON` | `Game.finishStage()` called inline; no delay |
+| Victory hold | 5,000 ms before results | 5 s `victory` state, then results | ✅ | `DELAY_GAME_WON` | `game.js` `victoryT`, banner + win sting |
 | Boss warning | 3 s banner | 3 s `WARNING` banner + flash | ✅ | `DELAY_HIDE_HAZARD_INFO=3000` | `game.js` ~413 `wave.startTime - 3` |
 | Post-hit i-frames | 3 s | shield timeline, 3 s `levelup`/`hit` | ✅ | `TIME_INVINCIBLE=3000` | `ZH.SHIELD` {hit:3} |
 | Continues | 2,500×n, max 2 | same | ✅ | `getPriceForContinue`, `MAX_CONTINUES=2` | `ui.js:492` comment + `showContinue` |
@@ -81,12 +81,12 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Assault2 | −20/0/+20° fan | spread fan | ✅ | shots array | enemy fire |
 | Miniboss soldier | 8-way ring | 8-way ring? | 🟡 | 8 shot entries | single fan in code — verify per-type |
 | Miniboss tower | 8-way @450 ms cd | cd 0.45, one aimed shot | 🟡 | shots array | `BOSS/ENEMY_TYPES` table |
-| Acid on death | 6 types, 1–3 s pools | none | ❌ | `deadshot` blocks | no `acid`/`hazard` code |
-| Corpse split | slime2→2 slime1, slug→2 slime2 | none | ❌ | `deadspawn` | no split code |
+| Acid on death | 6 types, 1–3 s pools | acid pools (3/5/7 dmg) via `world.hazards` | ✅ | `deadshot` blocks | `damageEnemy` + hazard tick |
+| Corpse split | slime2→2 slime1, slug→2 slime2 | implemented on death | ✅ | `deadspawn` | 2 children, 0.25 s spawn delay |
 | Manager briefcase | destroyable 10-dmg projectile | plain melee/ranged body | ❌ | `deadshot{frame:shot_briefcase}` | no briefcase |
 | Mass shove | mass 1/2/5 pushes hunter | separation only | ❌ | `mass` values | `entities.js` separation loop |
 | Miniboss HP | 2500–6000 | 3000–6000 (toxics inflated) | 🟡 | table | `ENEMY_TYPES` |
-| Miniboss drops | tower→1500 coin, toxic2→500 coin, spider→3-card chest | tower→**bomb**, toxic2→**1000 coin**, chest without card count | 🟡 | `deaddrop` | `DEADDROP` map |
+| Miniboss drops | tower→1500 coin, toxic2→500 coin, spider→3-card chest | tower→1500, toxic2→500, spider→3-card chest | ✅ | `deaddrop` | `DROP_DATA` map |
 | Static turrets | yes | yes | ✅ | `static:!0` | table |
 
 ## 6. Bosses and boss zones
@@ -103,7 +103,7 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Dragon stream | 10 shots @350 ms | none | ❌ | shots with delays | boss fire code |
 | Spider egg mortar | r190, 20 dmg | none | ❌ | ATTACK steps | no grenade AI |
 | Boss-zone **data** | rect 1000–3072 px | present, same sizes, 2 bosses in S4–S8 | ✅ | level JSON | `levels.js` + runtime |
-| Boss-zone **enforcement** | fence, player confined, kill all mobs | none; adds escort instead | ❌ | `BossZone` collision | `activateBossZone` |
+| Boss-zone **enforcement** | fence, player confined, kill all mobs | player clamped in the rect; no fence art or kill-all | 🟡 | `BossZone` collision | `bossZoneRect` in `updateSurvivor` |
 | Per-boss HP bars | one per boss | single bar | 🟡 | HUD | `pushHud` single boss |
 
 ## 7. Stages and waves
@@ -126,11 +126,11 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 |---|---|---|---|---|---|
 | Coin faces | 100/300/500/1000/1500 | `value` 5 default, gifts 250–800 | 🟡 | coin sprites/data | drop code |
 | Box drop table | coin15/coin×3 20/pile15/pouch10/magnet10/medkit25/bomb5 | rare 0.4 % bomb, 1 % medikit | 🟡 | `BOMB_*` table | `entities.js` drops |
-| Bomb effect | 10×attack in 900 px | kills all normal bodies, 8 % boss | 🟡 stronger | `BOMB_BONUS_RADIUS` | bomb branch |
+| Bomb effect | 10×attack in 900 px | 10×attack in 900 px, bosses included | ✅ | `BOMB_BONUS_RADIUS` | bomb branch |
 | Magnet | pulls **gems only** | vacuums every drop | 🟡 | pickup code | `pk.pulling` loop |
-| Food | heals 100 | none | ❌ | `BONUS_FOOD` | no food type |
+| Food | heals 100 | food drop heals 100 | ✅ | `BONUS_FOOD` | pickup branch + render |
 | Medkit | heals `firstaid` | heals 45/60 | 🟡 | pickup code | values |
-| Treasure cards | 1/3/5 cards | always 3 | ❌ | `ShowSkillSlots(data)` | `showLevelUp()` no args |
+| Treasure cards | 1/3/5 cards | 1/3/5 supported; drops carry the count | 🟡 | `ShowSkillSlots(data)` | `showLevelUp(count)`; reroll still shared |
 | Chest reroll | 1,500×(n+1), max 3 | shared 500×n, max 5 | ❌ | `MAX_CHESTS_REROLLS` | `lu-reroll` |
 | Level-up reroll | 500×(n+1) max 5 | same | ✅ | price helper | `ui.js` |
 | Shield cell | none | 25 s force field | ➕ | — | `ZH.SHIELD` |
@@ -151,7 +151,7 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 
 | Feature | GameSnacks | Ours | Status | Check 1 | Check 2 |
 |---|---|---|---|---|---|
-| Music beds | 3 tracks, per-track volume | music bus + `startMusic()` defined, **never called** | ❌ effectively | `music_menu/ingame/boss` | `grep startMusic` = definition only |
+| Music beds | 3 tracks, per-track volume | one drone/wind bed, now started at stage start | ✅/🟡 | `music_menu/ingame/boss` | `startStage` calls `startMusic()` |
 | Weapon SFX | 14 keys | per-weapon synth | ✅ | sound list | `audio.js` |
 | Pickup SFX | coin/medkit/magnet/exp | same | ✅ | sound list | `audio.js` |
 | Hit feedback | flash + blood | flash, knockback, numbers, decals | ✅/➕ | source | `entities.js` |
@@ -189,3 +189,23 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
   coins) and our toxic2 drops 1,000 coins (original: 500).
 - Earlier claim "26 enemy types" was wrong; the original has **28 combat types**
   plus box/treasure, which we match.
+
+## 13. Implemented in this pass
+
+| Change | Where | Verified by |
+|---|---|---|
+| Miniboss payouts corrected (tower 1,500 · toxic2 500 · fighter 1,000; reptile 1-card, spider 3-card chest) | `entities.js` `DEADDROP`/`DROP_DATA` | `sim.test.js` §10 asserts the exact values |
+| Acid `deadshot` pools for toxic1/2, slime1/2 and both miniboss toxins (3/5/7 dmg, 1–3 s) | `entities.js` `damageEnemy` + hazard tick | `sim.test.js` §10b: one hazard on slime2 death |
+| `deadspawn`: slime2 → 2 slime1, slug → 2 slime2 | `entities.js` death branch | `sim.test.js` §10b: two children |
+| Food pickup heals a flat 100 and drops rarely | `entities.js` + `game.js` render | `sim.test.js` §10b: 10 → 110 |
+| Bomb now `10 × attack` in a 900 px radius, bosses included | `entities.js` bomb branch | existing bomb test still passes |
+| Music actually starts on stage entry | `game.js` `startStage` → `ZH.Audio.startMusic()` | no test; call site checked |
+| 5 s victory hold (`victory` state, banner, win sting) before results | `game.js` `update`/win gate | state machine reviewed; `victoryT = 5` |
+| Boss arena is now a real rect: hunter clamped inside, zone banner, cleared on boss death | `game.js` `activateBossZone`, `entities.js` `updateSurvivor` | clamp probe returned x = 40 for a ±40 rect |
+| Chests can open 1/3/5 cards; drops carry the count | `ui.js` `showLevelUp(count)`, `pickOffers(count)` | source reviewed; treasure passes `pk.value` |
+| Cache-busting versions bumped | `index.html` entities 29 · game 36 · ui 20 · BUILD 23 | file inspected |
+
+**Still open:** boss step interpreter, arena fence art and kill-all-at-boss,
+manager briefcase, gems-only magnet, heavy-body shove, chest-specific reroll
+sink, missions/coffer, rewarded ads and suspended runs, and the three distinct
+music beds (we start one bed).

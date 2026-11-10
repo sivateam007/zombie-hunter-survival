@@ -218,7 +218,7 @@ window.ZH = window.ZH || {};
     /* Build the 3-card offer pool, same shape as the original's
        ShowSkillSlots(3): a new weapon, a weapon level, or a supply.
        Everything comes out of the real catalogue in weapons.js. */
-    pickOffers: function () {
+    pickOffers: function (count) {
       var p = (G && G.player) || {};
       var runWeapons = p.weapons || {};
       var runSupplies = p.supplies || {};
@@ -275,16 +275,19 @@ window.ZH = window.ZH || {};
       pool.push({ type: 'magnet', id: 'magnet', name: 'MAGNET +50%', desc: 'Every pickup on the ground is dragged to you.' });
 
       var picked = [];
-      for (var n = 0; n < 3 && pool.length > 0; n++) {
+      /* the original opens 1 (bronze), 3 (silver) or 5 (gold) cards */
+      var want = Math.max(1, Math.min(5, count || 3));
+      for (var n = 0; n < want && pool.length > 0; n++) {
         var idx = Math.floor(Math.random() * pool.length);
         picked.push(pool.splice(idx, 1)[0]);
       }
       return picked;
     },
 
-    showLevelUp: function () {
+    showLevelUp: function (count) {
       if (!G || !G.player) return;
-      var picked = UI.pickOffers();
+      G.luCount = Math.max(1, Math.min(5, count || 3));
+      var picked = UI.pickOffers(G.luCount);
       if (!picked || picked.length === 0) {
         // nothing left to offer — never trap the player in 'levelup'
         G.state = 'playing';
@@ -459,7 +462,7 @@ window.ZH = window.ZH || {};
             G.coins -= cost;
             G.luReroll = rerolls + 1;
             ZH.Audio.play && ZH.Audio.play('click');
-            UI.showLevelUpCard(UI.pickOffers());
+            UI.showLevelUpCard(UI.pickOffers((G && G.luCount) || 3));
           });
         }
       }
