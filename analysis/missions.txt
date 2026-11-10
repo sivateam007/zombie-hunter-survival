@@ -1,0 +1,56 @@
+MISSION TYPES
+0  DAILY_LOGIN
+1  WATCH_AD
+2  KILL_ENEMIES
+3  KILL_MINI_BOSSES
+4  KILL_BOSSES
+5  SURVIVE_X_MINUTES
+6  BUY_X_UPGRADES
+7  EARN_X_GOLD
+8  COLLECT_X_EXPS
+9  DEAL_X_DMG
+10  RECEIVE_X_DMG
+11  HEAL_X_PTS
+12  OPEN_X_CRATES
+20  COMPLETE_4_MISSIONS
+21  COMPLETE_10_MISSIONS
+
+GenerateMission
+missing
+
+GenerateActiveMissions
+{ActiveMissions=[];ActiveMissions.push(GenerateMission([MISSION_TYPE_DAILY_LOGIN]));var b=[MISSION_TYPE_KILL_ENEMIES,MISSION_TYPE_KILL_MINI_BOSSES,MISSION_TYPE_KILL_BOSSES,MISSION_TYPE_SURVIVE_X_MINUTES,MISSION_TYPE_BUY_X_UPGRADES,MISSION_TYPE_EARN_X_GOLD,MISSION_TYPE_COLLECT_X_EXPS,MISSION_TYPE_DEAL_X_DMG,MISSION_TYPE_RECEIVE_X_DMG,MISSION_TYPE_HEAL_X_PTS];Phaser.Utils.Array.Shuffle(b);for(var e=1;4>e;e++)ActiveMissions.push(GenerateMission(b,e)),b.splice(0,1);ActiveMissions.push(GenerateMission([MISSION_TYPE_COMPLETE_4_MISSIONS]));
+ActiveMissions.push(GenerateMission([MISSION_TYPE_COMPLETE_10_MISSIONS]));MissionUpdate(MISSION_TYPE_DAILY_LOGIN,1)}
+
+Save schema
+DataVersion=.4,PlayerMoney=0,PlayerSkills=[],SelectedLevel=0,MissionsCounter=0,ActiveMissions=[],LevelDifficulty={},LevelTimes={},LevelRewards={},CofferTime=null,MissionsTime=null,SavedGame=null,OnboardingPassed=!1,SoundsEnabled=!0;
+GameData.Reset=function(){PlayerMoney=SelectedMusic=0;PlayerSkills=[];MissionsCounter=SelectedLevel=0;ActiveMissions=[];LevelDifficulty={};LevelTimes={};LevelRewards={};SavedGame=null;var b=new Date;b.setHours(b.getHours()+168-10);CofferTime=b.getTime();b=new Date;b.setHours(b.getHours()+24);MissionsTime=b.getTime();LoginTime=(new Date).getTime();SoundsEnabled=!0;PlayerSkills[SKILL_POWER]=1;PlayerSkills[SKILL_HEALTH]=1;PlayerSkills[SKILL_DEFENSE]=1;PlayerSkills[SKILL_FIRSTAID]=1;PlayerSkills[SKILL_FORTUNE]=
+1;PlayerSkills[SKILL_LEARNING]=1;GenerateActiveMissions()};
+GameData.Load=function(){GameData.Reset();var b=null;try{b=JSON.parse(GameSnacks.storage.getItem(GameData.ProfileName))}catch(e){}try{if(b.DataVersion!=DataVersion){GameData.Save();return}PlayerMoney=b.PlayerMoney;PlayerSkills=b.PlayerSkills;SelectedLevel=b.SelectedLevel;MissionsCounter=b.MissionsCounter;ActiveMissions=b.ActiveMissions;LevelDifficulty=b.LevelDifficulty;LevelTimes=b.LevelTimes;LevelRewards=b.LevelRewards;CofferTime=b.CofferTime;MissionsTime=b.MissionsTime;SavedGame=b.SavedGame;OnboardingPassed=
+b.OnboardingPassed;SoundsEnabled=b.SoundsEnabled;b.hasOwnProperty("LoginTi
+
+Rewarded ads
+REWARDED_ADS_ENABLED=!0,rewardedAdPlaying=!1,onRewardedAdPlayedCallback=null,clbckFail;function onRewardedAdPlayed(){console.error("onRewardedAdPlayed",onRewardedAdPlayedCallback);rewardedAdPlaying=!1;for(var b=0;b<SceneGame.instance.input.manager.pointers.length;b++)SceneGame.instance.input.manager.pointers[b].active=!1;SceneGame.instance.onGameResume();onRewardedAdPlayedCallback()}
+function onRewardedAdClosed(){rewardedAdPlaying=!1;console.error("OnRewardAdClosed",clbckFail);for(var b=0;b<SceneGame.instance.input.manager.pointers.length;b++)SceneGame.instance.input.manager.pointers[b].active=!1;SceneGame.instance.onGameResume();null!=clbckFail&&(console.error("clbck Fail"),clbckFail.call(),clbckFail=null);Buttons.enabled=!0}
+function onRewardedAdButtonClicked(b,e,f){rewardedAdPlaying=!0;SceneGame.instance.onGamePause();showRewardedAd(onRewardedAdPlayed,onRewardedAdClosed,SceneGame.instance)};function showDiv(b,e){null==e&&(e=!1);if(!game.device.desktop||e)document.getElementById(b).style.display="block"}function hideDiv(b,e){null==e&&(e=!1);if(!game.device.desktop||e)document.getElementById(b).style.display="none"}function divVisible(b){return"none"!=document.getElementById(b).style.display}function reloadPage(){window.location.reload(!0)};var partnerName="google";window.partnerName=partnerName;function LOG(b){}String.prototype.replaceAll=function(b,e){return this.split(b).
+
+GameSnacks platform calls
+GameSnacks.storage.getItem
+GameSnacks.audio.isEnabled
+GameSnacks.storage.setItem
+GameSnacks.score.update
+GameSnacks.game.ready
+GameSnacks.game.levelComplete
+GameSnacks.game.gameOver
+GameSnacks.game.firstFrameReady
+GameSnacks.audio.subscribe
+GameSnacks.game.onPause
+GameSnacks.game.onResume
+GameSnacks.ad.break
+
+Level-up slot generation
+{1==b&&(this.txtTitle.text=STR("BRONZE_CHEST"));3==b&&(this.txtTitle.text=STR("SILVER_CHEST"));5==b&&(this.txtTitle.text=STR("GOLD_CHEST"));for(var e=[],f=0;f<b;f++)e[f]=this.getDataWeaponsAndSuppliesToUpgrade(f);Phaser.Utils.Array.Shuffle(e);for(f=0;f<
+this.slots.length;f++)this.slots[f].visible=!1;var h=-(131*b+3*(b-1))/2+65.5;for(f=0;f<b;f++)this.slots[f].delay=1E3+300*f,this.slots[f].x=h,this.slots[f].visible=!0,this.slots[f].slotSpeed=22,this.slots[f].playerInventoryItems=e[f],this.slots[f].playerInventoryItemsIdx=0,Phaser.Utils.Array.Shuffle(this.slots[f].playerInventoryItems),this.setSlotItems(this.slots[f]),h+=134;this.imgArrowLeft.x=this.slots[0].x-62;this.imgArrowRight.x=this.slots[b-1].x+62;this.btnContinue.visible=!1}
+
+Player attribs
+missing

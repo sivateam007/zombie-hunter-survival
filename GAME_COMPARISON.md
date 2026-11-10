@@ -42,7 +42,7 @@ Original: **14 base weapons, 14 evolutions**, five selectable primaries
 | Weapon (→ evo, supply) | Original numbers | Ours | Status |
 |---|---|---|---|
 | Axe → Battleaxe (Supplements) | cd 2500, dmg 5×atk, radius 80→120 (200 evo) | ✅ orbit axes | ✅ |
-| Crossbow → Shotgun (ActionGloves) | cd 1500, 3→7 bolts, pierce, range 300 | ✅ fan + pierce | ✅ |
+| Crossbow → Shotgun (ActionGloves) | cd 1500, fan + pierce, range 300, count scales with level | ✅ fan + pierce | ✅ |
 | Flamethrower → Plasmagun (Handbook) | cd 2000, 100 ms stream, 1/2/3/10 targets | ✅ | ✅ |
 | Gun → Uzi (AmmoBooster) | cd 1000, burst `level+1` @150 ms, auto-target | ✅ | ✅ |
 | Sword → Scimitars (Kevlar) | cd 500, range 250×scale, evo hits behind | ✅ | ✅ |
@@ -63,7 +63,7 @@ Original: **12 passives, 5 levels each**, offered as cards, never floor drops:
 Kevlar (defense 10/20/30/40/50), AmmoBooster (`attack_bonus` .1–.5),
 Handbook (`exp_bonus` 8–40), Scope, Propane, Magnet, Chronometer, EnergyDrink,
 ActionGloves, Sneakers, Detector, Supplements.
-Ours: the same 12 at 5 levels plus coin skills. ✅
+Ours: **14** passives at 5 levels (the original's 12 plus two extras) and coin skills. ✅
 
 ## 5. Enemies and bosses
 
@@ -79,7 +79,7 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 |---|---|---|
 | Boss behaviour lists: chase / charge with 700 ms windup / roam / retreat / teleport / spawn adds | bosses walk at you | ❌ **largest gap** |
 | Timed boss patterns: 12-way rings, delayed second volleys, 10-shot streams @350 ms, egg mortars (radius 190), poison fans, grenades | one straight shot each | ❌ |
-| Boss-zone fence: 80 px grid rect (1,000–1,600 px), player collides, **all normal enemies killed at the boss**, player moved inside | timer freeze only; you can walk out | ❌ |
+| Boss-zone fence: 80 px grid rect, **1,000–3,072 px** (stage 7–8 largest), player collides, **all normal enemies killed at the boss**, player moved inside; stages 4–8 send **two bosses per zone** | timer freeze only; you can walk out | ❌ |
 | Per-boss HP bars + boss music | single HUD bar, no music | 🟡 |
 | `deadshot` on death: acid pools (toxic1/2, slime1/2, miniboss toxins), manager's destroyable briefcase (10 dmg) | none | ❌ |
 | `deadspawn`: slime2 → 2× slime1, slug → 2× slime2 | none | ❌ |
@@ -109,8 +109,8 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 | Level-up | pauses scene, 3 cards, reroll `500 × (n+1)`, max 5 | Same, max 5 | ✅ |
 | Meta skills | POWER/HEALTH/ARMOR/AID/FORTUNE/LEARNING, max 30, price ladder to 435,000 | Same six, same curve | ✅ |
 | Stages | **8**, waves 33/35/36/43/43/53/66/61, 2 boss zones each, ladder ends at 630 s, run to 1,200 s | 20 stages, mirrored ladders for 1–7 plus a 30-wave stage 8 and endless | ✅ ours extends |
-| Missions | **13 types** (daily login, watch ad, kills, minibosses, bosses, survive X min, spend, earn, damage, heal, crates…) + 4/10 chains | none (daily reward + redeem codes instead) | ❌ |
-| Idle coffer | 25 coins / 15 min, cap 168 h = 16,800 | none | ❌ |
+| Missions | **15 entries** (13 tracked types incl. daily login/ad-watch/kills/bosses/survive/spend/earn/exp/damage/heal/crates, plus the 4- and 10-mission chains), 3 active per cycle with ×2/×4 reward tiers | none (daily reward + redeem codes instead) | ❌ |
+| Idle coffer | 25 coins / 15 min, cap 168 h = 16,800; a fresh save starts at **+158 h** | none | ❌ |
 | Characters | one hunter | 35 rigged survivors with powers | ✅ ours adds |
 | Store / daily / codes / leaderboard | GameSnacks service only | ours + local leaderboard with sanitising | ✅ ours adds |
 
@@ -141,7 +141,7 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 
 1. **Scripted boss AI** — charge/teleport/spawn-adds behaviour lists and timed volleys.
 2. **Boss-zone geometry** — 80 px fence, kill-all-at-boss, player confined.
-3. **`deadshot` + `deadspawn`** — acid pools, briefcase, slime/slug splits.
+3. **`deadshot` + `deadspawn`** — acid pools on six enemy types, the manager's briefcase, slime/slug corpse splits.
 4. **Chest card counts (1/3/5) and the 1,500-based chest reroll sink.**
 5. **Food pickup** and the real bomb formula (`10 × attack`, 900 px).
 6. **Magnet = gems only**, and **player shove from `mass` bodies**.
