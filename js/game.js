@@ -83,6 +83,8 @@ window.ZH = window.ZH || {};
   Game.startStage = function (stageId, primaryWeapon) {
     var stage = ZH.STAGES[stageId] || ZH.STAGES[0];
     if (!stage) return;
+    /* roll the daily contracts / coffer before the run starts */
+    if (ZH.Missions) ZH.Missions.ensure();
     this.stageId = stageId || 0;
     this.stage = stage;
     // stage data is shared, so reset every wave's runtime flags
@@ -2175,6 +2177,8 @@ window.ZH = window.ZH || {};
     this.state = 'results';
     if (document.body) document.body.classList.remove('in-game');
     var p = this.player;
+    /* 5 = SURVIVE_X_MINUTES, banked on a win and on a death alike */
+    if (ZH.Missions) ZH.Missions.update(5, Math.floor((this.elapsed || 0) / 60));
     var coinsEarned = 0;
     if (win && this.stage && this.stage.rewards) {
       var rewards = this.stage.rewards;

@@ -87,7 +87,7 @@
     <div id="weapon-slots" class="weapon-slots"></div>
     <div id="hud-items" class="hud-items"></div>
     <div class="enemy-count"><span class="pip hostile"></span><span id="hud-left">0</span> LEFT</div>
-    <div class="credit-mark">DEVELOPED BY <b>SIVA</b><span class="build"> · BUILD 23</span></div>
+    <div class="credit-mark">DEVELOPED BY <b>SIVA</b><span class="build"> · BUILD 24</span></div>
   </div>
 
   <!-- --------------------------- touch controls --------------------------- -->
@@ -121,6 +121,7 @@
           <button class="btn" id="btn-endless"><span>ENDLESS NIGHT</span><em>How long can you last?</em></button>
           <div class="menu-row">
             <button class="btn ghost" id="btn-shop">STORE</button>
+            <button class="btn ghost" id="btn-missions">MISSIONS</button>
             <button class="btn ghost" id="btn-board">LEADERBOARD</button>
             <button class="btn ghost" id="btn-help">HOW TO PLAY</button>
           </div>
@@ -200,6 +201,27 @@
           <button class="btn small primary" id="redeem-btn"><span>REDEEM</span></button>
         </div>
         <p class="shop-note redeem-msg" id="redeem-msg">Codes: SIVA1000 · ZOMBIEBUFF · GAMESNACKS · FORCEFIELD · MEOWCAT · CITY25 · SURVIVOR</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ----------------------------- MISSIONS ----------------------------- -->
+  <section id="screen-missions" class="screen panel-screen">
+    <div class="panel wide">
+      <header class="panel-head">
+        <div>
+          <span class="kicker">CONTRACT BOARD</span>
+          <h2>MISSIONS</h2>
+        </div>
+        <div class="head-right">
+          <div class="coin-chip"><span class="pip coin"></span><span id="missions-coins">0</span></div>
+          <button class="btn small ghost" data-back="menu">BACK</button>
+        </div>
+      </header>
+      <div class="shop-scroll">
+        <div id="coffer-card" class="coffer-card"></div>
+        <p class="shop-note" id="missions-note">Three contracts refresh every 24 hours.</p>
+        <div id="mission-list" class="mission-list"></div>
       </div>
     </div>
   </section>
@@ -350,15 +372,16 @@
 <script src="js/arena.js?v=13"></script>
 <script src="js/weapons.js?v=5"></script>
 <script src="js/levels.js?v=5"></script>
-<script src="js/entities.js?v=29"></script>
+<script src="js/entities.js?v=30"></script>
 <script src="js/audio.js?v=1"></script>
-<script src="js/storage.js?v=15"></script>
+<script src="js/storage.js?v=16"></script>
+<script src="js/missions.js?v=1"></script>
   <script src="js/powers.js?v=1"></script>
 <script src="js/anim.js?v=3"></script>
 <script src="js/net.js?v=1"></script>
-<script src="js/game.js?v=36"></script>
+<script src="js/game.js?v=37"></script>
 <script src="js/game-patch.js?v=2"></script>
-<script src="js/ui.js?v=20"></script>
+<script src="js/ui.js?v=21"></script>
 <script src="js/main.js?v=10"></script>
 </body>
 </html>

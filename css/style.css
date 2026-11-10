@@ -1309,3 +1309,46 @@ body.in-game .mobile-controls { display: flex; }
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
+
+/* ---------------------------------------------------------
+   Contract board + idle coffer
+   --------------------------------------------------------- */
+.coffer-card {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 209, 102, 0.10), rgba(255, 209, 102, 0.02));
+  border: 1px solid rgba(255, 209, 102, 0.30);
+}
+.coffer-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.coffer-value { font-size: 22px; font-weight: 800; color: #ffd166; font-variant-numeric: tabular-nums; }
+.coffer-bar { height: 8px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.coffer-bar i { display: block; height: 100%; background: linear-gradient(90deg, #b98a2e, #ffd166); }
+.coffer-meta {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px;
+  font-size: 10px; letter-spacing: 0.08em; color: var(--dim); font-family: var(--mono);
+}
+.coffer-card .btn { width: auto; align-self: start; }
+
+.mission-list { display: grid; gap: 8px; margin-top: 14px; }
+.mission-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+}
+.mission-row.is-done { border-color: rgba(155, 225, 93, 0.32); }
+.mission-row.is-claimed { opacity: 0.55; }
+.mission-main { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.mission-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.mission-name { font-size: 14px; font-weight: 800; letter-spacing: 0.05em; }
+.mission-reward { font-size: 13px; font-weight: 800; color: #ffd166; }
+.mission-desc { font-size: 11px; color: var(--dim); }
+.mission-bar { height: 6px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.mission-bar i { display: block; height: 100%; background: var(--amber); }
+.mission-progress { font-size: 10px; color: var(--dim); font-family: var(--mono); letter-spacing: 0.06em; }
+.mission-row > .btn { width: auto; flex: 0 0 auto; }

@@ -402,6 +402,8 @@
     if (!isFinite(dmg) || dmg < floor) dmg = floor;
     /* survivor power: crits, executes and berserk scale the hit here */
     if (ZH.Powers) dmg = ZH.Powers.modifyDamage(world, z, dmg);
+    /* 9 = DEAL_X_DMG: contracts count the damage that actually lands */
+    if (ZH.Missions) ZH.Missions.update(9, dmg);
     /* diagnostics hook: the harness reads the damage that actually lands */
     if (ZH.onDamage) ZH.onDamage(world, z, dmg);
     z.hp -= dmg;
@@ -482,6 +484,16 @@
     if (z.hp <= 0) {
       z.dead = true;
       if (world.player) world.player.kills = (world.player.kills || 0) + 1;
+      /* contracts: kills, bosses, minibosses and opened crates */
+      if (ZH.Missions) {
+        if (z.type === 'box' || z.type === 'treasure') {
+          ZH.Missions.update(12, 1);              /* OPEN_X_CRATES */
+        } else {
+          ZH.Missions.update(2, 1);               /* KILL_ENEMIES */
+          if (z.boss) ZH.Missions.update(4, 1);   /* KILL_BOSSES */
+          else if (z.miniboss) ZH.Missions.update(3, 1);
+        }
+      }
       world.score = (world.score || 0) + 10;
       if (ZH.Powers) ZH.Powers.onKill(world, z);
       /* deadshot: toxic and slime deaths leave a lingering acid pool */
@@ -1317,6 +1329,7 @@
             if (ZH.Powers) bite = ZH.Powers.onBite(world, z, bite);
             if (bite > 0) {
               p.hp -= bite;
+              if (ZH.Missions) ZH.Missions.update(10, bite);   /* RECEIVE_X_DMG */
               ZH.openShield(p, ZH.SHIELD.hit);   /* force field: one window */
               if (p.hp <= 0) { p.hp = 0; p.dead = true; }
               world.shake = Math.max(world.shake || 0, 5);
@@ -1505,6 +1518,7 @@
             if (ZH.Powers) shot = ZH.Powers.onBite(world, null, shot);
             if (shot > 0) {
               p.hp -= shot;
+              if (ZH.Missions) ZH.Missions.update(10, shot);   /* RECEIVE_X_DMG */
               ZH.openShield(p, ZH.SHIELD.hit);   /* force field: one window */
               if (p.hp <= 0) { p.hp = 0; p.dead = true; }
               world.shake = Math.max(world.shake || 0, 5);
@@ -1545,13 +1559,19 @@
           var gain = pk.value || 10;
           gain = Math.floor(gain + gain * (a.exp_bonus || 0) / 100);
           p.exp += gain;
+          /* 8 = COLLECT_X_EXPS */
+          if (ZH.Missions) ZH.Missions.update(8, gain);
         } else if (pk.type === 'coin') {
           var cash = (pk.value || 1);
           cash = cash + cash * (a.cash_bonus || 0) / 100;
-          world.coins = (world.coins || 0) + Math.round(cash);
+          cash = Math.round(cash);
+          world.coins = (world.coins || 0) + cash;
+          /* 7 = EARN_X_GOLD */
+          if (ZH.Missions) ZH.Missions.update(7, cash);
         } else if (pk.type === 'treasure') {
           // the original drops a treasure chest that opens 1/3/5 skill cards
           world.coins = (world.coins || 0) + 500;
+          if (ZH.Missions) { ZH.Missions.update(7, 500); ZH.Missions.update(12, 1); }
           if (world.ui && world.ui.showLevelUp) world.ui.showLevelUp(pk.value || 3);
         } else if (pk.type === 'shield') {
           var armed = ZH.openShield(p, pk.value || ZH.SHIELD.force);
@@ -1559,10 +1579,15 @@
             ZH.Anim.toast('FORCE FIELD · ' + Math.round(armed) + 's', 'good');
           }
         } else if (pk.type === 'medikit') {
-          p.hp = Math.min(p.maxHp, p.hp + (pk.value || 50));
+          var healed = Math.min(p.maxHp, p.hp + (pk.value || 50)) - p.hp;
+          p.hp += healed;
+          /* 11 = HEAL_X_PTS: only the HP that actually fit counts */
+          if (ZH.Missions && healed > 0) ZH.Missions.update(11, healed);
         } else if (pk.type === 'food') {
           /* the original's BONUS_FOOD: a flat +100 HP */
-          p.hp = Math.min(p.maxHp, p.hp + (pk.value || 100));
+          var foodHeal = Math.min(p.maxHp, p.hp + (pk.value || 100)) - p.hp;
+          p.hp += foodHeal;
+          if (ZH.Missions && foodHeal > 0) ZH.Missions.update(11, foodHeal);
           if (world.floaters && world.floaters.length < 70) {
             world.floaters.push({
               text: '+' + (pk.value || 100), x: p.x, y: p.y - 46, vy: -44,

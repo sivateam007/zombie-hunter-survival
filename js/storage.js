@@ -27,7 +27,13 @@ window.ZH = window.ZH || {};
     character: 'hunter',
     redeemed: [],
     lastDaily: '',
-    seenIntro: false
+    seenIntro: false,
+    /* contracts + idle coffer (js/missions.js owns the format) */
+    missions: [],
+    missionsTime: 0,
+    missionsDone: 0,
+    loginDay: '',
+    cofferTime: 0
   };
 
   /* ---------------------------- survivors ----------------------------
@@ -165,6 +171,8 @@ window.ZH = window.ZH || {};
   function onChange(fn) { listeners.push(fn); }
 
   function addCoins(n) {
+    /* 7 = EARN_X_GOLD: every scrap gain counts toward the contract */
+    if (ZH.Missions && n > 0) ZH.Missions.update(7, n);
     save.coins = Math.max(0, Math.round(save.coins + n));
     persist();
     return save.coins;
@@ -207,6 +215,8 @@ window.ZH = window.ZH || {};
     if (save.coins < price) return { ok: false, reason: 'coins', price: price };
     save.coins -= price;
     save.skills[id] = lvl + 1;
+    /* 6 = BUY_X_UPGRADES */
+    if (ZH.Missions) ZH.Missions.update(6, 1);
     persist();
     return { ok: true, level: lvl + 1, price: price };
   }
@@ -242,6 +252,8 @@ window.ZH = window.ZH || {};
     if (save.coins < price) return { ok: false, reason: 'coins', price: price };
     save.coins -= price;
     save.upgrades[id] = lvl + 1;
+    /* 6 = BUY_X_UPGRADES */
+    if (ZH.Missions) ZH.Missions.update(6, 1);
     persist();
     return { ok: true, level: lvl + 1, price: price };
   }
@@ -312,6 +324,7 @@ window.ZH = window.ZH || {};
       kind = 'upgrade'; label = 'FREE VITALITY LEVEL';
     }
     save.coins += 350 + bonus;
+    if (ZH.Missions) ZH.Missions.update(7, 350 + bonus);   /* EARN_X_GOLD */
     persist();
     return { ok: true, coins: 350 + bonus, bonus: bonus, kind: kind, label: label };
   }

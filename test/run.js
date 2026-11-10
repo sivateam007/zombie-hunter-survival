@@ -12,6 +12,7 @@ const FILES = [
   'shield.test.js',
   'storage.test.js',
   'ledger.test.js',
+  'missions.test.js',
   'server.test.js'
 ];
 

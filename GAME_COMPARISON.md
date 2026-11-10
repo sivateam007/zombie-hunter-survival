@@ -109,8 +109,8 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 | Level-up | pauses scene, 3 cards, reroll `500 × (n+1)`, max 5 | Same, max 5 | ✅ |
 | Meta skills | POWER/HEALTH/ARMOR/AID/FORTUNE/LEARNING, max 30, price ladder to 435,000 | Same six, same curve | ✅ |
 | Stages | **8**, waves 33/35/36/43/43/53/66/61, 2 boss zones each, ladder ends at 630 s, run to 1,200 s | 20 stages, mirrored ladders for 1–7 plus a 30-wave stage 8 and endless | ✅ ours extends |
-| Missions | **15 entries** (13 tracked types incl. daily login/ad-watch/kills/bosses/survive/spend/earn/exp/damage/heal/crates, plus the 4- and 10-mission chains), 3 active per cycle with ×2/×4 reward tiers | none (daily reward + redeem codes instead) | ❌ |
-| Idle coffer | 25 coins / 15 min, cap 168 h = 16,800; a fresh save starts at **+158 h** | none | ❌ |
+| Missions | **15 entries** (13 tracked types incl. daily login/ad-watch/kills/bosses/survive/spend/earn/exp/damage/heal/crates, plus the 4- and 10-mission chains), 3 active per cycle with ×2/×4 reward tiers | 6 slots on the same table, ×2/×4 tiers, 24 h refresh, chains | ✅ |
+| Idle coffer | 25 coins / 15 min, cap 168 h = 16,800; a fresh save starts at **+158 h** | same curve; +158 h start is worth 1,000 coins | ✅ |
 | Characters | one hunter | 35 rigged survivors with powers | ✅ ours adds |
 | Store / daily / codes / leaderboard | GameSnacks service only | ours + local leaderboard with sanitising | ✅ ours adds |
 

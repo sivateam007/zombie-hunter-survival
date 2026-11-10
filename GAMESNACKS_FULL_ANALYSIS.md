@@ -339,8 +339,12 @@ tier 1, slot 2 = ×2 reward, slot 3 = ×4 reward):
 | COMPLETE_4_MISSIONS | 8000 | 4 | — | — |
 | COMPLETE_10_MISSIONS | 15000 | 10 | — | — |
 
-- **Coffer**: 25 coins per 15-minute segment, cap **168 h**; the save initialises
-  it at **+158 h** (i.e. it starts almost full and refills the missing 10 h).
+- **Coffer**: 25 coins per 15-minute segment, cap **168 h** (672 segments =
+  16,800). `CofferTime` is the moment the coffer becomes full, so a save
+  initialised at **+158 h** starts with `672 − ceil(9480/15) = 40` segments,
+  i.e. **1,000 coins** banked, and fills the remaining 10 h worth. Claiming
+  pays the whole coffer and sets `CofferTime = now + 168 h`. (An earlier note
+  said "almost full" — that reading was wrong.)
 - Mission refresh: `MissionsTime = now + 24 h`.
 - Rewards are multiplied by difficulty (×1.5 hard, ×2.5 insane).
 - Save schema: `DataVersion, PlayerMoney, PlayerSkills, SelectedLevel,

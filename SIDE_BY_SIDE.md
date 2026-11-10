@@ -140,8 +140,8 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 
 | Feature | GameSnacks | Ours | Status | Check 1 | Check 2 |
 |---|---|---|---|---|---|
-| Missions | 15 entries, 3 active, ×2/×4 tiers | none (daily + codes) | ❌ | `missions.json` | no mission system in `js/` |
-| Coffer | 25/15 min, 168 h, starts +158 h | none | ❌ | `CofferTime` | no coffer |
+| Missions | 15 entries, 3 active, ×2/×4 tiers | 6 slots, same table, ×2/×4 tiers, 24 h refresh | ✅ | `missions.json` table | `js/missions.js`, `missions.test.js` |
+| Coffer | 25/15 min, 168 h, starts +158 h | 672 segments, 16,800 cap, same +10 h start (1,000 coins) | ✅ | `CofferTime` maths | `cofferState`, `missions.test.js` |
 | Rewarded ads | reroll/continue | none | ❌ | `REWARDED_ADS_ENABLED` | no ad code |
 | Suspended run | `SavedGame` snapshot | none | ❌ | save schema | no snapshot |
 | Store / characters | none | store, 35 survivors | ➕ | — | `storage.js`, `powers.js` |
@@ -173,9 +173,8 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | 9 | Chest reroll sink | `1500×(n+1)`, max 3 | single 500×n sink, max 5 |
 | 10 | 5 s victory hold | `DELAY_GAME_WON=5000` | results opened inline |
 | 11 | Music playback | 3 beds with volumes | `startMusic` never invoked |
-| 12 | Missions + coffer | 15 missions, 168 h | no mission/coffer module |
-| 13 | Player mass collision | `mass` 1/2/5 | separation only, no shove |
-| 14 | Gems-only magnet | `pullOnlyExps` behaviour | magnet flags all drops |
+| 12 | Player mass collision | `mass` 1/2/5 | separation only, no shove |
+| 13 | Gems-only magnet | `pullOnlyExps` behaviour | magnet flags all drops |
 
 ## 12. Corrections to earlier notes
 
@@ -207,5 +206,22 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 
 **Still open:** boss step interpreter, arena fence art and kill-all-at-boss,
 manager briefcase, gems-only magnet, heavy-body shove, chest-specific reroll
-sink, missions/coffer, rewarded ads and suspended runs, and the three distinct
-music beds (we start one bed).
+sink, rewarded ads and suspended runs, and the three distinct music beds
+(we start one bed).
+
+## 14. Implemented in this pass — contracts and the coffer
+
+| Change | Where | Verified by |
+|---|---|---|
+| Six contracts: daily patrol, three rolled tiers, 4- and 10-claim chains | `js/missions.js` `generate()` | `missions.test.js`: 6 slots, distinct types, tiers 1/2/3 |
+| Original table: 3,000 base, 6,000 / 12,000 tiers, exact targets (1,000 kills → 100,000; 10,000 scrap → 75,000; …) | `SPECS` | test asserts all twelve ladders + chain payouts |
+| Progress from real play: kills, bosses, minibosses, survival minutes, purchases, scrap, XP, damage dealt/taken, healing, crates | `entities.js`, `game.js`, `storage.js` | test drives progress, caps at target, pays once |
+| Claims pay into the bank and multiply by difficulty (x1 / x1.5 / x2.5) | `Missions.claim` | test: tier-2 = 6,000; insane boss = 7,500 |
+| 4- and 10-contract chains advance per claim | same | test: `missionsDone` → chain value |
+| 24 h refresh replaces claimed slots; daily patrol resets on the calendar day | `refresh`, `ensure` | test: claimed slot regenerated, daily claimable again |
+| Idle coffer: 672 × 25 = 16,800 cap, +158 h fresh save = 1,000 coins, claim resets to full 168 h | `cofferState`, `claimCoffer` | test: 1,000 → +25/segment → 16,800 cap → claim empties → refills |
+| Board screen: coffer progress, mission bars, claim buttons, live countdown | `index.html`, `ui.js`, `css/style.css` | source reviewed; page loads with BUILD 24 |
+
+**Reading correction:** the earlier note called the +158 h coffer "almost
+full". The actual formula (`672 − ceil(minutesLeft/15)`) means a fresh save
+holds **10 h of segments = 1,000 coins**, and fills over the next 158 h.

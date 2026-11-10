@@ -18,6 +18,12 @@ window.ZH = window.ZH || {};
     var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
     return m + ':' + (s < 10 ? '0' : '') + s;
   }
+  function fmtSpan(ms) {
+    var m = Math.max(0, Math.floor((ms || 0) / 60000));
+    var d = Math.floor(m / 1440); m -= d * 1440;
+    var h = Math.floor(m / 60); m -= h * 60;
+    return (d ? d + 'd ' : '') + h + 'h ' + m + 'm';
+  }
   /* skill values are small decimals (0.1) or big numbers (435000) */
   function fmtNum(v) {
     if (v == null) return '—';
@@ -61,6 +67,7 @@ window.ZH = window.ZH || {};
         toast: $('toast')
       };
       this.bind();
+      if (ZH.Missions) ZH.Missions.ensure();
       this.renderLevels();
       this.renderShop();
       this.refreshWeapons();
@@ -73,7 +80,11 @@ window.ZH = window.ZH || {};
     showOnly: function (id) {
       /* menu-ish screens freeze a live run instead of leaving the horde
          moving and a level-up card stack sitting over the briefing */
-      if (/^screen-(menu|levels|briefing|shop|board)$/.test(id) && G &&
+      if (id !== 'screen-missions' && this.missionClock) {
+        clearInterval(this.missionClock);
+        this.missionClock = null;
+      }
+      if (/^screen-(menu|levels|briefing|shop|board|missions)$/.test(id) && G &&
           (G.state === 'playing' || G.state === 'levelup')) {
         G.state = 'menu';
         var ov = document.getElementById('levelup-overlay');
@@ -128,6 +139,147 @@ window.ZH = window.ZH || {};
     },
 
     showHelp: function () { this.showOnly('screen-help'); },
+
+    /* ------------------------------ missions ---------------------------- */
+    showMissions: function () {
+      if (ZH.Missions) ZH.Missions.ensure();
+      this.renderMissions();
+      this.showOnly('screen-missions');
+      ZH.Anim.staggerIn($('mission-list'), '.mission-row');
+      var self = this;
+      if (this.missionClock) clearInterval(this.missionClock);
+      this.missionClock = setInterval(function () {
+        var screen = $('screen-missions');
+        if (!screen || !screen.classList.contains('is-open')) {
+          clearInterval(self.missionClock);
+          self.missionClock = null;
+          return;
+        }
+        self.tickMissions();
+      }, 5000);
+    },
+
+    /* the clock updates the numbers in place: rebuilding the rows every few
+       seconds would swap the button out from under a finger mid-press */
+    tickMissions: function () {
+      if (!ZH.Missions) return;
+      var now = Date.now();
+      var s = ZH.Save.get();
+      var c = ZH.Missions.cofferState(now);
+      var v = $('coffer-value');
+      if (v) v.textContent = c.value.toLocaleString() + ' SCRAP';
+      var timer = $('coffer-timer');
+      if (timer) timer.textContent = c.full ? 'COFFER FULL' : 'FULL IN ' + fmtSpan(c.leftMs);
+      var seg = $('coffer-seg');
+      if (seg) seg.textContent = c.segments + ' / ' + ZH.COFFER.totalSegments + ' SEGMENTS · 25 EACH';
+      var bar = $('coffer-bar');
+      if (bar) bar.style.width = (c.segments / ZH.COFFER.totalSegments * 100).toFixed(1) + '%';
+      var note = $('missions-note');
+      if (note) {
+        var mult = ZH.difficulty ? ZH.difficulty(s.difficulty).reward : 1;
+        note.textContent = 'Three contracts refresh in ' + fmtSpan(s.missionsTime - now) +
+          ' · rewards x' + mult + ' on ' + String(s.difficulty || 'normal').toUpperCase() +
+          ' · ' + (s.missionsDone || 0) + ' claimed';
+      }
+      /* the only state the button itself depends on is empty vs collectable */
+      var claim = $('coffer-claim');
+      if (claim && claim.disabled && c.value > 0) this.renderMissions();
+    },
+
+    renderMissions: function () {
+      if (!ZH.Missions) return;
+      var now = Date.now();
+      var s = ZH.Missions.ensure(now);
+      var save = ZH.Save.get();
+      if ($('missions-coins')) $('missions-coins').textContent = (save.coins || 0).toLocaleString();
+      var mult = ZH.difficulty ? ZH.difficulty(save.difficulty).reward : 1;
+
+      var c = ZH.Missions.cofferState(now);
+      var card = $('coffer-card');
+      if (card) {
+        var canClaim = c.value > 0;
+        card.innerHTML =
+          '<div class="coffer-head">' +
+            '<span class="kicker">IDLE COFFER</span>' +
+            '<span class="coffer-value" id="coffer-value">' + c.value.toLocaleString() + ' SCRAP</span>' +
+          '</div>' +
+          '<div class="coffer-bar"><i id="coffer-bar" style="width:' +
+            (c.segments / ZH.COFFER.totalSegments * 100).toFixed(1) + '%"></i></div>' +
+          '<div class="coffer-meta">' +
+            '<span id="coffer-timer">' + (c.full ? 'COFFER FULL' : 'FULL IN ' + fmtSpan(c.leftMs)) + '</span>' +
+            '<span id="coffer-seg">' + c.segments + ' / ' + ZH.COFFER.totalSegments + ' SEGMENTS · 25 EACH</span>' +
+          '</div>' +
+          '<button class="btn small ' + (canClaim ? 'primary' : 'ghost') + '" id="coffer-claim"' +
+            (canClaim ? '' : ' disabled') + '>' +
+            (canClaim ? 'COLLECT ' + c.value.toLocaleString() : 'EMPTY — COME BACK LATER') +
+          '</button>';
+        var cb = card.querySelector('#coffer-claim');
+        if (cb) cb.addEventListener('click', function () { UI.claimCoffer(); });
+      }
+
+      var list = $('mission-list');
+      if (list) {
+        list.innerHTML = '';
+        s.missions.forEach(function (m, i) {
+          var spec = ZH.Missions.spec[m.type] || {};
+          var done = m.value >= m.target;
+          var row = document.createElement('div');
+          row.className = 'mission-row' + (m.claimed ? ' is-claimed' : '') +
+            (done && !m.claimed ? ' is-done' : '');
+          row.innerHTML =
+            '<div class="mission-main">' +
+              '<div class="mission-top"><span class="mission-name">' + m.name + '</span>' +
+              '<span class="mission-reward">+' + Math.round(m.reward * mult).toLocaleString() + '</span></div>' +
+              '<div class="mission-desc">' + String(spec.desc || '').replace('{target}', fmtNum(m.target)) + '</div>' +
+              '<div class="mission-bar"><i style="width:' +
+                Math.min(100, m.value / m.target * 100).toFixed(1) + '%"></i></div>' +
+              '<div class="mission-progress">' + fmtNum(Math.floor(m.value)) + ' / ' + fmtNum(m.target) + '</div>' +
+            '</div>';
+          var btn = document.createElement('button');
+          btn.className = 'btn small' + (done && !m.claimed ? ' primary' : ' ghost');
+          btn.textContent = m.claimed ? 'CLAIMED' : done ? 'CLAIM' : 'IN PROGRESS';
+          btn.disabled = m.claimed || !done;
+          btn.addEventListener('click', function () { UI.claimMission(i); });
+          row.appendChild(btn);
+          list.appendChild(row);
+        });
+      }
+
+      var note = $('missions-note');
+      if (note) {
+        note.textContent = 'Three contracts refresh in ' + fmtSpan(s.missionsTime - now) +
+          ' · rewards x' + mult + ' on ' + String(save.difficulty || 'normal').toUpperCase() +
+          ' · ' + (s.missionsDone || 0) + ' claimed';
+      }
+    },
+
+    claimMission: function (i) {
+      if (!ZH.Missions) return;
+      var r = ZH.Missions.claim(i);
+      if (!r.ok) {
+        ZH.Audio.play && ZH.Audio.play('error');
+        ZH.Anim.toast && ZH.Anim.toast(r.reason === 'claimed' ? 'Already claimed' : 'Not finished yet', 'error');
+        return;
+      }
+      ZH.Audio.play && ZH.Audio.play('buy');
+      ZH.Anim.toast && ZH.Anim.toast('CONTRACT PAID · +' + r.coins + ' SCRAP', 'good');
+      this.renderMissions();
+      this.updateMenuStats();
+    },
+
+    claimCoffer: function () {
+      if (!ZH.Missions) return;
+      var r = ZH.Missions.claimCoffer();
+      if (!r.ok) {
+        ZH.Audio.play && ZH.Audio.play('error');
+        ZH.Anim.toast && ZH.Anim.toast('The coffer is empty', 'error');
+        return;
+      }
+      ZH.Audio.play && ZH.Audio.play('buy');
+      ZH.Anim.toast && ZH.Anim.toast('COFFER · +' + r.coins + ' SCRAP', 'good');
+      this.renderMissions();
+      this.updateMenuStats();
+    },
 
     showBriefing: function (level, mode) {
       var chapter = ZH.chapterOf ? ZH.chapterOf(level) : { name: 'CAMPAIGN' };
@@ -1146,6 +1298,7 @@ window.ZH = window.ZH || {};
       on('btn-campaign', 'click', function () { ZH.Audio.play('click'); self.showLevels(menuOpts && menuOpts.onLevels); });
       on('btn-endless', 'click', function () { ZH.Audio.play('click'); G.startEndless(); });
       on('btn-shop', 'click', function () { ZH.Audio.play('click'); self.showShop(); });
+      on('btn-missions', 'click', function () { ZH.Audio.play('click'); self.showMissions(); });
       on('btn-board', 'click', function () { ZH.Audio.play('click'); self.showLeaderboard('endless'); });
       on('btn-help', 'click', function () { ZH.Audio.play('click'); self.showHelp(); });
       on('btn-mute', 'click', function () { self.toggleMute(); });
