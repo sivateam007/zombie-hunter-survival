@@ -32,6 +32,17 @@
      read as "the gun stopped shooting the zombies". These helpers keep the two
      curves tied together so time-to-kill stays flat, and guarantee every
      registered hit removes a visible slice of the target's own bar. */
+  /* GameSnacks coin-face denominations (scrap). Used for rare drops and
+     boss/miniboss payouts; ordinary horde drops stay small. */
+  ZH.COIN_FACES = [100, 300, 500, 1000, 1500];
+  /* Box (gift) drop table: weighted outcomes for a wrapped gift box.
+     apply(world, p) mutates state and returns {label, colour}. */
+  ZH.BOX_DROP_TABLE = [
+    { id: 'scrap',   weight: 38, apply: function (world, p) { var c = 250 + Math.floor(Math.random() * 550); world.coins = (world.coins || 0) + c; return { label: '+' + c + ' SCRAP', colour: '#ffd166' }; } },
+    { id: 'heal',    weight: 20, apply: function (world, p) { p.hp = Math.min(p.maxHp, p.hp + 35); return { label: '+35 HP', colour: '#9be15d' }; } },
+    { id: 'magnet',  weight: 20, apply: function (world, p) { p.magnet = (p.magnet || 0) + 0.5; return { label: 'MAGNET +50%', colour: '#ff9ad5' }; } },
+    { id: 'jackpot', weight: 22, apply: function (world, p) { world.coins = (world.coins || 0) + 1000; return { label: 'JACKPOT +1000', colour: '#ffe066' }; } }
+  ];
   ZH.COMBAT = ZH.COMBAT || {
     hpCurve: 0.8,        /* exponent on the stage level multiplier: softened    */
     hpRecycleGain: 0.1,  /* extra health per recycled wave cycle              */
@@ -771,6 +782,9 @@
           world.pickups.push({ type: 'medikit', x: z.x, y: z.y - 6, life: 40, value: 45 });
         } else if (rollDrop < 0.022) {
           world.pickups.push({ type: 'food', x: z.x, y: z.y - 6, life: 40, value: 100 });
+        } else if (rollDrop < 0.024) {
+          /* rare gold coin face from the GameSnacks denomination set */
+          world.pickups.push({ type: 'coin', x: z.x, y: z.y - 6, life: 40, value: (ZH.COIN_FACES ? ZH.COIN_FACES[0] : 100) });
         }
       }
       /* supplies drop into the world as real items, so the catalogue (kevlar,
@@ -2269,23 +2283,15 @@
           if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast('MAGNET', 'good');
           if (ZH.Audio) ZH.Audio.play('magnet');
         } else if (pk.type === 'gift') {
-          /* a wrapped box pays out one random reward */
-          var roll = Math.random();
-          var label = '', colour = '#ffd166';
-          if (roll < 0.38) {
-            var cashG = 250 + Math.floor(Math.random() * 550);
-            world.coins = (world.coins || 0) + cashG;
-            label = '+' + cashG + ' SCRAP';
-          } else if (roll < 0.58) {
-            p.hp = Math.min(p.maxHp, p.hp + 35);
-            label = '+35 HP'; colour = '#9be15d';
-          } else if (roll < 0.78) {
-            p.magnet = (p.magnet || 0) + 0.5;
-            label = 'MAGNET +50%'; colour = '#ff9ad5';
-          } else {
-            world.coins = (world.coins || 0) + 1000;
-            label = 'JACKPOT +1000'; colour = '#ffe066';
-          }
+          /* a wrapped box pays out one reward from ZH.BOX_DROP_TABLE */
+          var tbl = ZH.BOX_DROP_TABLE || [];
+          var totalW = 0;
+          for (var tw = 0; tw < tbl.length; tw++) totalW += (tbl[tw].weight || 0);
+          var r = Math.random() * (totalW || 1);
+          var acc = 0, chosen = tbl[0];
+          for (var ti = 0; ti < tbl.length; ti++) { acc += (tbl[ti].weight || 0); if (r < acc) { chosen = tbl[ti]; break; } }
+          var res = (chosen && chosen.apply) ? chosen.apply(world, p) : { label: 'GIFT', colour: '#ffd166' };
+          var label = res.label, colour = res.colour;
           if (world.floaters && world.floaters.length < 70) {
             world.floaters.push({
               text: label, x: pk.x, y: pk.y - 22, vy: -42,

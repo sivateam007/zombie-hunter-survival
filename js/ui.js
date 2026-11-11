@@ -1400,6 +1400,7 @@ window.ZH = window.ZH || {};
       });
       on('btn-shop', 'click', function () { ZH.Audio.play('click'); self.showShop(); });
       on('btn-missions', 'click', function () { ZH.Audio.play('click'); self.showMissions(); });
+      on('btn-watch-ad', 'click', function () { ZH.Audio.play('click'); if (ZH.Ads) ZH.Ads.showRewarded(function (ok) { if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast(ok ? 'REWARD GRANTED' : 'ADS COMING SOON', ok ? 'good' : 'warn'); }); });
       on('btn-achievements', 'click', function () { ZH.Audio.play('click'); self.showAchievements(); });
       on('btn-board', 'click', function () { ZH.Audio.play('click'); self.showLeaderboard('endless'); });
       on('btn-help', 'click', function () { ZH.Audio.play('click'); self.showHelp(); });

@@ -53,6 +53,13 @@ window.ZH = window.ZH || {};
     requestAnimationFrame(function (ts) { self.frame(ts); });
   };
 
+  /* Rewarded ads: explicit no-op placeholder pending ad-SDK choice.
+     TODO: replace showRewarded with a real SDK integration once chosen. */
+  ZH.Ads = ZH.Ads || {
+    available: false,
+    showRewarded: function (onResult) { if (typeof onResult === 'function') onResult(false); return false; }
+  };
+
   Game.resize = function () {
     var c = this.canvas;
     if (!c) return;
