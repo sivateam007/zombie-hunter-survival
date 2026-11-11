@@ -381,6 +381,8 @@ window.ZH = window.ZH || {};
 
       // 1. a weapon the survivor is not carrying yet
       (ZH.WEAPON_ORDER || []).forEach(function (id) {
+        /* force field removed from the level-up pool */
+        if (id === 'forcefield') return;
         var w = ZH.WEAPONS && ZH.WEAPONS[id];
         if (!w || w.evoOnly) return;
         if (runWeapons[id]) return;
@@ -389,6 +391,8 @@ window.ZH = window.ZH || {};
 
       // 2. level up a weapon already in hand (level 6 evolves it)
       Object.keys(runWeapons).forEach(function (id) {
+        /* force field removed from the level-up pool */
+        if (id === 'forcefield') return;
         var w = ZH.WEAPONS && ZH.WEAPONS[id];
         var st = runWeapons[id] || {};
         if (!w || w.evoOnly) return;
