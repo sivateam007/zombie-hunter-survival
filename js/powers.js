@@ -36,21 +36,21 @@
     queen:    { name: 'SWARM CALL',       blurb: 'Hits splash 35% damage around the target', engine: 'splash', frac: 0.35, radius: 78 },
     ghostcat: { name: 'PHASE PAW',        blurb: '35% chance to slip a bite', engine: 'dodge', chance: 0.35 },
     ranger:   { name: 'LONG STRIDE',      blurb: '+8% speed and +8% damage', engine: 'stat', speed: 1.08, dmg: 1.08 },
-    medic:    { name: 'TRIAGE',           blurb: 'Regenerate 1.2 health per second', engine: 'regen', rate: 1.2 },
+    medic:    { name: 'TRIAGE',           blurb: 'Bites rebound for 25% of the damage', engine: 'thorns', frac: 0.25 },
     scrapper: { name: 'SALVAGE',          blurb: 'Half of all kills drop 3 extra scrap', engine: 'scavenge', coins: 3, chance: 0.5 },
     berserk:  { name: 'ADRENALINE',       blurb: 'Up to +40% damage as your health drops', engine: 'berserk', max: 0.4 },
     ghost:    { name: 'AFTERIMAGE',       blurb: '25% chance to slip a bite', engine: 'dodge', chance: 0.25 },
-    warden:   { name: 'LOCKDOWN',         blurb: 'Every 10 kills arms a 2 s force field', engine: 'aura', shieldEvery: 10, shieldSeconds: 2 },
-    paladin:  { name: 'AEGIS',            blurb: 'Bites rebound and you heal 0.8/s', engine: 'thorns', frac: 0.3, regen: 0.8 },
+    warden:   { name: 'LOCKDOWN',         blurb: '+50% damage to enemies under 40% health', engine: 'execute', threshold: 0.4, mult: 1.5 },
+    paladin:  { name: 'AEGIS',            blurb: 'Bites rebound for 30% of the damage', engine: 'thorns', frac: 0.3 },
     spectre:  { name: 'PHASE WALK',       blurb: '35% chance to slip a bite', engine: 'dodge', chance: 0.35 },
     tyrant:   { name: 'TYRANNY',          blurb: 'Up to +60% damage as your health drops', engine: 'berserk', max: 0.6 },
     oracle:   { name: 'FORESIGHT',        blurb: 'Every kill drops 4 extra scrap', engine: 'scavenge', coins: 4, chance: 1 },
     samurai:  { name: 'ONE CUT',          blurb: 'Every 4th hit deals triple damage', engine: 'countcrit', every: 4, mult: 3 },
     valkyrie: { name: 'SKY CHARGE',       blurb: '20% chance to crit, +10% speed', engine: 'crit', chance: 0.2, mult: 2, statSpeed: 1.1 },
-    monk:     { name: 'INNER PEACE',      blurb: 'Regenerate 2 health per second', engine: 'regen', rate: 2 },
+    monk:     { name: 'INNER PEACE',      blurb: '20% chance to slip a bite', engine: 'dodge', chance: 0.2 },
     huntress: { name: 'MARKSMAN',         blurb: '+80% damage to enemies under 40% health', engine: 'execute', threshold: 0.4, mult: 1.8 },
     empress:  { name: 'ROYAL DECREE',     blurb: 'Hits splash; damage grows as you bleed', engine: 'splash', frac: 0.3, radius: 70, berserk: 0.3 },
-    seraph:   { name: 'HALO',             blurb: '10% lifesteal; kills arm a force field', engine: 'lifesteal', frac: 0.1, shieldEvery: 8, shieldSeconds: 1.5 },
+    seraph:   { name: 'HALO',             blurb: '10% of damage dealt returns as health', engine: 'lifesteal', frac: 0.1 },
     overlord: { name: 'VOID EDICT',       blurb: 'Splash hits; +50% damage while wounded', engine: 'splash', frac: 0.45, radius: 96, berserk: 0.5 }
   };
 
@@ -164,13 +164,6 @@
       }
     }
 
-    if (pw.shieldEvery && p && ZH.openShield) {
-      p._shieldKills = (p._shieldKills || 0) + 1;
-      if (p._shieldKills >= pw.shieldEvery) {
-        p._shieldKills = 0;
-        ZH.openShield(p, pw.shieldSeconds);
-      }
-    }
   }
 
   /* returns the damage that actually lands: 0 means the hit was dodged */
@@ -198,10 +191,7 @@
     if (!p || p.dead) return;
     var pw = p.power;
 
-    var regen = pw ? (pw.regen || (pw.engine === 'regen' ? pw.rate : 0)) : 0;
-    if (regen > 0 && p.hp < p.maxHp) {
-      p.hp = Math.min(p.maxHp, p.hp + regen * dt);
-    }
+    /* no passive regeneration: health only moves through packs and gifts */
 
     /* burn / frost damage over time: ticks four times a second */
     var list = world.zombies || [];

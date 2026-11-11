@@ -1,7 +1,11 @@
 'use strict';
-/* Defence shield: one clock drives the timeline, the ring, the blink and the
-   damage gate. Asserted here: the timeline maths, arming rules, a real
-   countdown to exactly zero, the shield pickup, a break and a re-acquire. */
+/* Force field: one earned, timed protection window.
+
+   Nothing passive arms it any more — no bite, dash, level-up or revive — and
+   health never regenerates on its own. A cell drops on every 40th kill (and
+   from every boss), arms a 2.5-minute field, and the same clock drains it to
+   exactly zero. Asserted here: timeline maths, the single arming path, the
+   kill-gift gate, the pickup, a real block and a break that does not re-arm. */
 const assert = require('assert');
 const { ZH } = require('./_setup');
 
@@ -10,7 +14,7 @@ const full = ZH.shieldTimeline(3, 3);
 assert.deepStrictEqual(
   { active: full.active, remaining: full.remaining, frac: full.frac, expiring: full.expiring },
   { active: true, remaining: 3, frac: 1, expiring: false },
-  'a fresh window reads 3 s / full bar'
+  'a fresh window reads full'
 );
 assert.strictEqual(ZH.shieldTimeline(0, 3).active, false, 'no window when the clock is empty');
 assert.strictEqual(ZH.shieldTimeline(0, 3).frac, 0, 'an empty bar has no width');
@@ -21,37 +25,53 @@ assert.strictEqual(ZH.shieldTimeline(9, 3).frac, 1, 'the bar never overfills');
 const mid = ZH.shieldTimeline(1.8, 3);
 assert.ok(Math.abs(mid.frac * mid.max - mid.remaining) < 1e-9, 'bar width and remaining time agree');
 
-/* ---------------- arming rules ---------------- */
-const p = { shieldT: 0, shieldMax: 0 };
-ZH.openShield(p, 1.2);
-assert.strictEqual(p.shieldT, 1.2, 'a level-up window arms 1.2 s');
-ZH.openShield(p, 3);
-assert.strictEqual(p.shieldT, 3, 'a bite extends it to 3 s');
-ZH.openShield(p, 0.4);
-assert.strictEqual(p.shieldT, 3, 'a shorter trigger cannot cut a live window');
-assert.strictEqual(p.invuln, 3, 'the legacy mirror follows the one clock');
-assert.strictEqual(ZH.shielded(p), true);
+/* ---------------- one arming path: the earned cell ---------------- */
+assert.strictEqual(ZH.SHIELD.force, 150, 'a force field lasts 2.5 minutes');
+assert.ok(ZH.SHIELD.max >= ZH.SHIELD.force, 'the HUD bar spans the whole window');
+assert.strictEqual(ZH.SHIELD.hit, 0, 'a bite does not arm the field');
+assert.strictEqual(ZH.SHIELD.levelup, 0, 'a level-up does not arm the field');
+assert.strictEqual(ZH.SHIELD.dash, 0, 'a roll does not arm the field');
+assert.strictEqual(ZH.SHIELD.revive, 0, 'a revive does not arm the field');
 
-/* the shield cell arms the (shorter now) force field and disappears at zero */
-assert.strictEqual(ZH.SHIELD.force, 25, 'force field is a 25 s window');
-assert.ok(ZH.SHIELD.levelup <= 5, 'the level-up window is a short buffer, not a 2-minute field');
-const field = { shieldT: 0, shieldMax: 0 };
-ZH.openShield(field, ZH.SHIELD.force);
-assert.strictEqual(field.shieldT, 25, 'force field starts at 25 s');
-for (let i = 0; i < 26; i++) ZH.tickShield(field, 1);
-assert.strictEqual(field.shieldT, 0, 'force field is gone after 25 s');
-assert.strictEqual(ZH.shielded(field), false, 'no protection after the force field ends');
+const p = { shieldT: 0, shieldMax: 0 };
+ZH.openShield(p);
+assert.strictEqual(p.shieldT, 150, 'the default arming path is the 150 s cell');
+ZH.openShield(p, 30);
+assert.strictEqual(p.shieldT, 150, 'a shorter trigger cannot cut a live window');
+assert.strictEqual(p.invuln, 150, 'the legacy mirror follows the one clock');
+assert.strictEqual(ZH.shielded(p), true);
+assert.strictEqual(ZH.openShield({}, 0), 0, 'a zero trigger is a no-op');
+
+/* a stage starts with no protection at all */
+assert.strictEqual(ZH.createSurvivor({ weapon: 'gun' }).shieldT, 0,
+  'the hunter spawns without a force field');
+assert.strictEqual(ZH.createSurvivor({ weapon: 'gun' }).shieldMax, 0,
+  'and without a stale bar span');
+
+/* ---------------- earned, not timed: the kill gift ---------------- */
+assert.ok(ZH.SHIELD.killGiftEvery >= 20 && ZH.SHIELD.killGiftEvery <= 100,
+  'cells are rare enough to matter: ' + ZH.SHIELD.killGiftEvery + ' kills');
+assert.strictEqual(ZH.shieldGiftDue(0, false), false, 'no cell at spawn');
+assert.strictEqual(ZH.shieldGiftDue(39, false), false, 'not before the milestone');
+assert.strictEqual(ZH.shieldGiftDue(40, false), true, 'the 40th kill earns a cell');
+assert.strictEqual(ZH.shieldGiftDue(80, false), true, 'and every 40th after that');
+assert.strictEqual(ZH.shieldGiftDue(0, true), true, 'a boss always leaves a cell');
+assert.strictEqual(ZH.shieldGiftDue(40, true), true, 'bosses stay generous');
 
 /* ---------------- the clock drains to exactly zero ---------------- */
-let t = 3;
+const field = { shieldT: 0, shieldMax: 0 };
+ZH.openShield(field, ZH.SHIELD.force);
+let t = field.shieldT;
 let frames = 0;
-while (t > 0 && frames < 1000) { t = ZH.tickShield(p, 1 / 60); frames++; }
+while (t > 0 && frames < 20000) { t = ZH.tickShield(field, 1 / 60); frames++; }
 assert.strictEqual(t, 0, 'the window ends at zero, never negative');
-assert.ok(frames >= 179 && frames <= 181, '3 s of shield is 180 frames at 60 fps (got ' + frames + ')');
-assert.strictEqual(ZH.shielded(p), false, 'the hunter is unprotected after a break');
-assert.strictEqual(ZH.shieldTimeline(p.shieldT, 3).active, false, 'the timeline hides on a break');
+assert.ok(frames >= 149 * 60 && frames <= 151 * 60,
+  '150 s of field is ~9,000 frames at 60 fps (got ' + frames + ')');
+assert.strictEqual(ZH.shielded(field), false, 'the hunter is unprotected after the break');
+assert.strictEqual(ZH.shieldTimeline(field.shieldT, ZH.SHIELD.max).active, false,
+  'the timeline hides on a break');
 
-/* ---------------- pickup, break, re-acquire ---------------- */
+/* ---------------- pickup, block, break, no re-arm ---------------- */
 function makeWorld() {
   const world = {
     arena: { w: 6144, h: 6144 },
@@ -62,16 +82,14 @@ function makeWorld() {
   };
   world.player.attack = 10;
   world.player.attribs = ZH.attribsFrom({});
-  world.player.shieldT = 0;
-  world.player.shieldMax = 0;
-  world.player.invuln = 0;
   return world;
 }
 
 const w = makeWorld();
-w.pickups.push({ type: 'shield', x: w.player.x, y: w.player.y, life: 10, value: ZH.SHIELD.hit });
+assert.strictEqual(w.player.shieldT, 0, 'no opening shield to hide behind');
+w.pickups.push({ type: 'shield', x: w.player.x, y: w.player.y, life: 10, value: ZH.SHIELD.force });
 ZH.updatePickups(w.pickups, 1 / 60, w);
-assert.strictEqual(w.player.shieldT, ZH.SHIELD.hit, 'the shield cell arms the full 3 s window');
+assert.strictEqual(w.player.shieldT, ZH.SHIELD.force, 'the earned cell arms the 150 s window');
 assert.strictEqual(w.pickups.length, 0, 'the cell is consumed');
 assert.strictEqual(ZH.shieldTimeline(w.player.shieldT, w.player.shieldMax).active, true,
   'the timeline turns on with the pickup');
@@ -79,19 +97,18 @@ assert.strictEqual(ZH.shieldTimeline(w.player.shieldT, w.player.shieldMax).activ
 /* a bite during the window is blocked and the hunter keeps full health */
 w.zombies.push(ZH.createEnemy('zombieA', w.player.x + 8, w.player.y, 1));
 for (let i = 0; i < 90; i++) ZH.updateEnemies(w.zombies, 1 / 60, w);
-assert.strictEqual(w.player.hp, 100, 'the shield blocks bites while the timeline runs');
+assert.strictEqual(w.player.hp, 100, 'the field blocks bites while the timeline runs');
 
-/* run the clock out, then the same bite lands and re-arms the window */
-for (let i = 0; i < 200; i++) ZH.tickShield(w.player, 1 / 60);
+/* run the clock out, then the same bite lands and must NOT re-arm the field */
+for (let i = 0; i < 9200; i++) ZH.tickShield(w.player, 1 / 60);
 assert.strictEqual(w.player.shieldT, 0, 'the window expired');
 let bit = false;
-for (let i = 0; i < 240 && !bit; i++) {
+for (let i = 0; i < 420 && !bit; i++) {
   ZH.updateEnemies(w.zombies, 1 / 60, w);
   if (w.player.hp < 100) bit = true;
 }
-assert.ok(bit, 'a bite lands once the shield is down');
-assert.strictEqual(w.player.shieldT, ZH.SHIELD.hit, 'the bite re-acquires a fresh 3 s window');
-assert.strictEqual(ZH.shieldTimeline(w.player.shieldT, w.player.shieldMax).active, true,
-  'the timeline comes back after a re-acquire');
+assert.ok(bit, 'a bite lands once the field is down');
+assert.strictEqual(w.player.shieldT, 0, 'a bite does not re-arm the field');
+assert.strictEqual(w.player.invuln, 0, 'no hidden invulnerability window either');
 
-console.log('shield.test.js ✓ timeline maths, pickup, break and re-acquire');
+console.log('shield.test.js ✓ earned 150 s field, kill-gift gate, block and break');

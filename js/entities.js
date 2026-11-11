@@ -111,23 +111,24 @@
   };
 
   ZH.SHIELD = ZH.SHIELD || {
-    max: 25,         /* force-field window; also the HUD bar width            */
-    force: 25,       /* a shield cell arms a 25 s force field                 */
-    hit: 3.0,        /* after a bite or an enemy round                       */
-    revive: 3.0,     /* after spending scrap to get back up                  */
-    levelup: 3.0,    /* a short window while the level-up cards close        */
-    dash: 0.35,      /* during a combat roll                                 */
-    dashExit: 0.12   /* the instant after the roll ends                      */
+    max: 150,        /* force-field window; also the HUD bar width            */
+    force: 150,      /* one earned cell = 2.5 minutes of protection          */
+    /* nothing else arms the field: no bite, dash, level-up or revive window */
+    hit: 0,
+    revive: 0,
+    levelup: 0,
+    dash: 0,
+    dashExit: 0,
+    killGiftEvery: 40   /* every 40th kill drops a force-field cell          */
   };
 
   /** arm (or extend) the one protection timer */
   ZH.openShield = function (p, seconds) {
     if (!p) return 0;
-    var t = seconds == null ? ZH.SHIELD.hit : seconds;
+    var t = seconds == null ? ZH.SHIELD.force : seconds;
     if (!isFinite(t) || t <= 0) return p.shieldT || 0;
     p.shieldT = Math.max(p.shieldT || 0, t);
-    /* the HUD/ring span follows the window that is actually running: after
-       the 60 s force field a fresh 3 s bite shield must fill the bar again */
+    /* the HUD/ring span follows the window that is actually running */
     p.shieldMax = p.shieldT;
     p.invuln = p.shieldT;
     return p.shieldT;
@@ -135,6 +136,14 @@
 
   /** is the hunter protected right now? (one check, one field) */
   ZH.shielded = function (p) { return !!(p && (p.shieldT || 0) > 0); };
+
+  /** does this kill earn a force-field cell? Bosses always do; the horde
+      every `killGiftEvery` kills. This is the only source of the field. */
+  ZH.shieldGiftDue = function (kills, isBoss) {
+    if (isBoss) return true;
+    var n = Math.max(0, Math.floor(kills || 0));
+    return n > 0 && n % (ZH.SHIELD.killGiftEvery || 40) === 0;
+  };
 
   /** one clock, one timeline: remaining time, bar fraction and the
       "about to break" flag the HUD paints from */
@@ -362,10 +371,10 @@
       kills: 0,
       dead: false,
       deadT: 0,
-      /* one protection clock for every force-field window (see ZH.SHIELD) */
-      shieldT: 3, shieldMax: 3,
+      /* one protection clock, empty until an earned cell arms it */
+      shieldT: 0, shieldMax: 0,
       jetFuel: 100, jetMax: 100, jetActive: false, jetLift: 0,
-      invuln: 3,                    /* legacy mirror of shieldT only */
+      invuln: 0,                    /* legacy mirror of shieldT only */
       dashT: 0, dashCd: 0, dashMax: 2.2, dashVX: 0, dashVY: 0,
       regenT: 0
     };
@@ -496,7 +505,8 @@
        a pink siphon burst once enough has accumulated to be worth showing */
     var sip = world.player;
     if (sip && !sip.dead && sip.hp != null && sip.maxHp) {
-      var frac = (sip.lifesteal != null ? sip.lifesteal : (ZH.LIFESTEAL && ZH.LIFESTEAL.frac)) || 0.03;
+      /* only a lifesteal power returns health; there is no passive trickle */
+      var frac = sip.lifesteal || 0;
       var gain = Math.min((ZH.LIFESTEAL && ZH.LIFESTEAL.max) || 2.5, dmg * frac);
       if (gain > 0.02 && sip.hp < sip.maxHp) {
         sip.hp = Math.min(sip.maxHp, sip.hp + gain);
@@ -608,10 +618,18 @@
       if (z.coins || z.boss) {
         world.pickups.push({ type: 'coin', x: z.x + rand(-8, 8), y: z.y + rand(-8, 8), life: 12, value: z.coins || 5 });
       }
-      /* a spent shield cell: grabbing it re-arms the same protection window,
-         so the timeline can be topped up mid-fight */
-      if (z.boss || Math.random() < 0.06) {
-        world.pickups.push({ type: 'shield', x: z.x + rand(-10, 10), y: z.y - 6, life: 20, value: ZH.SHIELD.force });
+      /* force-field cells are earned, not sprinkled: every 40th kill drops
+         one, and a boss always leaves one. This is the only source. */
+      if (ZH.shieldGiftDue(world.player && world.player.kills, z.boss)) {
+        world.pickups.push({
+          type: 'shield', x: z.x + rand(-10, 10), y: z.y - 6, life: 30, value: ZH.SHIELD.force
+        });
+        if (world.floaters && world.floaters.length < 70) {
+          world.floaters.push({
+            text: 'FORCE FIELD CELL', x: z.x, y: z.y - 30, vy: -34,
+            life: 1.1, max: 1.1, size: 13, color: '#9ed8ff'
+          });
+        }
       }
       /* miniboss deaddrops, exactly the original's per-type table: a bomb from
          the soldiers/towers, a medkit from the toxic ones, a magnet from the
@@ -1274,14 +1292,7 @@
       }
     }
 
-    // Energy Drink: regen_bonus% of max HP every 5 s (original regen_time)
-    if (a.regen_bonus > 0 && !p.dead) {
-      p.regenT = (p.regenT || 0) + dt;
-      if (p.regenT >= 5) {
-        p.regenT -= 5;
-        p.hp = Math.min(p.maxHp, p.hp + p.maxHp * a.regen_bonus);
-      }
-    }
+    /* health never regenerates on its own: only packs and gifts heal */
   }
 
   function enemyShoot(world, z, dist) {
@@ -1392,7 +1403,7 @@
             if (bite > 0) {
               p.hp -= bite;
               if (ZH.Missions) ZH.Missions.update(10, bite);   /* RECEIVE_X_DMG */
-              ZH.openShield(p, ZH.SHIELD.hit);   /* force field: one window */
+
               if (p.hp <= 0) { p.hp = 0; p.dead = true; }
               world.shake = Math.max(world.shake || 0, 5);
               world.hurtT = 0.3;
@@ -1581,7 +1592,7 @@
             if (shot > 0) {
               p.hp -= shot;
               if (ZH.Missions) ZH.Missions.update(10, shot);   /* RECEIVE_X_DMG */
-              ZH.openShield(p, ZH.SHIELD.hit);   /* force field: one window */
+
               if (p.hp <= 0) { p.hp = 0; p.dead = true; }
               world.shake = Math.max(world.shake || 0, 5);
               world.hurtT = 0.3;

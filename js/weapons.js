@@ -351,9 +351,9 @@
       desc: 'All weapon cooldowns -[x]%.'
     },
     energydrink: {
-      id: 'energydrink', name: 'Energy Drink', attrib: 'regen_bonus', pct: true,
-      evoWeapon: 'forcefield', bonus: [0, .01, .02, .03, .04, .05],
-      desc: 'Regenerate [x]% of your health every 5 s.'
+      id: 'energydrink', name: 'Energy Drink', attrib: 'defense', pct: true,
+      evoWeapon: 'forcefield', bonus: [0, .03, .06, .09, .12, .15],
+      desc: 'Take [x]% less damage from bites.'
     },
     sneakers: {
       id: 'sneakers', name: 'Sneakers', attrib: 'speed_bonus', pct: true,

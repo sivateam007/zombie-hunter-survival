@@ -31,16 +31,14 @@ function makeWorld(opts) {
   const w = makeWorld();
   const z = ZH.createEnemy('zombieA', 3300, 3072, 1);
   w.zombies.push(z);
-  assert.strictEqual(w.player.shieldT, 3, 'a stage opens with the original 3 s defence shield');
-  w.player.invuln = 0;   // let the opening shield expire so the bite can land
-  w.player.shieldT = 0;
+  assert.strictEqual(w.player.shieldT, 0, 'a stage opens with no force field');
   const startDist = Math.hypot(z.x - w.player.x, z.y - w.player.y);
   for (let i = 0; i < 180; i++) ZH.updateEnemies(w.zombies, 1 / 60, w);
   const endDist = Math.hypot(z.x - w.player.x, z.y - w.player.y);
   assert.ok(endDist < startDist, 'the zombie closes the distance');
   assert.ok(w.player.hp < 100, 'it lands a bite');
-  assert.strictEqual(w.player.invuln, 3.0, 'a hit grants the original 3 s invincibility');
-  assert.strictEqual(w.player.shieldT, 3.0, 'the defence shield timeline restarts on a hit');
+  assert.strictEqual(w.player.invuln, 0, 'a hit grants no invulnerability window');
+  assert.strictEqual(w.player.shieldT, 0, 'a hit does not arm a force field');
 }
 
 /* ---------- 3. weapons kill, score and drop loot ---------- */
@@ -85,7 +83,7 @@ ZH.WEAPON_ORDER.forEach((id) => {
 /* ---------- 6. ranged enemies shoot and their shots hurt ---------- */
 {
   const w = makeWorld();
-  w.player.invuln = 0;   // past the opening defence shield
+  w.player.invuln = 0;   // no protection: shots must land
   w.player.shieldT = 0;
   const cop = ZH.createEnemy('cop', 3160, 3072, 1);
   w.zombies.push(cop);
@@ -101,7 +99,7 @@ ZH.WEAPON_ORDER.forEach((id) => {
   p.supplies = { sneakers: 5, energydrink: 1 };
   p.attribs = ZH.attribsFrom(p.supplies);
   assert.strictEqual(p.attribs.speed_bonus, 0.5, 'sneakers lvl 5 = +50% speed');
-  assert.strictEqual(p.attribs.regen_bonus, 0.01, 'energy drink heals 1% every 5 s');
+  assert.strictEqual(p.attribs.defense, 0.03, 'energy drink cuts bite damage by 3%');
 }
 
 /* ---------- 8. evolutions swap the firing gun at level 6 ---------- */

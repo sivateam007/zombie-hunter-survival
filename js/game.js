@@ -160,6 +160,7 @@ window.ZH = window.ZH || {};
     this._lastPY = null;
     this.waveShown = 1;
     this.wave20Paid = false;
+    this.giftKills = 0;
     if (window.ZH && ZH.Anim) ZH.Anim.banner(stage.name,
       (this.player.power ? this.player.power.name :
         'STAGE ' + ((stageId || 0) + 1) + ' · WAVE 1/' + (ZH.WAVES_PER_STAGE || 20)));
@@ -247,7 +248,6 @@ window.ZH = window.ZH || {};
         if (cdT > 1.2) {
           c._crashT = this.t;
           p.hp = Math.max(0, p.hp - 14);
-          if (ZH.openShield) ZH.openShield(p, ZH.SHIELD.hit);
           this.shake = Math.max(this.shake, 9);
           this.hurtT = 0.3;
           this.floaters.push({
@@ -284,14 +284,7 @@ window.ZH = window.ZH || {};
               });
             }
           }
-          var lh = this.player;
-          if (lh && !lh.dead && lh.hp < lh.maxHp) {
-            lh.hp = Math.min(lh.maxHp, lh.hp + 2);
-            this.floaters.push({
-              text: '+2', x: zz.x, y: zz.y - 26, vy: -40,
-              life: 0.7, max: 0.7, size: 13, color: '#ff9ad5'
-            });
-          }
+          /* roadkill pays in scrap, never in health: no free healing */
         }
       }
       var dx = c.x - p.x, dy = c.y - p.y;
@@ -989,7 +982,6 @@ window.ZH = window.ZH || {};
     p.dashVY = my / len;
     p.dashT = 0.2;
     p.dashCd = p.dashMax || 2.2;
-    ZH.openShield(p, ZH.SHIELD.dash);
     if (ZH.Audio) ZH.Audio.play('dash');
     return true;
   };
@@ -1118,7 +1110,6 @@ window.ZH = window.ZH || {};
       p.x += p.dashVX * p.speed * 3.4 * dt;
       p.y += p.dashVY * p.speed * 3.4 * dt;
       p.walkPhase += dt * 14;
-      if (p.dashT <= 0) ZH.openShield(p, ZH.SHIELD.dashExit);
     }
 
     if (ZH.updateSurvivor) ZH.updateSurvivor(p, dt, this);
@@ -1188,15 +1179,15 @@ window.ZH = window.ZH || {};
       if (ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('TREASURE', 'Grab it to pick a skill');
     }
 
-    /* gift drops: a wrapped box that pays out a random reward */
-    this.giftT = (this.giftT || 0) + dt;
-    if (this.giftT > 40 && this.pickups.length < 26) {
-      this.giftT = 0;
+    /* gift drops are earned: every 30 kills leaves a wrapped box */
+    var giftKills = p.kills || 0;
+    if (giftKills - (this.giftKills || 0) >= 30 && this.pickups.length < 26) {
+      this.giftKills = giftKills;
       var ga = rand(0, TAU), gd = rand(150, 330);
       this.pickups.push({
         type: 'gift', x: p.x + Math.cos(ga) * gd, y: p.y + Math.sin(ga) * gd, life: 45
       });
-      if (ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('GIFT DROP', 'Something is wrapped nearby');
+      if (ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('GIFT DROP', 'A kill-streak reward is nearby');
     }
 
     this.updateCamera(dt);
@@ -1234,7 +1225,6 @@ window.ZH = window.ZH || {};
       p.exp -= need;
       p.level = (p.level || 1) + 1;
       /* a short safe window while the cards are up */
-      ZH.openShield(p, ZH.SHIELD.levelup);
       /* the chooser takes over the screen: park the stick so the hunter does
          not keep walking while the cards are up, and so the next press is a
          clean grab */
@@ -2251,7 +2241,6 @@ window.ZH = window.ZH || {};
       p.dead = false;
       p.deadT = 0;
       p.hp = p.maxHp;
-      ZH.openShield(p, ZH.SHIELD.revive);   /* revival window, one timer */
       p.dashCd = 0;
     }
     /* clear the ring so the survivor is not re-killed on the same frame */

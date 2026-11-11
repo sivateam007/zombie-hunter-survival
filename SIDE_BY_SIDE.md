@@ -28,7 +28,7 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 |---|---|---|---|---|---|
 | Base speed | 0.3 px/ms | 0.3 | ✅ | `resetAttribs` speed .3 | `entities.js` survivor speed |
 | Pickup range | 50 | 150 base | 🟡 ours wider | `pickup_range=50` | `updatePickups` `150 × …` |
-| Regen interval | 5 s | 5 s | ✅ | `regen_time=5000` | survivor attribs |
+| Regen | `regen_bonus` tick every 5 s | **removed**: health only from packs, gifts and lifesteal powers | ❌ by design | `regen_time=5000` | `updateSurvivor`, `Powers.update` |
 | XP to level | `floor(1000×1.25^(level−1))` | same | ✅ | `getExpsToLevelUp` | `Game.expNeeded` |
 | XP gain | `3×floor(v + v·exp% + v·learning%)` | exp bonus only, no ×3/learning | 🟡 | `incExps` | `updatePickups` exp branch |
 | POWER at 30 | 880 | 880 | ✅ | skills array | `ZH.skillValue('power',30)` |
@@ -133,7 +133,7 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Treasure cards | 1/3/5 cards | 1/3/5 supported; drops carry the count | 🟡 | `ShowSkillSlots(data)` | `showLevelUp(count)`; reroll still shared |
 | Chest reroll | 1,500×(n+1), max 3 | shared 500×n, max 5 | ❌ | `MAX_CHESTS_REROLLS` | `lu-reroll` |
 | Level-up reroll | 500×(n+1) max 5 | same | ✅ | price helper | `ui.js` |
-| Shield cell | none | 25 s force field | ➕ | — | `ZH.SHIELD` |
+| Force field | none | earned cell every 40 kills / boss, 150 s | ➕ | — | `ZH.SHIELD`, `shieldGiftDue` |
 | Gift box | none | random reward | ➕ | — | gift branch |
 
 ## 9. Missions, idle, meta
@@ -243,3 +243,18 @@ holds **10 h of segments = 1,000 coins**, and fills over the next 158 h.
 20-minute clock is the existing win. Twenty 60-second waves fit that window
 exactly, so auto-advance triggers on wave 20 without skipping a single scripted
 boss zone. Shorter waves would have cut content off the end of every stage.
+
+## 16. Implemented in this pass — no passive healing, earned force field
+
+| Change | Where | Verified by |
+|---|---|---|
+| Passive HP regeneration removed: survivor regen powers, the Energy Drink tick and the roadkill +2 are all gone | `Powers.update`, `updateSurvivor`, `game.js` | `shield.test.js`; browser: 5 s of updates left a probe at 50 HP |
+| Universal 3% lifesteal default removed; only a lifesteal power returns health on damage | `damageEnemy` | tests + source |
+| Force field arms only from an earned cell: every 40th kill and every boss, **150 s** | `ZH.SHIELD`, `SHIELD.killGiftEvery`, `shieldGiftDue` | `shield.test.js`; browser: 40th kill dropped a cell, pickup → 150 s |
+| Bites, rolls, level-ups, car crashes and revives no longer arm a field | `entities.js`, `game.js` | browser: bite 100 → 88, shield stayed 0 |
+| Gift boxes are earned every 30 kills instead of a 40 s timer | `game.js` | source; full suite |
+| Energy Drink repurposed to 3–15% damage reduction (its regen tick is gone) | `weapons.js` | `sim.test.js` |
+
+All 12 test files pass; browser ran BUILD 27 with `frameErrors: 0`. Lifesteal
+is the one deliberate exception: those survivor powers still return health when
+they deal damage, but nothing ticks health back on a timer.
