@@ -85,7 +85,10 @@ window.ZH = window.ZH || {};
     { id: 'siphon',   name: 'SIPHON',      max: 5, base: 1800, desc: function (l) { return '+' + l + '% life discharge'; } },
     { id: 'sprint',   name: 'SPRINT',      max: 5, base: 1500, desc: function (l) { return '+' + (l * 3) + '% move speed'; } },
     { id: 'vitality', name: 'VITALITY',    max: 8, base: 900,  desc: function (l) { return '+' + (l * 5) + ' max vitals'; } },
-    { id: 'fortune',  name: 'FORTUNE',     max: 5, base: 2000, desc: function (l) { return '+' + (l * 5) + '% scrap'; } }
+    { id: 'fortune',  name: 'FORTUNE',     max: 5, base: 2000, desc: function (l) { return '+' + (l * 5) + '% scrap'; } },
+    { id: 'armor',    name: 'ARMOR',       max: 5, base: 2200, desc: function (l) { return '+' + (l * 2) + '% damage reduction'; } },
+    { id: 'reload',   name: 'RELOAD',      max: 5, base: 1600, desc: function (l) { return '-' + (l * 3) + '% reload time'; } },
+    { id: 'clip',     name: 'CLIP',        max: 5, base: 1700, desc: function (l) { return '+' + (l * 5) + '% magazine size'; } }
   ];
 
   ZH.CHARACTER_BY_ID = ZH.CHARACTER_BY_ID || {};
@@ -272,6 +275,18 @@ window.ZH = window.ZH || {};
     if (fort) p.fortune = Math.round((p.fortune || 0) + fort * 5);
     var sip = lv('siphon');
     if (sip) p.lifesteal = Math.max(p.lifesteal || 0, 0.03 + sip * 0.01);
+    var arm = lv('armor');
+    if (arm) p.armor = (p.armor || 0) + arm * 0.02;
+    var rel = lv('reload');
+    if (rel) p.reloadMul = (p.reloadMul || 1) * (1 - rel * 0.03);
+    var cl = lv('clip');
+    if (cl) {
+      p.clipMul = (p.clipMul || 1) * (1 + cl * 0.05);
+      if (p.weapons) for (var wk in p.weapons) {
+        var ww = p.weapons[wk];
+        if (ww && ww.mag != null) ww.mag = Math.round(ww.mag * (1 + cl * 0.05));
+      }
+    }
     return p;
   };
 

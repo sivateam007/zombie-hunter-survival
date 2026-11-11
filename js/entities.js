@@ -1534,6 +1534,7 @@
     var p = world.player;
     if (!p || p.dead) return 0;
     var ar = Math.min(0.8, (attribsOf(p).defense || 0) / 100);
+    ar = Math.min(0.9, ar + (p.armor || 0));
     var dmg = raw * (1 - ar);
     if (ZH.Powers) dmg = ZH.Powers.onBite(world, null, dmg);
     if (dmg <= 0) return 0;
@@ -2118,6 +2119,7 @@
         /* enemy shot: hurt the hunter */
         if (Math.hypot(p.x - b.x, p.y - b.y) < p.r + b.r) {
           var ar = Math.min(0.8, (attribsOf(p).defense || 0) / 100);
+    ar = Math.min(0.9, ar + (p.armor || 0));
           var shot = b.dmg * (1 - ar);
           if (ZH.Powers) shot = ZH.Powers.onBite(world, null, shot);
           if (shot > 0) {

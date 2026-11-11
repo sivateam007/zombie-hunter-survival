@@ -1089,12 +1089,12 @@ window.ZH = window.ZH || {};
       if (w.reloading > 0) { started++; continue; }
       if (ringOn && name === p.primaryWeapon) {
         var missing = Math.max(1, Math.ceil(max - w.mag));
-        this.beginRingReload(name, w, def, missing, (def.reload || 1.5) * this.RELOAD_MANUAL_MUL);
+        this.beginRingReload(name, w, def, missing, (def.reload || 1.5) * this.RELOAD_MANUAL_MUL * (p.reloadMul || 1));
         ringStarted++;
         started++;
         continue;
       }
-      w.reloading = (def.reload || 1.5) * this.RELOAD_MANUAL_MUL;
+      w.reloading = (def.reload || 1.5) * this.RELOAD_MANUAL_MUL * (p.reloadMul || 1);
       w.manual = true;
       started++;
     }
@@ -2401,7 +2401,7 @@ window.ZH = window.ZH || {};
         if (name === p.primaryWeapon && this.ringReloadEnabled()) {
           this.beginRingReload(name, st, def, def.mag || base.mag, base.reload || 1.5);
         } else {
-          st.reloading = base.reload || 1.5;
+          st.reloading = (base.reload || 1.5) * (p.reloadMul || 1);
           if (ZH.Audio) ZH.Audio.play('reload');
         }
         continue;
@@ -2419,7 +2419,7 @@ window.ZH = window.ZH || {};
           if (name === p.primaryWeapon && this.ringReloadEnabled()) {
             this.beginRingReload(name, st, def, def.mag || base.mag, base.reload || 1.5);
           } else {
-            st.reloading = base.reload || 1.5;
+            st.reloading = (base.reload || 1.5) * (p.reloadMul || 1);
             if (ZH.Audio) ZH.Audio.play('reload');
           }
         }
