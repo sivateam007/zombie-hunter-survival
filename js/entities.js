@@ -662,6 +662,7 @@
     }
     if (z.hp <= 0) {
       z.dead = true;
+      if (z.boss && world) world.bossKilled = true;
       if (world.player) world.player.kills = (world.player.kills || 0) + 1;
       /* contracts: kills, bosses, minibosses and opened crates */
       if (ZH.Missions) {

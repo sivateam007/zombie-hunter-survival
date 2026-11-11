@@ -84,6 +84,7 @@ window.ZH = window.ZH || {};
     var stage = ZH.STAGES[stageId] || ZH.STAGES[0];
     if (!stage) return;
     this.mode = mode || 'campaign';
+    this.bossKilled = false;
     /* roll the daily contracts / coffer before the run starts */
     if (ZH.Missions) ZH.Missions.ensure();
     this.stageId = stageId || 0;
@@ -2619,6 +2620,18 @@ window.ZH = window.ZH || {};
         died: !win,
         wave: ZH.waveNumber ? ZH.waveNumber(this.elapsed, this.mode === 'endless') : 1
       });
+      if (ZH.Achievements) {
+        var achCtx = { won: !!win, runKills: p.kills || 0, survived: this.elapsed || 0,
+          mode: this.mode || 'campaign', wave: ZH.waveNumber ? ZH.waveNumber(this.elapsed, this.mode === 'endless') : 1,
+          bossKilled: !!this.bossKilled };
+        var unlocked = ZH.Achievements.check(achCtx);
+        if (unlocked && unlocked.length) {
+          unlocked.forEach(function (a) {
+            if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast('ACHIEVEMENT: ' + a.name, 'good');
+            if (ZH.Audio && ZH.Audio.play) ZH.Audio.play('buy');
+          });
+        }
+      }
       if (win) ZH.Save.clearLevel(this.stageId, 0);
     }
     /* Survive wave 20 and the next district deploys by itself; the campaign

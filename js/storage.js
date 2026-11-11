@@ -29,6 +29,7 @@ window.ZH = window.ZH || {};
     lastDaily: '',
     loginStreak: 0,
     lastLoginDate: '',
+    achievements: [],
     seenIntro: false,
     /* contracts + idle coffer (js/missions.js owns the format) */
     missions: [],
@@ -258,6 +259,10 @@ window.ZH = window.ZH || {};
     /* 6 = BUY_X_UPGRADES */
     if (ZH.Missions) ZH.Missions.update(6, 1);
     persist();
+    if (ZH.Achievements) {
+      var nu = ZH.Achievements.check({});
+      if (nu && nu.length && ZH.Anim && ZH.Anim.toast) nu.forEach(function (a) { ZH.Anim.toast('ACHIEVEMENT: ' + a.name, 'good'); });
+    }
     return { ok: true, level: lvl + 1, price: price };
   }
 
@@ -353,6 +358,68 @@ window.ZH = window.ZH || {};
     return { ok: true, coins: base, bonus: bonus, kind: kind, label: label, streak: save.loginStreak };
   }
 
+  /* ------------------------ achievements ----------------------------- */
+  ZH.ACHIEVEMENTS = ZH.ACHIEVEMENTS || [
+    { id: 'first_blood', name: 'FIRST BLOOD', desc: 'Land your first kill.', reward: 250 },
+    { id: 'first_win', name: 'FIRST WIN', desc: 'Clear a stage.', reward: 1000 },
+    { id: 'slayer_100', name: 'SLAYER', desc: 'Reach 100 kills in one run.', reward: 500 },
+    { id: 'slayer_1000', name: 'CENTURION', desc: 'Reach 1000 total kills.', reward: 2500 },
+    { id: 'survivor_5', name: 'SURVIVOR', desc: 'Survive 5 minutes in a run.', reward: 750 },
+    { id: 'boss_slayer', name: 'BOSS SLAYER', desc: 'Defeat a boss.', reward: 1500 },
+    { id: 'endless_5', name: 'ENDLESS FIVE', desc: 'Reach wave 5 in Endless.', reward: 1000 },
+    { id: 'veteran_10', name: 'VETERAN', desc: 'Play 10 games.', reward: 2000 },
+    { id: 'rich', name: 'HIGH ROLLER', desc: 'Hold 5000 scrap at once.', reward: 1000 },
+    { id: 'upgrader', name: 'UPGRADER', desc: 'Buy 3 safehouse upgrades.', reward: 750 }
+  ];
+
+  function isUnlocked(id) { return (save.achievements || []).indexOf(id) !== -1; }
+
+  function unlock(id) {
+    if (isUnlocked(id)) return false;
+    var def = null;
+    ZH.ACHIEVEMENTS.forEach(function (a) { if (a.id === id) def = a; });
+    if (!def) return false;
+    save.achievements = save.achievements || [];
+    save.achievements.push(id);
+    save.coins += def.reward || 0;
+    persist();
+    return true;
+  }
+
+  /* evaluate milestones against a context object; returns newly unlocked defs */
+  function checkAchievements(ctx) {
+    ctx = ctx || {};
+    var newly = [];
+    ZH.ACHIEVEMENTS.forEach(function (a) {
+      if (isUnlocked(a.id)) return;
+      var ok = false;
+      switch (a.id) {
+        case 'first_blood': ok = (ctx.kills || 0) >= 1 || (save.stats.kills || 0) >= 1; break;
+        case 'first_win': ok = !!ctx.won; break;
+        case 'slayer_100': ok = (ctx.runKills || 0) >= 100; break;
+        case 'slayer_1000': ok = (save.stats.kills || 0) >= 1000; break;
+        case 'survivor_5': ok = (ctx.survived || 0) >= 300; break;
+        case 'boss_slayer': ok = !!ctx.bossKilled; break;
+        case 'endless_5': ok = ctx.mode === 'endless' && (ctx.wave || 0) >= 5; break;
+        case 'veteran_10': ok = (save.stats.gamesPlayed || 0) >= 10; break;
+        case 'rich': ok = (save.coins || 0) >= 5000; break;
+        case 'upgrader': {
+          var c = 0; Object.keys(save.upgrades || {}).forEach(function (k) { if (save.upgrades[k] > 0) c++; });
+          ok = c >= 3; break;
+        }
+      }
+      if (ok && unlock(a.id)) newly.push(a);
+    });
+    return newly;
+  }
+
+  ZH.Achievements = {
+    list: function () { return ZH.ACHIEVEMENTS; },
+    isUnlocked: isUnlocked,
+    check: checkAchievements,
+    unlocked: function () { return save.achievements || []; }
+  };
+
   function redeem(code) {
     code = String(code || '').trim().toUpperCase();
     var def = ZH.REDEEM_CODES[code];
@@ -375,6 +442,7 @@ window.ZH = window.ZH || {};
     }
     s.shots += result.shots || 0;
     s.deaths += result.died ? 1 : 0;
+    s.gamesPlayed = (s.gamesPlayed || 0) + 1;
     s.playTime += result.time || 0;
     if (result.coins) save.coins += Math.round(result.coins);
     persist();

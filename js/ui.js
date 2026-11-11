@@ -162,6 +162,38 @@ window.ZH = window.ZH || {};
       }, 5000);
     },
 
+    showAchievements: function () {
+      var overlay = document.getElementById('ach-overlay');
+      if (overlay) overlay.remove();
+      overlay = document.createElement('div');
+      overlay.id = 'ach-overlay';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:20px;';
+      var box = document.createElement('div');
+      box.style.cssText = 'background:#1a1a2e;border:2px solid #ffb347;border-radius:12px;max-width:520px;width:100%;max-height:80vh;overflow:auto;padding:20px;color:#fff;';
+      var title = document.createElement('h2');
+      title.textContent = 'ACHIEVEMENTS';
+      title.style.cssText = 'margin:0 0 12px;color:#ffb347;';
+      box.appendChild(title);
+      var unlocked = (ZH.Achievements && ZH.Achievements.unlocked) ? ZH.Achievements.unlocked() : [];
+      (ZH.ACHIEVEMENTS || []).forEach(function (a) {
+        var row = document.createElement('div');
+        row.style.cssText = 'padding:10px 0;border-bottom:1px solid rgba(255,255,255,.1);';
+        var done = unlocked.indexOf(a.id) !== -1;
+        row.innerHTML = '<div style="font-weight:bold;color:' + (done ? '#9be15d' : '#aaa') + '">' +
+          (done ? '✓ ' : '○ ') + a.name + '</div>' +
+          '<div style="font-size:12px;color:#ccc">' + a.desc + '</div>' +
+          '<div style="font-size:11px;color:#ffb347">Reward: ' + a.reward + ' scrap' + (done ? ' · UNLOCKED' : '') + '</div>';
+        box.appendChild(row);
+      });
+      var close = document.createElement('button');
+      close.textContent = 'CLOSE';
+      close.style.cssText = 'margin-top:14px;padding:8px 18px;background:#ffb347;border:none;border-radius:6px;cursor:pointer;font-weight:bold;';
+      close.onclick = function () { overlay.remove(); };
+      box.appendChild(close);
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+    },
+
     /* the clock updates the numbers in place: rebuilding the rows every few
        seconds would swap the button out from under a finger mid-press */
     tickMissions: function () {
@@ -1232,6 +1264,8 @@ window.ZH = window.ZH || {};
       $('menu-kills').textContent = s.stats.kills.toLocaleString();
       var eb = $('menu-endless');
       if (eb) eb.textContent = s.stats.bestEndless;
+      var ma = $('menu-achievements');
+      if (ma && ZH.Achievements) ma.textContent = ZH.Achievements.unlocked().length + '/' + ZH.ACHIEVEMENTS.length;
       $('levels-coins').textContent = s.coins.toLocaleString();
       this.syncMute();
     },
@@ -1366,6 +1400,7 @@ window.ZH = window.ZH || {};
       });
       on('btn-shop', 'click', function () { ZH.Audio.play('click'); self.showShop(); });
       on('btn-missions', 'click', function () { ZH.Audio.play('click'); self.showMissions(); });
+      on('btn-achievements', 'click', function () { ZH.Audio.play('click'); self.showAchievements(); });
       on('btn-board', 'click', function () { ZH.Audio.play('click'); self.showLeaderboard('endless'); });
       on('btn-help', 'click', function () { ZH.Audio.play('click'); self.showHelp(); });
       on('btn-mute', 'click', function () { self.toggleMute(); });
