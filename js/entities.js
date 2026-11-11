@@ -369,7 +369,7 @@
       behaviour: [
         { kind: 'fan', count: 5, spread: 0.32, duration: 1.8, range: 700, dmg: 9 },
         { kind: 'fan', count: 5, spread: 0.32, duration: 1.8, range: 700, dmg: 9 },
-        { kind: 'mortar', count: 1, duration: 2.5, range: 900, dmg: 24, radius: 110, flight: 1.05 },
+        { kind: 'mortar', count: 1, duration: 2.5, range: 900, dmg: 30, radius: 80, flight: 1.05 },
         { kind: 'fan', count: 5, spread: 0.32, duration: 1.8, range: 700, dmg: 9 }
       ] },
     boss_tower:   { name: 'BOSS: TOWER',   hp: 9000,  speed: 0,   dmg: 12, range: 150, cd: 0.8, scale: 1.7, coins: 20000, variant: 'warden', static: true, ranged: true, shotSpeed: 520, mass: 5,
@@ -406,9 +406,9 @@
     boss_spider:  { name: 'BOSS: SPIDER',  hp: 11000, speed: 180, dmg: 26, range: 50, cd: 0.9, scale: 1.7, coins: 24000, variant: 'crawler', mass: 5,
       pattern: { kind: 'summon', type: 'spider1', count: 3, cd: 4.0, range: 900 },
       behaviour: [
-        { kind: 'mortar', count: 1, duration: 2.2, range: 900, dmg: 24, radius: 170, flight: 1.1 },
+        { kind: 'mortar', count: 1, duration: 2.2, range: 900, dmg: 20, radius: 190, flight: 1.1 },
         { kind: 'summon', type: 'spider1', count: 3, duration: 2.0, range: 900 },
-        { kind: 'mortar', count: 1, duration: 2.2, range: 900, dmg: 24, radius: 170, flight: 1.1 },
+        { kind: 'mortar', count: 1, duration: 2.2, range: 900, dmg: 20, radius: 190, flight: 1.1 },
         { kind: 'fan', count: 3, spread: 0.65, duration: 1.7, range: 800, dmg: 9 }
       ] },
     boss_fighter: { name: 'BOSS: FIGHTER', hp: 9000,  speed: 150, dmg: 20, range: 48, cd: 0.9, scale: 1.7, coins: 20000, variant: 'boss', mass: 5,

@@ -115,7 +115,7 @@ assert.ok(p.hp === 100, 'it has not exploded yet');
 ZH.updateMortars(w, 0.8);
 assert.strictEqual(w.mortars.length, 0, 'it lands and is removed');
 assert.strictEqual(w.mortarBooms, 1, 'the landing explodes');
-assert.ok(p.hp < 100, 'the explosion damages the hunter');
+assert.strictEqual(p.hp, 80, 'the teardown mortar hits for 20');
 
 /* manager: the briefcase spawns, takes damage and can be destroyed */
 w = makeWorld(); p = w.player;

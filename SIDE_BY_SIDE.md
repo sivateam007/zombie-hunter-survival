@@ -101,7 +101,7 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Summon adds | reptile 4, mutant 4, spider 3 | reptile 4, mutant 4, spider 3 as list steps | ✅ | `spawns[]` | `bossPattern` summon |
 | 12-way tower ring | yes | 12-way ring and fan follow-up | ✅ | 12 shots | `boss_tower.behaviour` |
 | Dragon stream | 10 shots @350 ms | 10 shots @120 ms plus a fan follow-up | ✅ | shots with delays | `boss_dragon.behaviour` |
-| Spider egg mortar | r190, 20 dmg | marked arc, 170 px radius, 24 dmg, lands and explodes | ✅ | ATTACK steps | `spawnMortar` / `updateMortars` |
+| Spider egg mortar | r190, 20 dmg | marked arc, 190 px radius, 20 dmg, lands and explodes | ✅ | ATTACK steps | `spawnMortar` / `updateMortars` |
 | Boss-zone **data** | rect 1000–3072 px | present, same sizes, 2 bosses in S4–S8 | ✅ | level JSON | `levels.js` + runtime |
 | Boss-zone **enforcement** | fence, player confined, kill all mobs | fence drawn, player clamped, normal bodies cleared | ✅ | `BossZone` collision | `bossZoneFence` / `clearNonBosses` |
 | Per-boss HP bars | one per boss | single bar | 🟡 | HUD | `pushHud` single boss |
@@ -279,7 +279,7 @@ All 13 test files pass; browser ran BUILD 32 with `frameErrors: 0`.
 | Bosses cycle multi-step lists instead of one repeating pattern: chase → charge / teleport / mortar / summon / ring / fan / stream → next step | `BOSS_TYPES.behaviour`, `updateBossBehaviour`, `startBossStep` | `boss.test.js`: every boss exposes a list and the old ring/fan/stream/summon steps remain |
 | Charge has a 700/500 ms windup, a locked dash and a recovery; a dashed lane and growing ring draw during the windup | `updateBossAct`, `game.js` render | `boss.test.js`: windup phase, no movement, then dash; browser: 30 windup frames, `dashMoved: 72`, `chargeDashes: 1` |
 | Mutant teleports 260 px after a 350 ms purple windup; the destination is clamped inside the boss-zone rect | `startBossStep`, `updateBossAct`, `clampInZone` | `boss.test.js`; browser: `teleported: true`, `teleportInFence: true` |
-| Spider egg mortar is a lobbed projectile with a marked landing circle; it lands, bursts for 24 damage in a 170 px radius and leaves a shockwave | `spawnMortar`, `updateMortars`, `game.js` render | `boss.test.js`: still airborne at 0.45 s, booms at 1.25 s; browser: `midAir: 1`, `mortarBooms: 1`, HP 100 → 76 |
+| Spider egg mortar is a lobbed projectile with a marked landing circle; it lands, bursts for 20 damage in a 190 px radius and leaves a shockwave | `spawnMortar`, `updateMortars`, `game.js` render | `boss.test.js`: still airborne at 0.45 s, booms at 1.25 s; browser: `midAir: 1`, `mortarBooms: 1`, HP 100 → 80 |
 | Manager drops a rotating 20 hp briefcase; bullets damage it, 30 damage destroys it, and an unshot one deals 10 on contact | `damageEnemy`, `updateBriefcases`, projectile collision | `boss.test.js`; browser: 20 → 12 hp, destroyed, `briefcaseBreaks: 1` |
 | Mass 1/2/5 bodies shove the hunter; bosses/minibosses use mass 5 and the shove is fence-clamped | `shoveHunter`, `mass` in enemy tables | `boss.test.js`: player displaced 28.6 px; browser: `shoveCount: 1`, `shoveDelta: -28.6` |
 | Bosses stay clamped during a dash and teleport, and normal bodies are still cleared on zone entry | `clampInZone`, `activateBossZone` | browser: `fence: true`, `bosses: 2`, tower volley still 12 rounds |

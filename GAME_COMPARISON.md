@@ -78,7 +78,7 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 | Original behaviour | Ours | Status |
 |---|---|---|
 | Boss behaviour lists: chase / charge with 700 ms windup / roam / retreat / teleport / spawn adds | multi-step lists with chase, telegraphed charge (700/500 ms windup, dash, recovery), teleport, mortar and the old ring/fan/stream/summon steps; no roam/retreat segments | ✅ core vocabulary (partial sequence fidelity) |
-| Timed boss patterns: 12-way rings, delayed second volleys, 10-shot streams @350 ms, egg mortars (radius 190), poison fans, grenades | 12-way tower rings, soldier fans, a 10-shot dragon stream, spider egg mortars (170 px, 24 dmg, marked arc) and follow-up fans | ✅ |
+| Timed boss patterns: 12-way rings, delayed second volleys, 10-shot streams @350 ms, egg mortars (radius 190), poison fans, grenades | 12-way tower rings, soldier fans, a 10-shot dragon stream, spider egg mortars (190 px, 20 dmg, marked arc) and follow-up fans | ✅ |
 | Boss-zone fence: 80 px grid rect, **1,000–3,072 px** (stage 7–8 largest), player collides, **all normal enemies killed at the boss**, player moved inside; stages 4–8 send **two bosses per zone** | fence drawn, normal bodies cleared at spawn, player clamped, two-boss zones | ✅ |
 | Per-boss HP bars + boss music | single HUD bar, no music | 🟡 |
 | `deadshot` on death: acid pools (toxic1/2, slime1/2, miniboss toxins), manager's destroyable briefcase (10 dmg) | acid pools; manager drops a rotating 20 hp briefcase that can be shot down and hits for 10 | ✅ |
