@@ -43,6 +43,9 @@ window.ZH = window.ZH || {};
         shieldRow: $('shield-row'),
         shieldFill: $('shield-fill'),
         shieldText: $('shield-text'),
+        siegeRow: $('siege-row'),
+        siegeFill: $('siege-fill'),
+        siegeText: $('siege-text'),
         jetRow: $('jet-row'),
         jetFill: $('jet-fill'),
         jetText: $('jet-text'),
@@ -1068,6 +1071,20 @@ window.ZH = window.ZH || {};
             ? Math.ceil(st.remaining) + 's'
             : st.remaining.toFixed(1) + 's';
           e.shieldText.title = 'Force field: ' + st.remaining.toFixed(1) + 's left';
+        }
+      }
+
+      /* idle siege: fills while the hunter holds position and turns red once
+         the extra bodies are already arriving */
+      if (e.siegeRow && d.siege != null) {
+        var siege = Math.max(0, Math.min(1, d.siege));
+        e.siegeFill.style.width = (siege * 100).toFixed(1) + '%';
+        e.siegeRow.classList.toggle('is-active', siege >= 1);
+        e.siegeRow.classList.toggle('is-warning', siege > 0.35 && siege < 1);
+        var siegeLabel = siege >= 1 ? 'SURROUNDED' : (siege > 0.05 ? 'HOLDING' : 'CLEAR');
+        if (last.siegeLabel !== siegeLabel) {
+          e.siegeText.textContent = siegeLabel;
+          last.siegeLabel = siegeLabel;
         }
       }
 

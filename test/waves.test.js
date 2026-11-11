@@ -29,8 +29,8 @@ assert.strictEqual(ZH.waveNumber(3000, true), 51, 'endless keeps counting');
 assert.strictEqual(ZH.waveNumber(-5), 1, 'a negative clock is still wave 1');
 
 /* ------------------------------ idle siege ------------------------------- */
-assert.ok(ZH.SIEGE.grace >= 1 && ZH.SIEGE.grace <= 3, 'a short grace before the siege');
-assert.ok(ZH.SIEGE.extraCap > 0 && ZH.SIEGE.extraCap <= 24, 'the overspill is bounded');
+assert.ok(ZH.SIEGE.grace >= 0.5 && ZH.SIEGE.grace <= 2, 'a short grace before the siege');
+assert.ok(ZH.SIEGE.extraCap >= 12 && ZH.SIEGE.extraCap <= 60, 'the overspill is bounded but real');
 assert.strictEqual(ZH.siegeCadence(0), ZH.SIEGE.cadence[0].s, 'the curve opens at its first stop');
 
 const lastStop = ZH.SIEGE.cadence[ZH.SIEGE.cadence.length - 1];
@@ -38,9 +38,23 @@ assert.strictEqual(ZH.siegeCadence(5000), lastStop.s, 'the curve clamps after it
 for (let i = 1; i < ZH.SIEGE.cadence.length; i++) {
   assert.ok(ZH.SIEGE.cadence[i].s < ZH.SIEGE.cadence[i - 1].s, 'the siege tightens with the clock');
 }
-assert.ok(ZH.siegeCadence(0) <= 2.2, 'the opening siege is not a wall');
-assert.ok(ZH.siegeCadence(1200) >= 0.45, 'the late siege stays survivable');
+assert.ok(ZH.siegeCadence(0) <= 1.5, 'the opening siege is not a wall');
+assert.ok(ZH.siegeCadence(1200) >= 0.25, 'the late siege stays survivable');
 assert.ok(ZH.siegeCadence(600) < ZH.siegeCadence(0), 'minute ten closes in faster than minute one');
+
+/* camping is punished harder over time: more bodies per tick and tougher bodies */
+assert.strictEqual(ZH.siegeBurst(0), 2, 'the opening siege drops a pair');
+assert.ok(ZH.siegeBurst(1200) >= 3 && ZH.siegeBurst(1200) <= 5, 'late ticks drop a bigger group');
+assert.ok(ZH.siegeBurst(1200) > ZH.siegeBurst(0), 'the burst grows with the clock');
+assert.strictEqual(ZH.siegePower(0), 1, 'siege bodies start at stage strength');
+assert.ok(ZH.siegePower(1200) >= 1.6 && ZH.siegePower(1200) <= 2, 'late siege bodies are nearly double');
+assert.ok(ZH.siegePower(600) > ZH.siegePower(0), 'siege power ramps through the run');
+
+/* clearing a wave pays scrap, more for later waves and higher difficulty */
+assert.strictEqual(ZH.waveClearReward(1, 1), 28, 'wave one pays a small bounty');
+assert.ok(ZH.waveClearReward(10, 1) > ZH.waveClearReward(1, 1), 'later waves pay more');
+assert.strictEqual(ZH.waveClearReward(5, 2.5), Math.round((20 + 5 * 8) * 2.5), 'difficulty multiplies the bounty');
+assert.ok(ZH.waveClearReward(0, 1) > 0, 'a missing wave number still pays');
 
 /* --------------------------- practice roster ----------------------------- */
 assert.ok(Array.isArray(roster.NAMES) && roster.NAMES.length >= 50,

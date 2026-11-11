@@ -1353,3 +1353,24 @@ body.in-game .mobile-controls { display: flex; }
 .mission-bar i { display: block; height: 100%; background: var(--amber); }
 .mission-progress { font-size: 10px; color: var(--dim); font-family: var(--mono); letter-spacing: 0.06em; }
 .mission-row > .btn { width: auto; flex: 0 0 auto; }
+
+/* idle siege meter: the price of standing still */
+.bar.siege { border: 1px solid rgba(255, 107, 107, 0.28); }
+.bar.siege > i { background: linear-gradient(90deg, #ffb347, #ff6b6b); }
+.siege-row.is-warning .bar.siege > i { box-shadow: 0 0 10px rgba(255, 179, 71, 0.55); }
+.siege-row.is-active .bar.siege > i {
+  background: #ff3b2f;
+  box-shadow: 0 0 12px rgba(255, 59, 47, 0.75);
+}
+.siege-num {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #ffb347;
+  min-width: 66px;
+  text-align: right;
+}
+.siege-row.is-active .siege-num {
+  color: #ff5a3c;
+  animation: shield-break 0.5s ease-in-out infinite alternate;
+}

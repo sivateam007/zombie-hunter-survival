@@ -71,6 +71,11 @@
           <div class="bar shield"><i id="shield-fill"></i></div>
           <span class="shield-num" id="shield-text">0.0s</span>
         </div>
+        <div class="dash-row siege-row" id="siege-row">
+          <span class="hud-kicker">SIEGE</span>
+          <div class="bar siege"><i id="siege-fill"></i></div>
+          <span class="siege-num" id="siege-text">CLEAR</span>
+        </div>
       </div>
 
       <div class="weapon-card">
@@ -88,7 +93,7 @@
     <div id="weapon-slots" class="weapon-slots"></div>
     <div id="hud-items" class="hud-items"></div>
     <div class="enemy-count"><span class="pip hostile"></span><span id="hud-left">0</span> LEFT</div>
-    <div class="credit-mark">DEVELOPED BY <b>SIVA</b><span class="build"> · BUILD 25</span></div>
+    <div class="credit-mark">DEVELOPED BY <b>SIVA</b><span class="build"> · BUILD 26</span></div>
   </div>
 
   <!-- --------------------------- touch controls --------------------------- -->
@@ -353,7 +358,7 @@
           <h3>SURVIVAL RULES</h3>
           <ul class="rules">
             <li><b>Clear 20 waves</b> to finish a stage. Survive wave 20 and the next stage deploys automatically with your run carried over. Boss zones freeze the clock until the bosses die.</li>
-            <li><b>Keep moving</b>. Stand still for a moment and the horde smells you: extra zombies close in from every side.</li>
+            <li><b>Keep moving</b>. The SIEGE meter fills while you stand still; once it fills, extra zombies burst in from every side. Camping is not a strategy here.</li>
             <li><b>Level up</b> for a 3-card offer: a new weapon, a weapon level, or a supply.</li>
             <li><b>Supplies</b> stack five levels and let a level-6 weapon evolve into its real form.</li>
             <li><b>Scrap</b> is dropped by the dead. Spend it on the six permanent skills in the safehouse.</li>
@@ -374,7 +379,7 @@
 <script src="js/arena.js?v=13"></script>
 <script src="js/weapons.js?v=5"></script>
 <script src="js/levels.js?v=5"></script>
-<script src="js/entities.js?v=31"></script>
+<script src="js/entities.js?v=32"></script>
 <script src="js/audio.js?v=1"></script>
 <script src="js/storage.js?v=16"></script>
 <script src="js/missions.js?v=1"></script>
@@ -382,9 +387,9 @@
 <script src="js/anim.js?v=3"></script>
 <script src="js/roster.js?v=1"></script>
 <script src="js/net.js?v=2"></script>
-<script src="js/game.js?v=38"></script>
+<script src="js/game.js?v=39"></script>
 <script src="js/game-patch.js?v=2"></script>
-<script src="js/ui.js?v=22"></script>
+<script src="js/ui.js?v=23"></script>
 <script src="js/main.js?v=10"></script>
 </body>
 </html>

@@ -236,14 +236,15 @@
      from close range on a cadence that tightens with the run clock, up to a
      bounded overspill above the normal field cap. */
   ZH.SIEGE = {
-    grace: 1.5,
-    extraCap: 12,
+    grace: 0.8,
+    extraCap: 34,
     cadence: [
-      { at: 0,    s: 1.7 },
-      { at: 300,  s: 1.25 },
-      { at: 600,  s: 1.0 },
-      { at: 900,  s: 0.8 },
-      { at: 1200, s: 0.65 }
+      { at: 0,    s: 1.1 },
+      { at: 120,  s: 0.9 },
+      { at: 300,  s: 0.7 },
+      { at: 600,  s: 0.52 },
+      { at: 900,  s: 0.4 },
+      { at: 1200, s: 0.3 }
     ]
   };
 
@@ -259,6 +260,23 @@
       return a.s + (b.s - a.s) * k;
     }
     return c[c.length - 1].s;
+  };
+
+  /** how many bodies one siege tick drops: 2 at the opening, 4 late */
+  ZH.siegeBurst = function (seconds) {
+    return 2 + Math.min(2, Math.floor(Math.max(0, seconds || 0) / 450));
+  };
+
+  /** siege bodies get tougher with the run clock, on top of stage scaling */
+  ZH.siegePower = function (seconds) {
+    var t = Math.max(0, Math.min(1200, seconds || 0));
+    return 1 + (t / 1200) * 0.85;
+  };
+
+  /** scrap for clearing a wave; the difficulty reward multiplies it */
+  ZH.waveClearReward = function (wave, difficultyReward) {
+    var w = Math.max(1, Math.floor(wave || 1));
+    return Math.round((20 + w * 8) * (difficultyReward || 1));
   };
 
   /** advance the protection clock by dt (kept separate so it is testable) */

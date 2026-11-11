@@ -125,7 +125,8 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 | Boss escort | all non-boss waves frozen while bosses live | escort grows 2 → 10 | 🟡 ours adds enemies |
 | Treasure | box every **15 s** at the screen edge | same | ✅ |
 | Stage progression | one stage per run, back to the menu | clear wave 20, next stage auto-deploys with the run carried over | ✅ ours adds |
-| Idle pressure | none | standing still arms an escalating close-range siege | ✅ ours adds |
+| Idle pressure | none | standing still fills a siege meter, then bursts of tougher zombies ring the player | ✅ ours adds |
+| Wave clear | none | `20 + 8×wave` scrap per cleared wave, multiplied by difficulty | ✅ ours adds |
 | Board population | platform score service | 60 seeded cat callsigns + real submissions | ✅ ours adds |
 
 ## 9. Presentation

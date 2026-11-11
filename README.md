@@ -112,8 +112,9 @@ wave is submitted to the server leaderboard.
 window. Clear wave 20 and the next stage deploys automatically with your level, XP, weapons and
 supplies carried over, so a campaign is one continuous run rather than a trip back to the menu.
 
-**Idle siege** — standing still for more than a moment draws extra zombies from close range on a
-cadence that tightens as the run goes on. Camping is a tactic, not a free pass.
+**Idle siege** — the HUD SIEGE meter fills while the hunter holds position. When it fills, groups of
+zombies burst in from a full ring around the player, faster and tougher as the run goes on. Camping
+is not a strategy here.
 
 **A board with a crowd on it** — sixty cat callsigns seed the leaderboard on both the Node server
 and the offline fallback, so a fresh install never opens onto a single line.

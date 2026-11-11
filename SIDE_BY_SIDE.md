@@ -233,7 +233,9 @@ holds **10 h of segments = 1,000 coins**, and fills over the next 158 h.
 | A stage is **20 waves × 60 s** = the authored 1,200 s window, so wave 20 and the 20-minute clear are the same moment | `ZH.WAVE_SECONDS`, `ZH.WAVES_PER_STAGE`, `waveNumber` | `waves.test.js` asserts 20 × 60 = `TIME_LEVEL_COMPLETED` and the clamp |
 | HUD reads **WAVE n / 20**; endless keeps counting past the campaign length | `pushHud`, `updateHud`, `index.html` | browser: BUILD 25 shows `/20` |
 | Surviving wave 20 **deploys the next stage automatically**, carrying level, XP, weapons, supplies and vitals | `finishStage`, `captureRun`, `restoreRun` | browser: stage 1 → Stage 2 with SMG lvl 3 and power lvl 2 intact, WAVE 1/20, `frameErrors: 0` |
-| Standing still 1.5 s arms the **siege**: extra bodies from close range, 1.7 s → 0.65 s cadence, +12 over the field cap | `updateSiege`, `ZH.SIEGE` | `waves.test.js`; browser: 3 extra zombies in 7 s of standing |
+| Standing still 0.8 s arms the **siege**: 2–4 bodies burst in from a full ring at 290–430 px, 1.1 s → 0.3 s cadence, tougher enemies (+85% by minute 20), +34 over the field cap | `updateSiege`, `ZH.SIEGE` | `waves.test.js`; browser: ring spawns and SURROUNDED state |
+| SIEGE meter in the HUD fills while standing, red and pulsing when surrounded | `index.html`, `ui.js`, `css/style.css` | browser: CLEAR → HOLDING → SURROUNDED |
+| Every cleared wave pays `20 + 8×wave` scrap (× difficulty); wave 20 pays with the stage payout | `waveClearReward`, `game.js` | `waves.test.js` |
 | Wave banner every fifth wave, siege warning, stage-clear banner, carried-run toast | `game.js`, `ui.js` | browser, live run |
 | **60 cat callsigns** seed both boards and the offline fallback; server seed is idempotent | `js/roster.js`, `server/index.js`, `ledger.seed`, `net.js` | `waves.test.js`; `/api/leaderboard` returns 50 ranked rows |
 

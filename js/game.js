@@ -159,8 +159,10 @@ window.ZH = window.ZH || {};
     this._lastPX = null;
     this._lastPY = null;
     this.waveShown = 1;
+    this.wave20Paid = false;
     if (window.ZH && ZH.Anim) ZH.Anim.banner(stage.name,
-      (this.player.power ? this.player.power.name : 'SURVIVE 20 MINUTES'));
+      (this.player.power ? this.player.power.name :
+        'STAGE ' + ((stageId || 0) + 1) + ' · WAVE 1/' + (ZH.WAVES_PER_STAGE || 20)));
     this.lastTs = performance.now();
   };
 
@@ -392,21 +394,35 @@ window.ZH = window.ZH || {};
     var moved = Math.hypot(p.x - lx, p.y - ly);
     var standing = moved < 0.9 && !(p.dashT > 0) && !p.jetActive;
     this.stillT = standing ? (this.stillT || 0) + dt : 0;
-    if (this.stillT < (ZH.SIEGE.grace || 1.5)) { this.siegeT = 0; return; }
+    if (this.stillT < (ZH.SIEGE.grace || 0.8)) { this.siegeT = 0; return; }
     if (!this.siegeWarned) {
       this.siegeWarned = true;
       if (ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('THEY SMELL YOU', 'MOVE — THE HORDE IS CLOSING IN');
+      if (ZH.Audio && ZH.Audio.play) ZH.Audio.play('error');
     }
     this.siegeT = (this.siegeT || 0) + dt;
     if (this.siegeT < ZH.siegeCadence(this.elapsed)) return;
     this.siegeT = 0;
-    var cap = (this.hordeHard || ZH.HORDE.hardCap) + (ZH.SIEGE.extraCap || 10);
-    if (this.zombies.length >= cap) return;
-    var types = ['zombieA', 'zombieB', 'zombieC', 'zombieD'];
-    var pos = this.findSpawnPoint(340);
-    var z = ZH.createEnemy(types[(Math.random() * types.length) | 0], pos.x, pos.y,
-      (this.stage && this.stage.multiplier) || 1, this.diff, this.waveCycle || 0);
-    if (z) this.zombies.push(z);
+    var cap = (this.hordeHard || ZH.HORDE.hardCap) + (ZH.SIEGE.extraCap || 30);
+    var burst = ZH.siegeBurst ? ZH.siegeBurst(this.elapsed) : 2;
+    var mult = ((this.stage && this.stage.multiplier) || 1) *
+      (ZH.siegePower ? ZH.siegePower(this.elapsed) : 1);
+    /* bodies arrive in a ring, not from one angle: camping is surrounded */
+    var base = rand(0, TAU);
+    for (var i = 0; i < burst && this.zombies.length < cap; i++) {
+      var ang = base + (i / burst) * TAU + rand(-0.28, 0.28);
+      var d = rand(290, 430);
+      var roll = Math.random();
+      var type = 'zombieA';
+      if (this.elapsed > 420 && roll < 0.16) type = 'reptile';
+      else if (this.elapsed > 240 && roll < 0.3) type = 'bat';
+      else if (roll < 0.48) type = 'zombieB';
+      else if (roll < 0.74) type = 'zombieC';
+      else type = 'zombieD';
+      var z = ZH.createEnemy(type, p.x + Math.cos(ang) * d, p.y + Math.sin(ang) * d,
+        mult, this.diff, this.waveCycle || 0);
+      if (z) this.zombies.push(z);
+    }
   };
 
   Game.updateWaves = function (dt) {
@@ -1064,11 +1080,20 @@ window.ZH = window.ZH || {};
     this.bombFlash = Math.max(0, (this.bombFlash || 0) - dt);
     /* a live boss zone freezes the level clock (original behaviour) */
     if (!this.bossZoneActive) this.elapsed += dt;
-    /* every fifth wave gets a banner, so progress is legible at a glance */
+    /* every wave pays scrap, every fifth wave gets a banner */
     if (!this.bossZoneActive && ZH.waveNumber) {
       var waveNow = ZH.waveNumber(this.elapsed, this.mode === 'endless');
       if (waveNow !== this.waveShown) {
+        var clearedWave = this.waveShown;
         this.waveShown = waveNow;
+        var bonus = ZH.waveClearReward
+          ? ZH.waveClearReward(clearedWave, this.diff && this.diff.reward) : 0;
+        if (bonus > 0) {
+          this.coins += bonus;
+          if (clearedWave % 5 === 0 && ZH.Anim && ZH.Anim.toast) {
+            ZH.Anim.toast('WAVE ' + clearedWave + ' CLEAR · +' + bonus + ' SCRAP', 'good');
+          }
+        }
         if (waveNow % 5 === 0) {
           if (ZH.Anim && ZH.Anim.banner) {
             ZH.Anim.banner('WAVE ' + waveNow +
@@ -1182,7 +1207,15 @@ window.ZH = window.ZH || {};
       if (!this.victoryT) {
         this.victoryT = 5;
         this.state = 'victory';
-        if (ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('ZONE CLEARED', 'You survived 20 minutes');
+        /* wave 20's own clear reward, banked with the stage payout */
+        if (!this.wave20Paid) {
+          this.wave20Paid = true;
+          this.coins += ZH.waveClearReward
+            ? ZH.waveClearReward(20, this.diff && this.diff.reward) : 0;
+        }
+        if (ZH.Anim && ZH.Anim.banner) {
+          ZH.Anim.banner('STAGE CLEARED', 'Wave 20 of 20 · next stage deploying');
+        }
         if (ZH.Audio) ZH.Audio.play('win');
       }
       return;
@@ -1257,6 +1290,7 @@ window.ZH = window.ZH || {};
       mode: this.mode || 'campaign',
       levelName: this.stage ? this.stage.name : '',
       supplies: p.supplies || {},
+      siege: Math.min(1, (this.stillT || 0) / ((ZH.SIEGE.grace || 0.8) + 2.0)),
       boss: boss ? { name: (boss.name || boss.type || 'BOSS'), hp: boss.hp, max: boss.maxHp } : null
     });
   };
