@@ -8,7 +8,7 @@
  * Hooks are called from the existing combat paths:
  *   modifyDamage  — before damage lands (crits, executes, berserk)
  *   onHit         — after damage lands (burn, chain, splash)
- *   onKill        — when a zombie dies (scavenge, speed, force fields)
+ *   onKill        — when a zombie dies (scavenge, speed)
  *   onBite        — when the hunter is hit (dodge, thorns)
  *   update        — once per frame (regen, burn ticks)
  * All of them are defensive: a missing player, power or world is a no-op.

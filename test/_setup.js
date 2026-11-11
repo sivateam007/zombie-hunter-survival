@@ -26,7 +26,7 @@ require('../js/levels.js');
 require('../js/storage.js');
 require('../js/entities.js');
 
-// Forward defence-shield safety-call into the test sandbox so every flaw
+// Forward the boss-arena safety latch into the test sandbox so every flaw
 // reporter (live or capture) re-applies the safety latch around bosses.
 var ZH = global.ZH;
 if (ZH.Game && !ZH.Game.thinningAroundBoss) {

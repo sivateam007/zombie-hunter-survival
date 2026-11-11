@@ -239,11 +239,10 @@ window.ZH = window.ZH || {};
       var c = this.traffic[i];
       c.x += c.vx * dt;
       c.y += c.vy * dt;
-      /* a running car hurts the hunter too: crash damage with a short
-         cooldown, ignored while any force field is up */
+      /* a running car hurts the hunter too: crash damage with a short cooldown */
       var pdx = p.x - c.x, pdy = p.y - c.y;
       var crash = 44;
-      if (pdx * pdx + pdy * pdy < crash * crash && !(p.shieldT > 0) && !p.jetActive) {
+      if (pdx * pdx + pdy * pdy < crash * crash && !p.jetActive) {
         var cdT = c._crashT != null ? this.t - c._crashT : 99;
         if (cdT > 1.2) {
           c._crashT = this.t;
@@ -1266,7 +1265,6 @@ window.ZH = window.ZH || {};
     this.ui.updateHud({
       hp: Math.max(0, p.hp), maxHp: p.maxHp,
       dashCd: p.dashCd || 0, dashMax: p.dashMax || 2.2,
-      shield: p.shieldT || 0, shieldMax: p.shieldMax || ZH.SHIELD.max,
       jet: p.jetFuel == null ? 100 : p.jetFuel,
       jetMax: (ZH.JETPACK && ZH.JETPACK.max) || 100,
       jetActive: !!p.jetActive,
@@ -1524,37 +1522,6 @@ window.ZH = window.ZH || {};
         ctx.strokeStyle = 'rgba(255,206,130,0.75)';
         ctx.lineWidth = 2;
         ctx.beginPath(); ctx.ellipse(e.x, e.y + 11, 18, 7, 0, 0, TAU); ctx.stroke();
-        /* original Player.updatePlayerInvincibility(): while the defence
-           shield runs the body blinks 0.5 → 1 on a 500 ms cycle. */
-        var shieldT = e.shieldT || 0;
-        var blink = 1;
-        if (shieldT > 0) {
-          var phase = Math.abs((shieldT * 1000) % 500 - 250) / 250;   // 0..1..0
-          blink = 0.5 + phase * 0.5;
-          ctx.save();
-          ctx.strokeStyle = 'rgba(150,215,255,' + (0.5 + phase * 0.45).toFixed(3) + ')';
-          ctx.lineWidth = 3;
-          ctx.shadowColor = 'rgba(120,200,255,0.9)';
-          ctx.shadowBlur = 10;
-          /* the ring itself drains: it is an arc of the remaining fraction,
-             not a decorative circle, so the window reads at a glance */
-          var frac = Math.max(0, Math.min(1, shieldT / (e.shieldMax || ZH.SHIELD.max)));
-          ctx.beginPath();
-          ctx.arc(e.x, e.y, 27, -Math.PI / 2, -Math.PI / 2 + TAU * frac);
-          ctx.stroke();
-          ctx.restore();
-          /* and the one-decimal countdown floats over the hunter, so the
-             protection window is readable in the world, not just in the HUD */
-          ctx.save();
-          ctx.font = 'bold 13px Rajdhani, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillStyle = 'rgba(8,14,20,0.7)';
-          ctx.fillText(shieldT.toFixed(1) + 's', e.x + 1, e.y - 39);
-          ctx.fillStyle = 'rgba(190,232,255,' + (0.75 + phase * 0.25).toFixed(2) + ')';
-          ctx.fillText(shieldT.toFixed(1) + 's', e.x, e.y - 40);
-          ctx.textAlign = 'left';
-          ctx.restore();
-        }
         if (e.jetActive) {
           /* twin jets: a short blue-core flame that flickers under the rig */
           ctx.fillStyle = 'rgba(0,0,0,0.26)';
@@ -1608,7 +1575,7 @@ window.ZH = window.ZH || {};
           x: e.x - Math.cos(kAng) * kick, y: e.y - (e.jetLift || 0) - Math.sin(kAng) * kick,
           s: 1.15, kind: 'hunter', variant: 'hunter',
           facing: e.facing, aim: e.aimDir || 0, weapon: e.primaryWeapon,
-          alpha: blink,
+          alpha: 1,
           palette: ZH.Rig.paletteFor ? ZH.Rig.paletteFor(e.character || 'hunter') : null,
           dead: e.dead ? clamp(e.deadT, 0, 1) : 0,
           pose: { t: this.t, moving: Math.hypot(e.moveX, e.moveY), walkPhase: e.walkPhase || 0 }

@@ -78,15 +78,14 @@ window.ZH = window.ZH || {};
     { id: 'seraph',  name: 'SERAPH',      tag: '+30% ALL / LIFESTEAL 10%', desc: 'Wings of scrap, halo of teeth.', price: 150000, hp: 1.3, speed: 1.3, damage: 1.3, scrap: 1.3, lifesteal: 0.1, coat: '#3a3830', accent: '#fff4c2' },
     { id: 'overlord',name: 'VOID OVERLORD', tag: '+60% HP / +60% DMG', desc: 'The horde is staff. You are management.', price: 250000, hp: 1.6, speed: 1.1, damage: 1.6, scrap: 1.2, coat: '#241f2e', accent: '#c45cff' }
   ];
-  /* six permanent store upgrades, kept across every run and every survivor.
+  /* five permanent store upgrades, kept across every run and every survivor.
      Separate from the original six coin skills so GameSnacks parity holds. */
   ZH.STORE_UPGRADES = ZH.STORE_UPGRADES || [
     { id: 'magnet',   name: 'MAGNET',      max: 5, base: 1200, desc: function (l) { return '+' + (l * 25) + '% pickup reach'; } },
     { id: 'siphon',   name: 'SIPHON',      max: 5, base: 1800, desc: function (l) { return '+' + l + '% life discharge'; } },
     { id: 'sprint',   name: 'SPRINT',      max: 5, base: 1500, desc: function (l) { return '+' + (l * 3) + '% move speed'; } },
     { id: 'vitality', name: 'VITALITY',    max: 8, base: 900,  desc: function (l) { return '+' + (l * 5) + ' max vitals'; } },
-    { id: 'fortune',  name: 'FORTUNE',     max: 5, base: 2000, desc: function (l) { return '+' + (l * 5) + '% scrap'; } },
-    { id: 'field',    name: 'FORCE FIELD', max: 5, base: 2200, desc: function (l) { return '+' + (l * 4) + 's shield'; } }
+    { id: 'fortune',  name: 'FORTUNE',     max: 5, base: 2000, desc: function (l) { return '+' + (l * 5) + '% scrap'; } }
   ];
 
   ZH.CHARACTER_BY_ID = ZH.CHARACTER_BY_ID || {};
@@ -97,7 +96,6 @@ window.ZH = window.ZH || {};
     SIVA1000:   { coins: 1000, label: 'SIVA DROP' },
     ZOMBIEBUFF: { coins: 1500, label: 'ZOMBIE BUFF' },
     GAMESNACKS: { coins: 2000, character: 'ranger', label: 'GAME SNACKS PACK' },
-    FORCEFIELD: { coins: 600,  label: 'FORCE FIELD SUPPLY' },
     MEOWCAT:    { coins: 1500, character: 'catlord', label: 'MEOW CAT PACK' },
     NEON2026:   { coins: 1200, label: 'NEON DROP' },
     GIFTBOX:    { coins: 800,  label: 'GIFT BOX' },
@@ -272,8 +270,6 @@ window.ZH = window.ZH || {};
     if (mag) p.magnet = (p.magnet || 0) + mag * 0.25;
     var fort = lv('fortune');
     if (fort) p.fortune = Math.round((p.fortune || 0) + fort * 5);
-    var field = lv('field');
-    if (field) p.fieldBonus = field * 4;
     var sip = lv('siphon');
     if (sip) p.lifesteal = Math.max(p.lifesteal || 0, 0.03 + sip * 0.01);
     return p;

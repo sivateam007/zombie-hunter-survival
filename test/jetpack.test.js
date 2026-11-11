@@ -29,7 +29,6 @@ const world = {
   coins: 0, score: 0, shake: 0, t: 0,
   ui: { showLevelUp() {} }
 };
-world.player.shieldT = 0;
 world.player.jetActive = true;
 world.player.hp = 100;
 world.zombies.push(ZH.createEnemy('zombieA', world.player.x + 8, world.player.y, 1));

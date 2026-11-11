@@ -10,7 +10,6 @@ const FILES = [
   'density.test.js',
   'waves.test.js',
   'jetpack.test.js',
-  'shield.test.js',
   'storage.test.js',
   'ledger.test.js',
   'missions.test.js',

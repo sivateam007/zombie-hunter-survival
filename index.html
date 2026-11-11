@@ -66,12 +66,6 @@
           <div class="bar jet"><i id="jet-fill"></i></div>
           <span class="jet-num" id="jet-text">100%</span>
         </div>
-        <div class="dash-row shield-row" id="shield-row">
-          <span class="hud-kicker">FORCE FIELD</span>
-          <div class="bar shield"><i id="shield-fill"></i></div>
-          <span class="shield-num" id="shield-text">0.0s</span>
-          <span class="shield-cap" id="shield-cap">/ 60s</span>
-        </div>
         <div class="dash-row siege-row" id="siege-row">
           <span class="hud-kicker">SIEGE</span>
           <div class="bar siege"><i id="siege-fill"></i></div>
@@ -94,7 +88,7 @@
     <div id="weapon-slots" class="weapon-slots"></div>
     <div id="hud-items" class="hud-items"></div>
     <div class="enemy-count"><span class="pip hostile"></span><span id="hud-left">0</span> LEFT</div>
-    <div class="credit-mark">DEVELOPED BY <b>SIVA</b><span class="build"> · BUILD 29</span></div>
+    <div class="credit-mark">DEVELOPED BY <b>SIVA</b><span class="build"> · BUILD 30</span></div>
   </div>
 
   <!-- --------------------------- touch controls --------------------------- -->
@@ -193,7 +187,7 @@
         <div id="upgrade-grid" class="upgrade-grid"></div>
 
         <h3 class="section-title">PERMANENT UPGRADES</h3>
-        <p class="shop-note">Six upgrades bought once and kept forever. They apply to every survivor and every run.</p>
+        <p class="shop-note">Five upgrades bought once and kept forever. They apply to every survivor and every run.</p>
         <div id="store-grid" class="upgrade-grid"></div>
 
         <h3 class="section-title">SURVIVOR CHARACTERS</h3>
@@ -207,7 +201,7 @@
           <input id="redeem-input" maxlength="24" autocomplete="off" spellcheck="false" placeholder="REDEEM CODE">
           <button class="btn small primary" id="redeem-btn"><span>REDEEM</span></button>
         </div>
-        <p class="shop-note redeem-msg" id="redeem-msg">Codes: SIVA1000 · ZOMBIEBUFF · GAMESNACKS · FORCEFIELD · MEOWCAT · CITY25 · SURVIVOR</p>
+        <p class="shop-note redeem-msg" id="redeem-msg">Codes: SIVA1000 · ZOMBIEBUFF · GAMESNACKS · MEOWCAT · CITY25 · SURVIVOR</p>
       </div>
     </div>
   </section>
@@ -363,8 +357,7 @@
             <li><b>Level up</b> for a 3-card offer: a new weapon, a weapon level, or a supply.</li>
             <li><b>Supplies</b> stack five levels and let a level-6 weapon evolve into its real form.</li>
             <li><b>Scrap</b> is dropped by the dead. Spend it on the six permanent skills in the safehouse.</li>
-            <li><b>Rolling</b> makes you briefly untouchable — use it to slip out of a bite.</li>
-            <li><b>Force field</b> is earned: every 40th kill (and every boss) drops a cell worth 1 minute. Nothing else arms it, and health only comes from packs and gifts.</li>
+            <li><b>Rolling</b> is a fast reposition — it slips through gaps but does not make you invulnerable.</li>
             <li><b>Level-up cards</b> carry a 10-second countdown: take an offer before it ends or the first one is auto-picked.</li>
             <li><b>Jetpack</b> — hold JET (or Space) to fly over bites. Fuel recharges on the ground.</li>
             <li><b>Ranged</b> enemies (cops, turrets, assaults) shoot back. Break line or close in fast.</li>
@@ -381,7 +374,7 @@
 <script src="js/arena.js?v=13"></script>
 <script src="js/weapons.js?v=6"></script>
 <script src="js/levels.js?v=5"></script>
-<script src="js/entities.js?v=35"></script>
+<script src="js/entities.js?v=36"></script>
 <script src="js/audio.js?v=1"></script>
 <script src="js/storage.js?v=16"></script>
 <script src="js/missions.js?v=1"></script>
@@ -389,9 +382,9 @@
 <script src="js/anim.js?v=3"></script>
 <script src="js/roster.js?v=1"></script>
 <script src="js/net.js?v=2"></script>
-<script src="js/game.js?v=41"></script>
+<script src="js/game.js?v=42"></script>
 <script src="js/game-patch.js?v=2"></script>
-<script src="js/ui.js?v=25"></script>
+<script src="js/ui.js?v=26"></script>
 <script src="js/main.js?v=10"></script>
 </body>
 </html>

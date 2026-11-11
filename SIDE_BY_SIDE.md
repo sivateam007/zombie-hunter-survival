@@ -15,7 +15,7 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Run length | 1,200,000 ms | `ZH.TIME_LEVEL_COMPLETED = 1200` | ✅ | `TIME_LEVEL_COMPLETED` | `js/game.js` win gate ~line 1101 |
 | Victory hold | 5,000 ms before results | 5 s `victory` state, then results | ✅ | `DELAY_GAME_WON` | `game.js` `victoryT`, banner + win sting |
 | Boss warning | 3 s banner | 3 s `WARNING` banner + flash | ✅ | `DELAY_HIDE_HAZARD_INFO=3000` | `game.js` ~413 `wave.startTime - 3` |
-| Post-hit i-frames | 3 s | shield timeline, 3 s `levelup`/`hit` | ✅ | `TIME_INVINCIBLE=3000` | `ZH.SHIELD` {hit:3} |
+| Post-hit i-frames | 3 s | none — protection windows removed | ❌ removed | `TIME_INVINCIBLE=3000` | — |
 | Continues | 2,500×n, max 2 | same | ✅ | `getPriceForContinue`, `MAX_CONTINUES=2` | `ui.js:492` comment + `showContinue` |
 | Difficulty multipliers | HP/dmg ×2, ×4; speed 1.15/1.5; rewards 1.5/2.5 | same three tiers | ✅ | difficulty tables | `ZH.CONFIG/diff` + `healthMultiplier` |
 | Stage unlock | previous record ≥ 20 min | record gate | ✅ | `IsLevelLocked` | `storage.js`/`game-patch.js` |
@@ -133,7 +133,6 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Treasure cards | 1/3/5 cards | 1/3/5 supported; drops carry the count | 🟡 | `ShowSkillSlots(data)` | `showLevelUp(count)`; reroll still shared |
 | Chest reroll | 1,500×(n+1), max 3 | shared 500×n, max 5 | ❌ | `MAX_CHESTS_REROLLS` | `lu-reroll` |
 | Level-up reroll | 500×(n+1) max 5 | same | ✅ | price helper | `ui.js` |
-| Force field | none | earned cell every 40 kills / boss, 60 s | ➕ | — | `ZH.SHIELD`, `shieldGiftDue` |
 | Gift box | none | random reward | ➕ | — | gift branch |
 
 ## 9. Missions, idle, meta
@@ -244,18 +243,17 @@ holds **10 h of segments = 1,000 coins**, and fills over the next 158 h.
 exactly, so auto-advance triggers on wave 20 without skipping a single scripted
 boss zone. Shorter waves would have cut content off the end of every stage.
 
-## 16. Implemented in this pass — no passive healing, earned force field
+## 16. Implemented in this pass — no passive healing, no force field
 
 | Change | Where | Verified by |
 |---|---|---|
-| Passive HP regeneration removed: survivor regen powers, the Energy Drink tick and the roadkill +2 are all gone | `Powers.update`, `updateSurvivor`, `game.js` | `shield.test.js`; browser: 5 s of updates left a probe at 50 HP |
+| Force field removed entirely: no shield clock, cell drops, pickup, HUD row, store upgrade, render ring or damage gate | `entities.js`, `game.js`, `ui.js`, `storage.js`, `index.html` | `sim.test.js` asserts `ZH.SHIELD`/`openShield` are gone; browser: no field row, bites land |
+| Passive HP regeneration removed: survivor regen powers, the Energy Drink tick and the roadkill +2 are all gone | `Powers.update`, `updateSurvivor`, `game.js` | `sim.test.js`; browser: 5 s of updates left a probe at 50 HP |
 | Universal 3% lifesteal default removed; only a lifesteal power returns health on damage | `damageEnemy` | tests + source |
-| Force field arms only from an earned cell: every 40th kill and every boss, **60 s**; the HUD row is hidden while no field runs | `ZH.SHIELD`, `SHIELD.killGiftEvery`, `shieldGiftDue` | `shield.test.js`; browser: 40th kill dropped a cell, pickup → 60 s |
 | Every level-up card screen carries a **10 s auto-pick countdown** | `ui.js` `showLevelUpCard` | browser: timer counts down and auto-picks |
-| Bites, rolls, level-ups, car crashes and revives no longer arm a field | `entities.js`, `game.js` | browser: bite 100 → 88, shield stayed 0 |
 | Gift boxes are earned every 30 kills instead of a 40 s timer | `game.js` | source; full suite |
 | Energy Drink repurposed to 3–15% damage reduction (its regen tick is gone) | `weapons.js` | `sim.test.js` |
 
-All 12 test files pass; browser ran BUILD 27 with `frameErrors: 0`. Lifesteal
+All 11 test files pass; browser ran BUILD 30 with `frameErrors: 0`. Lifesteal
 is the one deliberate exception: those survivor powers still return health when
 they deal damage, but nothing ticks health back on a timer.

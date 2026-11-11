@@ -41,10 +41,6 @@ window.ZH = window.ZH || {};
         hpBar: document.querySelector('.bar.hp'),
         dashFill: $('dash-fill'),
         dashBar: $('dash-fill').parentElement,
-        shieldRow: $('shield-row'),
-        shieldFill: $('shield-fill'),
-        shieldText: $('shield-text'),
-        shieldCap: $('shield-cap'),
         siegeRow: $('siege-row'),
         siegeFill: $('siege-fill'),
         siegeText: $('siege-text'),
@@ -1078,33 +1074,6 @@ window.ZH = window.ZH || {};
         if (jetBtn) {
           jetBtn.classList.toggle('is-held', !!d.jetActive);
           jetBtn.classList.toggle('is-cooling', jetNow < ((ZH.JETPACK && ZH.JETPACK.min) || 12));
-        }
-      }
-
-      /* earned force field: only a kill-gift cell arms this, and the row is
-         hidden the rest of the time so the opening never shows a field */
-      if (e.shieldRow) {
-        var st = ZH.shieldTimeline
-          ? ZH.shieldTimeline(d.shield || 0, d.shieldMax || ZH.SHIELD.max)
-          : null;
-        if (!st) {
-          var span = d.shieldMax || 3, t0 = d.shield || 0;
-          st = { active: t0 > 0.001, remaining: t0, frac: Math.max(0, Math.min(1, t0 / span)), expiring: t0 > 0.001 && t0 <= 0.9 };
-        }
-        e.shieldRow.classList.toggle('is-active', st.active);
-        e.shieldRow.classList.toggle('is-expiring', !!st.expiring);
-        if (st.active) {
-          e.shieldFill.style.width = (st.frac * 100).toFixed(1) + '%';
-          /* long force-field windows read as whole seconds; the final 10 s
-             keeps the tenths so the break is still readable */
-          e.shieldText.textContent = st.remaining >= 10
-            ? Math.ceil(st.remaining) + 's'
-            : st.remaining.toFixed(1) + 's';
-          /* the cap spells out the full value, so a 60 s cell reads as one
-             minute at a glance instead of an open-ended bar */
-          if (e.shieldCap) e.shieldCap.textContent = '/ ' + Math.round(st.max) + 's';
-          e.shieldText.title = 'Force field: ' + st.remaining.toFixed(1) + 's of ' +
-            Math.round(st.max) + 's left';
         }
       }
 

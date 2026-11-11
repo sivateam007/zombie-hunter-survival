@@ -3,6 +3,9 @@
 const assert = require('assert');
 const { ZH } = require('./_setup');
 
+assert.strictEqual(ZH.SHIELD, undefined, 'the force field system is gone');
+assert.strictEqual(ZH.openShield, undefined, 'there is no shield arming function');
+
 function makeWorld(opts) {
   opts = opts || {};
   const world = {
@@ -31,14 +34,11 @@ function makeWorld(opts) {
   const w = makeWorld();
   const z = ZH.createEnemy('zombieA', 3300, 3072, 1);
   w.zombies.push(z);
-  assert.strictEqual(w.player.shieldT, 0, 'a stage opens with no force field');
   const startDist = Math.hypot(z.x - w.player.x, z.y - w.player.y);
   for (let i = 0; i < 180; i++) ZH.updateEnemies(w.zombies, 1 / 60, w);
   const endDist = Math.hypot(z.x - w.player.x, z.y - w.player.y);
   assert.ok(endDist < startDist, 'the zombie closes the distance');
   assert.ok(w.player.hp < 100, 'it lands a bite');
-  assert.strictEqual(w.player.invuln, 0, 'a hit grants no invulnerability window');
-  assert.strictEqual(w.player.shieldT, 0, 'a hit does not arm a force field');
 }
 
 /* ---------- 3. weapons kill, score and drop loot ---------- */
@@ -83,8 +83,6 @@ ZH.WEAPON_ORDER.forEach((id) => {
 /* ---------- 6. ranged enemies shoot and their shots hurt ---------- */
 {
   const w = makeWorld();
-  w.player.invuln = 0;   // no protection: shots must land
-  w.player.shieldT = 0;
   const cop = ZH.createEnemy('cop', 3160, 3072, 1);
   w.zombies.push(cop);
   for (let i = 0; i < 120 && !w.enemyBullets.length; i++) ZH.updateEnemies(w.zombies, 1 / 60, w);

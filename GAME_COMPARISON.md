@@ -99,7 +99,7 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 | Food | heals **100** flat | none | ❌ |
 | Bomb | `10 × attack` damage in a **900 px** radius + shake | kills all normal bodies, chips bosses 8 %, white flash | 🟡 different formula |
 | Treasure chest | opens **1, 3 or 5 cards** (`ShowSkillSlots(data)`), reroll `1,500 × (n+1)`, max 3 | always 3 cards, shared 5-reroll sink | ❌ |
-| Magnet / force field / gift box | magnet yes, others no | force field is kill-earned (40 kills or a boss), 60 s; gift boxes every 30 kills | ✅ ours adds |
+| Magnet / gift box | magnet yes, others no | magnet pickup + gift boxes every 30 kills; force field removed | ➖ |
 
 ## 7. Progression and meta
 

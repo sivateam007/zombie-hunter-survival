@@ -54,11 +54,6 @@
     return ZH.healthMultiplier(levelMultiplier, waveCycle);
   };
 
-  /* ------------------- protection windows (force field) -------------------
-     One timer — player.shieldT — is the single source of truth for every
-     window: it gates damage, feeds the HUD countdown, paints the hunter ring
-     and drives the body blink. player.invuln is only a legacy mirror. */
-  /* ----------------------------- jetpack ----------------------------- */
   /* ----------------------------- jetpack -----------------------------
      A tactical short-burst jet, not a slow balloon: ignition costs a chunk of
      fuel and kicks the hunter forward for a moment, the tank gives ~4 s of
@@ -76,7 +71,7 @@
     lift: 20
   };
 
-  /** one hold-to-fly fuel clock, separate from the shield clock */
+  /** one hold-to-fly fuel clock */
   ZH.tickJetpack = function (p, dt, held) {
     if (!p) return 0;
     var j = ZH.JETPACK;
@@ -108,56 +103,6 @@
     if (p.jetActive) p.jetLift = Math.min(j.lift || 18, (p.jetLift || 0) + 110 * dt);
     else p.jetLift = Math.max(0, (p.jetLift || 0) - 110 * dt);
     return p.jetFuel;
-  };
-
-  ZH.SHIELD = ZH.SHIELD || {
-    max: 60,         /* force-field window; also the HUD bar width            */
-    force: 60,       /* one earned cell = exactly one minute of protection   */
-    /* nothing else arms the field: no bite, dash, level-up or revive window */
-    hit: 0,
-    revive: 0,
-    levelup: 0,
-    dash: 0,
-    dashExit: 0,
-    killGiftEvery: 40   /* every 40th kill drops a force-field cell          */
-  };
-
-  /** arm (or extend) the one protection timer */
-  ZH.openShield = function (p, seconds) {
-    if (!p) return 0;
-    var t = seconds == null ? ZH.SHIELD.force : seconds;
-    if (!isFinite(t) || t <= 0) return p.shieldT || 0;
-    p.shieldT = Math.max(p.shieldT || 0, t);
-    /* the HUD/ring span follows the window that is actually running */
-    p.shieldMax = p.shieldT;
-    p.invuln = p.shieldT;
-    return p.shieldT;
-  };
-
-  /** is the hunter protected right now? (one check, one field) */
-  ZH.shielded = function (p) { return !!(p && (p.shieldT || 0) > 0); };
-
-  /** does this kill earn a force-field cell? Bosses always do; the horde
-      every `killGiftEvery` kills. This is the only source of the field. */
-  ZH.shieldGiftDue = function (kills, isBoss) {
-    if (isBoss) return true;
-    var n = Math.max(0, Math.floor(kills || 0));
-    return n > 0 && n % (ZH.SHIELD.killGiftEvery || 40) === 0;
-  };
-
-  /** one clock, one timeline: remaining time, bar fraction and the
-      "about to break" flag the HUD paints from */
-  ZH.shieldTimeline = function (t, max) {
-    var span = (max && max > 0) ? max : ZH.SHIELD.max;
-    var remaining = Math.max(0, isFinite(t) ? t : 0);
-    var frac = Math.max(0, Math.min(1, remaining / span));
-    return {
-      active: remaining > 0.001,
-      remaining: remaining,
-      max: span,
-      frac: frac,
-      expiring: remaining > 0.001 && remaining <= 0.9
-    };
   };
 
   /* ------------------------- horde density: MEDIUM -------------------------
@@ -288,14 +233,6 @@
     return Math.round((20 + w * 8) * (difficultyReward || 1));
   };
 
-  /** advance the protection clock by dt (kept separate so it is testable) */
-  ZH.tickShield = function (p, dt) {
-    if (!p) return 0;
-    if (p.shieldT) p.shieldT = Math.max(0, p.shieldT - dt);
-    p.invuln = p.shieldT || 0;
-    return p.shieldT || 0;
-  };
-
   /* ------------------------------ enemies ------------------------------ */
   /* name = display name, variant = character rig, speed = px/s, cd = seconds */
   var ENEMY_TYPES = {
@@ -371,10 +308,7 @@
       kills: 0,
       dead: false,
       deadT: 0,
-      /* one protection clock, empty until an earned cell arms it */
-      shieldT: 0, shieldMax: 0,
       jetFuel: 100, jetMax: 100, jetActive: false, jetLift: 0,
-      invuln: 0,                    /* legacy mirror of shieldT only */
       dashT: 0, dashCd: 0, dashMax: 2.2, dashVX: 0, dashVY: 0,
       regenT: 0
     };
@@ -617,19 +551,6 @@
       }
       if (z.coins || z.boss) {
         world.pickups.push({ type: 'coin', x: z.x + rand(-8, 8), y: z.y + rand(-8, 8), life: 12, value: z.coins || 5 });
-      }
-      /* force-field cells are earned, not sprinkled: every 40th kill drops
-         one, and a boss always leaves one. This is the only source. */
-      if (ZH.shieldGiftDue(world.player && world.player.kills, z.boss)) {
-        world.pickups.push({
-          type: 'shield', x: z.x + rand(-10, 10), y: z.y - 6, life: 30, value: ZH.SHIELD.force
-        });
-        if (world.floaters && world.floaters.length < 70) {
-          world.floaters.push({
-            text: 'FORCE FIELD CELL', x: z.x, y: z.y - 30, vy: -34,
-            life: 1.1, max: 1.1, size: 13, color: '#9ed8ff'
-          });
-        }
       }
       /* miniboss deaddrops, exactly the original's per-type table: a bomb from
          the soldiers/towers, a medkit from the toxic ones, a magnet from the
@@ -1268,9 +1189,6 @@
 
     /* open world: no walls — the city keeps generating in every direction */
 
-    /* one clock: the force field drains, the legacy mirror follows it */
-    ZH.tickShield(p, dt);
-
     /* Auto-aim. The Gun/Uzi fire at the closest threat, so the hunter has to
        face it too — otherwise the arm and muzzle keep the walk direction
        while the rounds go the other way, which reads as "the gun is not
@@ -1394,7 +1312,7 @@
         if (z.ranged) {
           enemyShoot(world, z, dist);
         } else if (dist < (z.range || 30)) {
-          if (!ZH.shielded(p) && !p.jetActive) {
+          if (!p.jetActive) {
             var a = attribsOf(p);
             var armor = Math.min(0.8, (a.defense || 0) / 100);
             var bite = z.dmg * (1 - armor);
@@ -1585,19 +1503,17 @@
       } else {
         /* enemy shot: hurt the hunter */
         if (Math.hypot(p.x - b.x, p.y - b.y) < p.r + b.r) {
-          if (!ZH.shielded(p)) {
-            var ar = Math.min(0.8, (attribsOf(p).defense || 0) / 100);
-            var shot = b.dmg * (1 - ar);
-            if (ZH.Powers) shot = ZH.Powers.onBite(world, null, shot);
-            if (shot > 0) {
-              p.hp -= shot;
-              if (ZH.Missions) ZH.Missions.update(10, shot);   /* RECEIVE_X_DMG */
+          var ar = Math.min(0.8, (attribsOf(p).defense || 0) / 100);
+          var shot = b.dmg * (1 - ar);
+          if (ZH.Powers) shot = ZH.Powers.onBite(world, null, shot);
+          if (shot > 0) {
+            p.hp -= shot;
+            if (ZH.Missions) ZH.Missions.update(10, shot);   /* RECEIVE_X_DMG */
 
-              if (p.hp <= 0) { p.hp = 0; p.dead = true; }
-              world.shake = Math.max(world.shake || 0, 5);
-              world.hurtT = 0.3;
-              if (ZH.Anim && ZH.Anim.hurt) ZH.Anim.hurt();
-            }
+            if (p.hp <= 0) { p.hp = 0; p.dead = true; }
+            world.shake = Math.max(world.shake || 0, 5);
+            world.hurtT = 0.3;
+            if (ZH.Anim && ZH.Anim.hurt) ZH.Anim.hurt();
           }
           list.splice(i, 1);
           continue;
@@ -1646,11 +1562,6 @@
           world.coins = (world.coins || 0) + 500;
           if (ZH.Missions) { ZH.Missions.update(7, 500); ZH.Missions.update(12, 1); }
           if (world.ui && world.ui.showLevelUp) world.ui.showLevelUp(pk.value || 3);
-        } else if (pk.type === 'shield') {
-          var armed = ZH.openShield(p, pk.value || ZH.SHIELD.force);
-          if (armed >= 10 && ZH.Anim && ZH.Anim.toast) {
-            ZH.Anim.toast('FORCE FIELD · ' + Math.round(armed) + 's · 1 MIN', 'good');
-          }
         } else if (pk.type === 'medikit') {
           var healed = Math.min(p.maxHp, p.hp + (pk.value || 50)) - p.hp;
           p.hp += healed;
@@ -1698,7 +1609,7 @@
           /* vacuum every drop on the ground toward the hunter */
           for (var mi = 0; mi < world.pickups.length; mi++) {
             var mp = world.pickups[mi];
-            if (mp === pk || mp.type === 'shield') continue;
+            if (mp === pk) continue;
             mp.pulling = 1;
           }
           if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast('MAGNET', 'good');
@@ -1714,10 +1625,7 @@
           } else if (roll < 0.58) {
             p.hp = Math.min(p.maxHp, p.hp + 35);
             label = '+35 HP'; colour = '#9be15d';
-          } else if (roll < 0.76) {
-            if (ZH.openShield) ZH.openShield(p, ZH.SHIELD.force + (p.fieldBonus || 0));
-            label = 'FORCE FIELD · ' + ZH.SHIELD.force + 's'; colour = '#9ed8ff';
-          } else if (roll < 0.92) {
+          } else if (roll < 0.78) {
             p.magnet = (p.magnet || 0) + 0.5;
             label = 'MAGNET +50%'; colour = '#ff9ad5';
           } else {

@@ -253,21 +253,7 @@ p { margin: 0; line-height: 1.5; }
 .jet-row.is-low .bar.jet > i { background: linear-gradient(90deg, #c0301c, #ffb347); }
 .jet-num { font-size: 11px; font-weight: 700; color: #9fe6ff; font-variant-numeric: tabular-nums; min-width: 40px; text-align: right; }
 
-/* defence shield timeline — the original's TIME_INVINCIBLE countdown */
-.shield-row { display: none; }
-.shield-row.is-active { display: flex; }
-.bar.shield { border: 1px solid rgba(140, 205, 255, 0.35); box-shadow: 0 0 10px rgba(90, 169, 255, 0.25); }
-.bar.shield > i { background: linear-gradient(90deg, #4d8dff, #a8e0ff); }
-.shield-num { font-size: 13px; font-weight: 700; color: #a8e0ff; font-variant-numeric: tabular-nums; min-width: 48px; text-align: right; letter-spacing: 0.02em; }
-/* last second: the same timeline turns amber and pulses so a break is not a
-   surprise. Still driven by the one shieldT clock. */
-.shield-row.is-expiring .bar.shield > i {
-  background: linear-gradient(90deg, #ff6a45, #ffd166);
-  box-shadow: 0 0 12px rgba(255, 128, 74, 0.55);
-  animation: shield-break 0.5s ease-in-out infinite alternate;
-}
-.shield-row.is-expiring .shield-num { color: #ffb066; }
-@keyframes shield-break {
+@keyframes siege-break {
   from { opacity: 0.55; }
   to { opacity: 1; }
 }
@@ -277,7 +263,6 @@ p { margin: 0; line-height: 1.5; }
   .hud-bottom { padding: 8px 14px; }
   .vitals { gap: 4px; }
   .dash-row .bar { height: 4px; }
-  .shield-num { font-size: 12px; min-width: 32px; }
   .jet-num { font-size: 10px; min-width: 34px; }
   .hud-kicker { font-size: 9px; }
 }
@@ -1372,12 +1357,8 @@ body.in-game .mobile-controls { display: flex; }
 }
 .siege-row.is-active .siege-num {
   color: #ff5a3c;
-  animation: shield-break 0.5s ease-in-out infinite alternate;
+  animation: siege-break 0.5s ease-in-out infinite alternate;
 }
-
-/* the force field only exists once a cell is earned: hide the empty row */
-.shield-row { display: none; }
-.shield-row.is-active { display: flex; }
 
 /* level-up auto-pick countdown */
 .levelup-timer {
@@ -1388,14 +1369,4 @@ body.in-game .mobile-controls { display: flex; }
   letter-spacing: 0.14em;
   color: var(--amber);
   text-transform: uppercase;
-}
-
-/* the force field's full value, so one cell reads as one minute */
-.shield-cap {
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: rgba(168, 224, 255, 0.6);
-  min-width: 34px;
 }
