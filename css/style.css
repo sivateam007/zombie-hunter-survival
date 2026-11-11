@@ -536,7 +536,7 @@ p { margin: 0; line-height: 1.5; }
 .menu-layout {
   position: relative;
   display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
   align-items: center;
   gap: clamp(16px, 4vw, 64px);
   width: 100%;
@@ -544,7 +544,7 @@ p { margin: 0; line-height: 1.5; }
   margin: auto;
   padding: clamp(20px, 4vw, 60px);
 }
-.menu-left { display: flex; flex-direction: column; gap: clamp(16px, 2.4vw, 28px); }
+.menu-left { display: flex; flex-direction: column; gap: clamp(16px, 2.4vw, 28px); min-width: 0; }
 .logo-kicker {
   font-size: 12px;
   letter-spacing: 0.7em;
@@ -553,7 +553,8 @@ p { margin: 0; line-height: 1.5; }
   font-weight: 700;
 }
 .logo {
-  font-size: clamp(52px, 9vw, 118px);
+  font-size: clamp(40px, 8vw, 104px);
+  overflow-wrap: break-word;
   line-height: 0.84;
   font-weight: 900;
   letter-spacing: -0.02em;
@@ -593,6 +594,7 @@ p { margin: 0; line-height: 1.5; }
 .stat small { font-size: 9px; letter-spacing: 0.14em; color: var(--dim); }
 .menu-right {
   position: relative;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
