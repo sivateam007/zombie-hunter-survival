@@ -60,13 +60,8 @@ body.touch #game { cursor: default; }
 .about-text p { margin: 8px 0; line-height: 1.5; }
 .about-credit { color: #ffb347; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 800; }
 
-/* GameSnacks portrait target: 790x1300. On narrow portrait viewports the
-   playfield is letterboxed to that aspect ratio instead of stretching. */
-@media (orientation: portrait) and (max-width: 900px) {
-  #app { max-width: 790px; margin: 0 auto; }
-  #game { aspect-ratio: 790 / 1300; height: auto; top: 50%; transform: translateY(-50%); }
-}
-
+/* Mobile portrait: fill the whole screen instead of letterboxing, so there
+   are no black bars; the canvas adapts to the viewport aspect ratio. */
 /* anime.js event wash: player hit, boss entrance, level-up */
 .fx-flash {
   position: absolute;
