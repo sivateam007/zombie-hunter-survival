@@ -391,12 +391,12 @@
     boss_tower:   { name: 'BOSS: TOWER',   hp: 9000,  speed: 0,   dmg: 12, range: 150, cd: 0.8, scale: 1.7, coins: 20000, variant: 'warden', static: true, ranged: true, shotSpeed: 520, mass: 5,
       pattern: { kind: 'ring', count: 12, cd: 1.8, range: 900, dmg: 9 },
       behaviour: [
+        { kind: 'ring', count: 12, duration: 3.5, range: 900, dmg: 9 },
         { kind: 'ring', count: 12, duration: 2.5, range: 900, dmg: 9 },
-        { kind: 'ring', count: 12, duration: 2.5, range: 900, dmg: 9 },
-        { kind: 'ring', count: 12, duration: 2.5, range: 900, dmg: 9 },
+        { kind: 'ring', count: 12, duration: 3.5, range: 900, dmg: 9 },
         { kind: 'fan', count: 4, spread: 0.45, duration: 2.5, range: 900, dmg: 8 },
         { kind: 'fan', count: 4, spread: 0.45, duration: 2.5, range: 900, dmg: 8 },
-        { kind: 'fan', count: 4, spread: 0.45, duration: 2.5, range: 900, dmg: 8 },
+        { kind: 'fan', count: 4, spread: 0.45, duration: 3.5, range: 900, dmg: 8 },
         { kind: 'ring', count: 12, duration: 2.5, range: 900, dmg: 9 },
         { kind: 'ring', count: 12, duration: 2.5, range: 900, dmg: 9 },
         { kind: 'ring', count: 12, duration: 2.5, range: 900, dmg: 9 }
@@ -405,46 +405,46 @@
       pattern: { kind: 'stream', count: 10, gap: 0.12, cd: 2.8, range: 800, dmg: 10 },
       behaviour: [
         { kind: 'chase', duration: 4.0, speed: 0.25 },
-        { kind: 'stream', count: 10, gap: 0.12, duration: 3.0, range: 800, dmg: 10 }
+        { kind: 'stream', count: 10, gap: 0.12, duration: 3.91, range: 800, dmg: 10 }
       ] },
     boss_reptile: { name: 'BOSS: REPTILE', hp: 10000, speed: 170, dmg: 22, range: 50, cd: 0.9, scale: 1.7, coins: 22000, variant: 'matron', mass: 5,
       pattern: { kind: 'summon', type: 'reptile', count: 3, cd: 4.5, range: 900 },
       behaviour: [
         { kind: 'chase', duration: 6.0, speed: 0.2 },
-        { kind: 'charge', windup: 0.7, dash: 0.5, speed: 700, duration: 2.8, range: 1200 },
-        { kind: 'charge', windup: 0.7, dash: 0.5, speed: 700, duration: 2.8, range: 1200 },
-        { kind: 'charge', windup: 0.7, dash: 0.5, speed: 700, duration: 2.8, range: 1200 },
-        { kind: 'summon', type: 'reptile', count: 4, duration: 2.2, range: 900 }
+        { kind: 'charge', windup: 0.7, dash: 0.5, speed: 700, duration: 3.8, range: 1200 },
+        { kind: 'charge', windup: 0.7, dash: 0.5, speed: 700, duration: 3.8, range: 1200 },
+        { kind: 'charge', windup: 0.7, dash: 0.5, speed: 700, duration: 3.8, range: 1200 },
+        { kind: 'summon', type: 'reptile', count: 4, duration: 1.81, range: 900 }
       ] },
     boss_mutant:  { name: 'BOSS: MUTANT',  hp: 14000, speed: 100, dmg: 28, range: 54, cd: 0.9, scale: 1.9, coins: 28000, variant: 'butcher', mass: 5,
       pattern: { kind: 'summon', type: 'slime2', count: 3, cd: 4.5, range: 900 },
       behaviour: [
         { kind: 'chase', duration: 6.0, speed: 0.15 },
-        { kind: 'charge', windup: 0.5, dash: 0.5, speed: 720, duration: 2.4, range: 1200 },
-        { kind: 'teleport', windup: 0.35, dist: 260, duration: 1.4 },
-        { kind: 'summon', type: 'slime2', count: 4, duration: 2.3, range: 900 }
+        { kind: 'charge', windup: 0.5, dash: 0.5, speed: 720, duration: 2.55, range: 1200 },
+        { kind: 'teleport', windup: 0.1, dist: 260, duration: 1.2 },
+        { kind: 'summon', type: 'slime2', count: 4, duration: 1.81, range: 900 }
       ] },
     boss_spider:  { name: 'BOSS: SPIDER',  hp: 11000, speed: 180, dmg: 26, range: 50, cd: 0.9, scale: 1.7, coins: 24000, variant: 'crawler', mass: 5,
       pattern: { kind: 'summon', type: 'spider1', count: 3, cd: 4.0, range: 900 },
       behaviour: [
         { kind: 'roam', duration: 4.0, speed: 0.2 },
-        { kind: 'mortar', count: 1, duration: 1.5, range: 900, dmg: 20, radius: 190, flight: 1.1 },
+        { kind: 'mortar', count: 1, duration: 0.02, range: 900, dmg: 20, radius: 190, flight: 1.1 },
         { kind: 'roam', duration: 1.5, speed: 0.2 },
-        { kind: 'fan', count: 3, spread: 0.35, duration: 1.5, range: 800, dmg: 8 },
-        { kind: 'fan', count: 3, spread: 0.35, duration: 1.5, range: 800, dmg: 8 },
+        { kind: 'fan', count: 3, spread: 0.35, duration: 0.06, range: 800, dmg: 8 },
+        { kind: 'fan', count: 3, spread: 0.35, duration: 0.06, range: 800, dmg: 8 },
         { kind: 'roam', duration: 1.5, speed: 0.2 },
-        { kind: 'summon', type: 'spider1', count: 3, duration: 2.0, range: 900 },
+        { kind: 'summon', type: 'spider1', count: 3, duration: 1.6, range: 900 },
         { kind: 'roam', duration: 1.5, speed: 0.3 },
-        { kind: 'fan', count: 3, spread: 0.35, duration: 1.5, range: 800, dmg: 8 },
-        { kind: 'fan', count: 3, spread: 0.35, duration: 1.5, range: 800, dmg: 8 },
+        { kind: 'fan', count: 3, spread: 0.35, duration: 0.06, range: 800, dmg: 8 },
+        { kind: 'fan', count: 3, spread: 0.35, duration: 0.06, range: 800, dmg: 8 },
         { kind: 'roam', duration: 1.5, speed: 0.2 },
-        { kind: 'fan', count: 3, spread: 0.35, duration: 1.5, range: 800, dmg: 8 },
+        { kind: 'fan', count: 3, spread: 0.35, duration: 0.6, range: 800, dmg: 8 },
         { kind: 'roam', duration: 0.7, speed: 0.3 },
-        { kind: 'fan', count: 3, spread: 0.35, duration: 1.5, range: 800, dmg: 8 },
+        { kind: 'fan', count: 3, spread: 0.35, duration: 0.6, range: 800, dmg: 8 },
         { kind: 'roam', duration: 2.0, speed: 0.2 },
-        { kind: 'fan', count: 3, spread: 0.35, duration: 1.5, range: 800, dmg: 8 },
+        { kind: 'fan', count: 3, spread: 0.35, duration: 0.6, range: 800, dmg: 8 },
         { kind: 'roam', duration: 1.5, speed: 0.3 },
-        { kind: 'mortar', count: 3, spread: 0.4, duration: 2.0, range: 800, dmg: 0, radius: 80, flight: 0.9, acid: true }
+        { kind: 'mortar', count: 3, spread: 0.4, duration: 1.6, range: 800, dmg: 0, radius: 80, flight: 0.9, acid: true }
       ] },
     boss_fighter: { name: 'BOSS: FIGHTER', hp: 9000,  speed: 150, dmg: 20, range: 48, cd: 0.9, scale: 1.7, coins: 20000, variant: 'boss', mass: 5,
       pattern: { kind: 'fan', count: 3, spread: 0.45, cd: 1.6, range: 700, dmg: 8 },

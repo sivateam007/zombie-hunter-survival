@@ -95,7 +95,7 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 |---|---|---|---|---|---|
 | Boss count | 6 | 7 (`boss_fighter` extra) | 🟡 | `BossesData` | `ZH.BOSS_TYPES` |
 | Boss HP | 7,500–10,000 | 8,000–14,000 | 🟡 | table | runtime |
-| Scripted steps | 2–18 steps per boss | multi-step lists with chase, charge, teleport, mortar and the old ring/fan/stream/summon steps; no roam/retreat | ✅/🟡 | `behaviour[]` | `updateBossBehaviour` |
+| Scripted steps | 2–18 steps per boss | step counts and per-step durations now match the original behaviour lists (tower 9, reptile 5, soldier 8, dragon 2, spider 18, mutant 4) | ✅ | `behaviour[]` | `updateBossBehaviour` |
 | Charge windup | 700/500 ms | 700/500 ms telegraphed lane, dash, recovery | ✅ | `duration[0]` | `BOSS_TYPES.behaviour` charge steps |
 | Teleport | mutant, 1 s | 350 ms purple windup, 260 px reposition, clamped | ✅ | step 3 | `startBossStep` / `updateBossAct` |
 | Summon adds | reptile 4, mutant 4, spider 3 | reptile 4, mutant 4, spider 3 as list steps | ✅ | `spawns[]` | `bossPattern` summon |
@@ -161,7 +161,7 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 
 | # | Missing system | Check 1 | Check 2 |
 |---|---|---|---|
-| 1 | Full 2–18-step fidelity | original step chains include roam and retreat segments | roam and retreat movement steps now run; soldier fires a delayed second volley; spider's poison fan leaves a 10-dmg acid fragment. Remaining: full per-boss step counts and exact timings |
+| 1 | Full 2–18-step fidelity | original step chains include roam and retreat segments | step counts and per-step durations now match the original behaviour lists for all six bosses (counts and timings pulled from the bundle); attack-kind fidelity for tower's cluster bomb (ATTACK3) still uses ring/fan steps |
 | 2 | Spider poison-fan fragments | poison fan leaves a 10-dmg acid fragment | implemented as acid mortars that spawn 10-dmg acid pools (✅) |
 | 3 | Per-boss HP bars | one bar per boss in the original | one shared HUD boss bar |
 | 4 | Music beds | menu / run / boss tracks | no boss or menu bed wired |
