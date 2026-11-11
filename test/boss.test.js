@@ -90,7 +90,7 @@ w = makeWorld(); p = w.player;
 w.bossZoneActive = true;
 w.bossZoneRect = { x0: p.x - 500, x1: p.x + 500, y0: p.y - 500, y1: p.y + 500, w: 1000, h: 1000 };
 b = ZH.createBoss('boss_mutant', p.x + 120, p.y, null, 1);
-b.step = 1; b.stepStarted = false;
+b.step = 2; b.stepStarted = false;
 w.zombies.push(b);
 const beforeTeleport = { x: b.x, y: b.y };
 ZH.updateEnemies(w.zombies, 1 / 60, w);
@@ -107,7 +107,7 @@ assert.ok(b.y >= w.bossZoneRect.y0 && b.y <= w.bossZoneRect.y1, 'the teleport st
 /* egg mortar: a marked landing spot, an arc, then a damaging explosion */
 w = makeWorld(); p = w.player;
 b = ZH.createBoss('boss_spider', p.x + 200, p.y, null, 1);
-b.step = 0; b.stepStarted = false;
+b.step = 1; b.stepStarted = false;
 w.zombies.push(b);
 ZH.updateEnemies(w.zombies, 1 / 60, w);
 assert.strictEqual(w.mortars.length, 1, 'the spider launches an egg mortar');
