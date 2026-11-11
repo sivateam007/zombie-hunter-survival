@@ -144,7 +144,7 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 ## 10. Ranked gaps
 
 1. **Full sequence fidelity** — roam/retreat movement steps, the soldier's delayed second volley and the spider's poison-fan acid fragments now run; remaining work is the exact per-boss step counts and timings.
-2. **Per-boss HP bars and music** — one shared HUD bar and no boss music bed.
+2. **Per-boss HP bars and music** — done: one bar per boss in the zone, plus a heavier boss music bed that swaps in on zone entry and reverts on clear.
 3. **Music and platform services** — three music beds, rewarded ads and suspended-run snapshots.
 4. **Magnet = gems only** — ours vacuums every drop by design.
 

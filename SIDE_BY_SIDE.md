@@ -104,7 +104,7 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Spider egg mortar | r190, 20 dmg | marked arc, 190 px radius, 20 dmg, lands and explodes | ✅ | ATTACK steps | `spawnMortar` / `updateMortars` |
 | Boss-zone **data** | rect 1000–3072 px | present, same sizes, 2 bosses in S4–S8 | ✅ | level JSON | `levels.js` + runtime |
 | Boss-zone **enforcement** | fence, player confined, kill all mobs | fence drawn, player clamped, normal bodies cleared | ✅ | `BossZone` collision | `bossZoneFence` / `clearNonBosses` |
-| Per-boss HP bars | one per boss | single bar | 🟡 | HUD | `pushHud` single boss |
+| Per-boss HP bars | one per boss | one bar per boss in the zone | ✅ | HUD | `pushHud` bosses array + ui.js |
 
 ## 7. Stages and waves
 
@@ -286,7 +286,7 @@ All 13 test files pass; browser ran BUILD 32 with `frameErrors: 0`.
 
 Browser ran BUILD 33 with `frameErrors: 0`; the forced zone showed a telegraphed charge, a teleport, a landing mortar, a destroyed briefcase and a mass shove, with the tower's 12-way ring still intact.
 
-**Still honestly missing:** exact per-boss step counts and timings, per-boss HP bars and boss/menu music, rewarded ads and suspended-run snapshots, and the gems-only magnet.
+**Still honestly missing:** exact per-boss step counts and timings, menu music bed (only run + boss beds exist), rewarded ads and suspended-run snapshots, and the gems-only magnet.
 
 ## 20. Boss roam, delayed volleys and poison fragments
 
