@@ -149,14 +149,15 @@
      jets until the button is released, so the pack cannot stutter on fumes. */
   ZH.JETPACK = ZH.JETPACK || {
     max: 100,
-    drain: 25,        /* 4 s of continuous flight from a full tank     */
-    regen: 30,        /* ~3 s to refill on the ground                  */
-    min: 15,          /* cannot ignite below this                      */
-    cost: 6,          /* ignition burns a little extra                 */
-    speed: 1.6,       /* hover speed multiplier                        */
-    burstSpeed: 2.05, /* the take-off kick, for `burst` seconds        */
-    burst: 0.3,
-    lift: 20
+    drain: 22,        /* ~4.5 s of continuous flight from a full tank  */
+    regen: 36,        /* ~2.8 s to refill on the ground                */
+    min: 18,          /* cannot ignite below this                      */
+    cost: 8,          /* ignition burns a little extra                 */
+    speed: 1.85,      /* hover speed multiplier                        */
+    burstSpeed: 2.35, /* the take-off kick, for `burst` seconds        */
+    burst: 0.35,
+    lift: 24,
+    thrustForward: 0.6 /* forward nudge while thrusting with no input  */
   };
 
   /** one hold-to-fly fuel clock */
@@ -1346,6 +1347,13 @@
       p.x += mx * speed * dt;
       p.y += my * speed * dt;
       p.walkPhase += dt * 8;
+    } else if (p.jetActive) {
+      /* Mini Militia style: holding thrust with no stick input still gives a
+         forward nudge in the aim direction, so the pack is never dead air */
+      var fwd = (jet.thrustForward || 0.55) * (p.jetBurst > 0 ? 1.4 : 1);
+      p.x += Math.cos(p.aimDir || 0) * p.speed * fwd * dt;
+      p.y += Math.sin(p.aimDir || 0) * p.speed * fwd * dt;
+      p.walkPhase += dt * 6;
     }
     /* a live boss zone is a sealed arena: the hunter stays inside the rect */
     if (world.bossZoneActive && world.bossZoneRect) {
