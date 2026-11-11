@@ -1389,3 +1389,13 @@ body.in-game .mobile-controls { display: flex; }
   color: var(--amber);
   text-transform: uppercase;
 }
+
+/* the force field's full value, so one cell reads as one minute */
+.shield-cap {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(168, 224, 255, 0.6);
+  min-width: 34px;
+}

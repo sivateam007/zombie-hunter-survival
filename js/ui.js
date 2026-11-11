@@ -44,6 +44,7 @@ window.ZH = window.ZH || {};
         shieldRow: $('shield-row'),
         shieldFill: $('shield-fill'),
         shieldText: $('shield-text'),
+        shieldCap: $('shield-cap'),
         siegeRow: $('siege-row'),
         siegeFill: $('siege-fill'),
         siegeText: $('siege-text'),
@@ -1099,7 +1100,11 @@ window.ZH = window.ZH || {};
           e.shieldText.textContent = st.remaining >= 10
             ? Math.ceil(st.remaining) + 's'
             : st.remaining.toFixed(1) + 's';
-          e.shieldText.title = 'Force field: ' + st.remaining.toFixed(1) + 's left';
+          /* the cap spells out the full value, so a 60 s cell reads as one
+             minute at a glance instead of an open-ended bar */
+          if (e.shieldCap) e.shieldCap.textContent = '/ ' + Math.round(st.max) + 's';
+          e.shieldText.title = 'Force field: ' + st.remaining.toFixed(1) + 's of ' +
+            Math.round(st.max) + 's left';
         }
       }
 

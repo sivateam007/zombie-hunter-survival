@@ -1649,7 +1649,7 @@
         } else if (pk.type === 'shield') {
           var armed = ZH.openShield(p, pk.value || ZH.SHIELD.force);
           if (armed >= 10 && ZH.Anim && ZH.Anim.toast) {
-            ZH.Anim.toast('FORCE FIELD · ' + Math.round(armed) + 's', 'good');
+            ZH.Anim.toast('FORCE FIELD · ' + Math.round(armed) + 's · 1 MIN', 'good');
           }
         } else if (pk.type === 'medikit') {
           var healed = Math.min(p.maxHp, p.hp + (pk.value || 50)) - p.hp;
@@ -1716,7 +1716,7 @@
             label = '+35 HP'; colour = '#9be15d';
           } else if (roll < 0.76) {
             if (ZH.openShield) ZH.openShield(p, ZH.SHIELD.force + (p.fieldBonus || 0));
-            label = 'FORCE FIELD'; colour = '#9ed8ff';
+            label = 'FORCE FIELD · ' + ZH.SHIELD.force + 's'; colour = '#9ed8ff';
           } else if (roll < 0.92) {
             p.magnet = (p.magnet || 0) + 0.5;
             label = 'MAGNET +50%'; colour = '#ff9ad5';
