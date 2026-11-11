@@ -27,6 +27,8 @@ window.ZH = window.ZH || {};
     character: 'hunter',
     redeemed: [],
     lastDaily: '',
+    loginStreak: 0,
+    lastLoginDate: '',
     seenIntro: false,
     /* contracts + idle coffer (js/missions.js owns the format) */
     missions: [],
@@ -318,6 +320,15 @@ window.ZH = window.ZH || {};
 
   function claimDaily() {
     if (!dailyAvailable()) return { ok: false, reason: 'claimed' };
+    /* daily login streak: consecutive days build a multiplier */
+    var yday = new Date(); yday.setDate(yday.getDate() - 1);
+    var ystr = yday.toISOString().slice(0, 10);
+    if (save.lastLoginDate === ystr) save.loginStreak = (save.loginStreak || 0) + 1;
+    else if (save.lastLoginDate === today()) { /* same day, already counted */ }
+    else save.loginStreak = 1;
+    if (save.loginStreak < 1) save.loginStreak = 1;
+    if (save.loginStreak > 7) save.loginStreak = 7;
+    save.lastLoginDate = today();
     save.lastDaily = today();
     /* the daily crate: 350 scrap guaranteed, plus one random bonus */
     var bonus = 0, kind = 'scrap', label = 'DAILY DROP';
@@ -334,10 +345,12 @@ window.ZH = window.ZH || {};
       save.upgrades.vitality = Math.min(8, (save.upgrades.vitality || 0) + 1);
       kind = 'upgrade'; label = 'FREE VITALITY LEVEL';
     }
-    save.coins += 350 + bonus;
-    if (ZH.Missions) ZH.Missions.update(7, 350 + bonus);   /* EARN_X_GOLD */
+    var streakMul = 1 + (save.loginStreak - 1) * 0.25;
+    var base = Math.round((350 + bonus) * streakMul);
+    save.coins += base;
+    if (ZH.Missions) ZH.Missions.update(7, base);   /* EARN_X_GOLD */
     persist();
-    return { ok: true, coins: 350 + bonus, bonus: bonus, kind: kind, label: label };
+    return { ok: true, coins: base, bonus: bonus, kind: kind, label: label, streak: save.loginStreak };
   }
 
   function redeem(code) {
@@ -410,6 +423,7 @@ window.ZH = window.ZH || {};
     buyCharacter: buyCharacter,
     selectCharacter: selectCharacter,
     dailyAvailable: dailyAvailable,
+    loginStreak: function () { return save.loginStreak || 0; },
     claimDaily: claimDaily,
     redeem: redeem,
     recordRun: recordRun,

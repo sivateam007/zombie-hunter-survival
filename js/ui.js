@@ -949,7 +949,8 @@ window.ZH = window.ZH || {};
       if (daily) {
         var avail = ZH.Save.dailyAvailable ? ZH.Save.dailyAvailable() : false;
         daily.disabled = !avail;
-        daily.textContent = avail ? 'CLAIM DAILY +350' : 'CLAIMED TODAY';
+        var st = ZH.Save.loginStreak ? ZH.Save.loginStreak() : 0;
+        daily.textContent = avail ? 'CLAIM DAILY +350 · STREAK ' + (st + 1) : 'CLAIMED · STREAK ' + st;
       }
     },
 
@@ -1016,7 +1017,7 @@ window.ZH = window.ZH || {};
         ZH.Audio.play && ZH.Audio.play('error');
         return;
       }
-      if (msg) msg.textContent = '+' + r.coins + ' SCRAP · ' + (r.label || 'DAILY DROP') + ' CLAIMED';
+      if (msg) msg.textContent = '+' + r.coins + ' SCRAP · ' + (r.label || 'DAILY DROP') + ' · STREAK ' + (r.streak || 1) + ' CLAIMED';
       ZH.Audio.play && ZH.Audio.play('buy');
       ZH.Anim.toast && ZH.Anim.toast('+' + r.coins + ' · ' + (r.label || 'DAILY'), 'good');
       UI.renderShop();
