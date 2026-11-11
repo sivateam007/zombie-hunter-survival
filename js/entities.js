@@ -2193,7 +2193,10 @@
       if (d < 22) {
         if (pk.type === 'exp') {
           var gain = pk.value || 10;
-          gain = Math.floor(gain + gain * (a.exp_bonus || 0) / 100);
+          /* original: 3 x floor(v + v*exp% + v*learning%) */
+          var expPct = (a.exp_bonus || 0) / 100;
+          var learnPct = (p.learning || 0) / 100;
+          gain = 3 * Math.floor(gain + gain * expPct + gain * learnPct);
           p.exp += gain;
           /* 8 = COLLECT_X_EXPS */
           if (ZH.Missions) ZH.Missions.update(8, gain);

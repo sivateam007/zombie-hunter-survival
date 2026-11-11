@@ -67,7 +67,7 @@ ZH.WEAPON_ORDER.forEach((id) => {
   w.pickups.push({ type: 'exp', x: w.player.x, y: w.player.y, life: 5, value: 10 });
   w.pickups.push({ type: 'coin', x: w.player.x, y: w.player.y, life: 5, value: 5 });
   ZH.updatePickups(w.pickups, 1 / 60, w);
-  assert.strictEqual(w.player.exp, 10, 'exp gem is collected');
+  assert.strictEqual(w.player.exp, 30, 'exp gem is collected (3x original formula)');
   assert.strictEqual(w.coins, 5, 'scrap is collected');
   assert.strictEqual(w.pickups.length, 0, 'pickups are consumed');
 }
