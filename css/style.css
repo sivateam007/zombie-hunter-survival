@@ -1374,3 +1374,18 @@ body.in-game .mobile-controls { display: flex; }
   color: #ff5a3c;
   animation: shield-break 0.5s ease-in-out infinite alternate;
 }
+
+/* the force field only exists once a cell is earned: hide the empty row */
+.shield-row { display: none; }
+.shield-row.is-active { display: flex; }
+
+/* level-up auto-pick countdown */
+.levelup-timer {
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--amber);
+  text-transform: uppercase;
+}

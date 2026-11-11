@@ -111,8 +111,8 @@
   };
 
   ZH.SHIELD = ZH.SHIELD || {
-    max: 150,        /* force-field window; also the HUD bar width            */
-    force: 150,      /* one earned cell = 2.5 minutes of protection          */
+    max: 60,         /* force-field window; also the HUD bar width            */
+    force: 60,       /* one earned cell = exactly one minute of protection   */
     /* nothing else arms the field: no bite, dash, level-up or revive window */
     hit: 0,
     revive: 0,

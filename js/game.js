@@ -1266,7 +1266,7 @@ window.ZH = window.ZH || {};
     this.ui.updateHud({
       hp: Math.max(0, p.hp), maxHp: p.maxHp,
       dashCd: p.dashCd || 0, dashMax: p.dashMax || 2.2,
-      shield: p.shieldT || 0, shieldMax: p.shieldMax || 3,
+      shield: p.shieldT || 0, shieldMax: p.shieldMax || ZH.SHIELD.max,
       jet: p.jetFuel == null ? 100 : p.jetFuel,
       jetMax: (ZH.JETPACK && ZH.JETPACK.max) || 100,
       jetActive: !!p.jetActive,

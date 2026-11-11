@@ -12,6 +12,7 @@ window.ZH = window.ZH || {};
   var menuT = 0;
   var boardMode = 'endless';
   var menuOpts = {};
+  var luClock = null;          /* the auto-pick countdown on every level-up card */
 
   function $(id) { return document.getElementById(id); }
   function fmtTime(sec) {
@@ -471,6 +472,7 @@ window.ZH = window.ZH || {};
             '<button class="levelup-x" id="lu-x" aria-label="Close">×</button>' +
           '</div>' +
           '<div class="levelup-desc">Pick one: a new weapon, a weapon upgrade, or a supply.</div>' +
+          '<div class="levelup-timer" id="lu-timer">AUTO-PICK IN 10s</div>' +
           '<div class="levelup-cards" id="levelup-cards"></div>' +
           '<div class="levelup-foot">' +
             '<button class="btn small" id="lu-reroll">REROLL</button>' +
@@ -623,10 +625,37 @@ window.ZH = window.ZH || {};
         }
       }
 
+      /* every card screen carries a countdown: if the player does not choose,
+         the first offer is taken automatically so the chooser is never a
+         hang-up. The world is paused in 'levelup', so this is UI-only. */
+      if (luClock) { clearInterval(luClock); luClock = null; }
+      var left = 10;
+      var timerEl = panel.querySelector('#lu-timer');
+      luClock = setInterval(function () {
+        if (!document.body.contains(panel) || !G || G.state !== 'levelup') {
+          clearInterval(luClock); luClock = null; return;
+        }
+        left -= 1;
+        if (timerEl) {
+          timerEl.textContent = left > 0 ? 'AUTO-PICK IN ' + left + 's' : 'AUTO-PICKING…';
+        }
+        if (left <= 0) {
+          clearInterval(luClock); luClock = null;
+          var pick = panel.querySelector('.levelup-card [data-act="take"]');
+          if (pick) {
+            if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast('AUTO-PICKED · TIME UP', 'info');
+            pick.click();
+          } else {
+            UI.hideLevelUp();
+          }
+        }
+      }, 1000);
+
       ZH.Anim && ZH.Anim.staggerIn && ZH.Anim.staggerIn(panel, '.levelup-card');
     },
 
     hideLevelUp: function () {
+      if (luClock) { clearInterval(luClock); luClock = null; }
       var old = document.getElementById('levelup-overlay');
       if (old) {
         old.classList.remove('is-active');
@@ -1051,8 +1080,8 @@ window.ZH = window.ZH || {};
         }
       }
 
-      /* defence shield: the original's 3 s TIME_INVINCIBLE after a bite or a
-         revive, drawn as a draining timeline so the mercy window is readable */
+      /* earned force field: only a kill-gift cell arms this, and the row is
+         hidden the rest of the time so the opening never shows a field */
       if (e.shieldRow) {
         var st = ZH.shieldTimeline
           ? ZH.shieldTimeline(d.shield || 0, d.shieldMax || ZH.SHIELD.max)

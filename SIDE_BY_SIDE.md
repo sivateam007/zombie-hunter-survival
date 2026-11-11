@@ -133,7 +133,7 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Treasure cards | 1/3/5 cards | 1/3/5 supported; drops carry the count | 🟡 | `ShowSkillSlots(data)` | `showLevelUp(count)`; reroll still shared |
 | Chest reroll | 1,500×(n+1), max 3 | shared 500×n, max 5 | ❌ | `MAX_CHESTS_REROLLS` | `lu-reroll` |
 | Level-up reroll | 500×(n+1) max 5 | same | ✅ | price helper | `ui.js` |
-| Force field | none | earned cell every 40 kills / boss, 150 s | ➕ | — | `ZH.SHIELD`, `shieldGiftDue` |
+| Force field | none | earned cell every 40 kills / boss, 60 s | ➕ | — | `ZH.SHIELD`, `shieldGiftDue` |
 | Gift box | none | random reward | ➕ | — | gift branch |
 
 ## 9. Missions, idle, meta
@@ -250,7 +250,8 @@ boss zone. Shorter waves would have cut content off the end of every stage.
 |---|---|---|
 | Passive HP regeneration removed: survivor regen powers, the Energy Drink tick and the roadkill +2 are all gone | `Powers.update`, `updateSurvivor`, `game.js` | `shield.test.js`; browser: 5 s of updates left a probe at 50 HP |
 | Universal 3% lifesteal default removed; only a lifesteal power returns health on damage | `damageEnemy` | tests + source |
-| Force field arms only from an earned cell: every 40th kill and every boss, **150 s** | `ZH.SHIELD`, `SHIELD.killGiftEvery`, `shieldGiftDue` | `shield.test.js`; browser: 40th kill dropped a cell, pickup → 150 s |
+| Force field arms only from an earned cell: every 40th kill and every boss, **60 s**; the HUD row is hidden while no field runs | `ZH.SHIELD`, `SHIELD.killGiftEvery`, `shieldGiftDue` | `shield.test.js`; browser: 40th kill dropped a cell, pickup → 60 s |
+| Every level-up card screen carries a **10 s auto-pick countdown** | `ui.js` `showLevelUpCard` | browser: timer counts down and auto-picks |
 | Bites, rolls, level-ups, car crashes and revives no longer arm a field | `entities.js`, `game.js` | browser: bite 100 → 88, shield stayed 0 |
 | Gift boxes are earned every 30 kills instead of a 40 s timer | `game.js` | source; full suite |
 | Energy Drink repurposed to 3–15% damage reduction (its regen tick is gone) | `weapons.js` | `sim.test.js` |

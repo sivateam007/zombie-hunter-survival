@@ -79,6 +79,9 @@ sidearm, Kestrel SMG, Marrow 12g, Vanguard AR, Longshot .338, Rocket Launcher an
 are the first of each line. Rocket and grenade launchers evolve into Doomsday and Siegebreaker;
 weapons unlock through mission milestones *and* can be bought early.
 
+**Level-up timer** — every card screen carries a 10-second countdown; if it runs out the first
+offer is auto-picked, so a run can never hang on the chooser.
+
 **Jetpack** — hold the cyan JET button (or Space on a desktop) to fly. The fuel bar drains while
 airborne and recharges on the ground; bites pass underneath while the jets are lit, but ranged
 fire still connects.
@@ -105,9 +108,10 @@ lifesteal survivor powers still return a share of the damage they deal.
 chunks are crossed by several footbridges, and blocks carry more barricades, wrecks, crates,
 containers and other roadside obstacles. Traffic and props are decorative and never alter zombie AI.
 
-**Earned force field** — every 40th kill and every boss drops a force-field cell worth 2.5 minutes
+**Earned force field** — every 40th kill and every boss drops a force-field cell worth one minute
 of protection, shown in the HUD as a whole-second countdown with a draining timeline and the same
-ring around the hunter. Nothing else arms it: no bite, roll, level-up or revive.
+ring around the hunter. Nothing else arms it: no bite, roll, level-up or revive, and the row is
+hidden while no field is running.
 
 **Endless Night** — an endless escalating wave curve where every fifth wave is a boss. Your best
 wave is submitted to the server leaderboard.
