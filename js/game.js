@@ -16,7 +16,7 @@ window.ZH = window.ZH || {};
     stageId: 0, stage: null,
     arena: null,
     player: null,
-    zombies: [], bullets: [], enemyBullets: [],
+    zombies: [], bullets: [], enemyBullets: [], mortars: [], briefcases: [],
     pickups: [], particles: [], decals: [], ghosts: [], floaters: [], ambient: [],
     camera: { x: 0, y: 0, zoom: 1 },
     shake: 0, t: 0, elapsed: 0, lastTs: 0, acc: 0,
@@ -348,6 +348,7 @@ window.ZH = window.ZH || {};
 
   Game.resetSimulation = function () {
     this.zombies = []; this.bullets = []; this.enemyBullets = [];
+    this.mortars = []; this.briefcases = [];
     this.pickups = []; this.particles = []; this.decals = [];
     this.ghosts = []; this.floaters = [];
     this.coins = 0; this.score = 0; this.exp = 0;
@@ -1203,6 +1204,8 @@ window.ZH = window.ZH || {};
     if (ZH.updateEnemies) ZH.updateEnemies(this.zombies, dt, this);
     if (ZH.updateProjectiles) ZH.updateProjectiles(this.bullets, dt, this);
     if (ZH.updateProjectiles) ZH.updateProjectiles(this.enemyBullets, dt, this);
+    if (ZH.updateMortars) ZH.updateMortars(this, dt);
+    if (ZH.updateBriefcases) ZH.updateBriefcases(this, dt);
     if (ZH.updatePickups) ZH.updatePickups(this.pickups, dt, this);
     /* survivor power runtime: regeneration and burn ticks */
     if (ZH.Powers) ZH.Powers.update(this, dt);
@@ -1756,6 +1759,41 @@ window.ZH = window.ZH || {};
       }
     }
 
+    /* a charge has to be readable before it lands: a dashed lane and a
+       growing ring while the boss winds up, not a silent teleport-dash */
+    for (var tb = 0; tb < this.zombies.length; tb++) {
+      var tz = this.zombies[tb];
+      if (!tz.act || tz.act.phase !== 'windup') continue;
+      if (tz.act.kind === 'charge') {
+        var ck = Math.min(1, tz.act.t / (tz.act.windup || 0.7));
+        var ca = tz.act.ang || 0;
+        ctx.save();
+        ctx.globalAlpha = 0.18 + ck * 0.5;
+        ctx.strokeStyle = '#ff5a3c';
+        ctx.lineWidth = 4 + ck * 4;
+        ctx.setLineDash([14, 9]);
+        ctx.beginPath();
+        ctx.moveTo(tz.x, tz.y);
+        ctx.lineTo(tz.x + Math.cos(ca) * 190, tz.y + Math.sin(ca) * 190);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.arc(tz.x, tz.y, 32 + ck * 16, 0, TAU);
+        ctx.stroke();
+        ctx.restore();
+      } else if (tz.act.kind === 'teleport') {
+        var tk = Math.min(1, tz.act.t / (tz.act.windup || 0.35));
+        ctx.save();
+        ctx.globalAlpha = 0.3 + tk * 0.5;
+        ctx.strokeStyle = '#c79bff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(tz.x, tz.y, 42 - tk * 26, 0, TAU);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
     // bullets — every weapon gets its own projectile silhouette
     drawShots(ctx, this);
 
@@ -1771,6 +1809,53 @@ window.ZH = window.ZH || {};
       ctx.beginPath(); ctx.arc(ebl.x, ebl.y, 12, 0, TAU); ctx.fill();
       ctx.fillStyle = '#b7ef55';
       ctx.beginPath(); ctx.arc(ebl.x, ebl.y, 3.4, 0, TAU); ctx.fill();
+    }
+
+    /* the manager's briefcase: a rotating, shootable target */
+    for (var bci = 0; bci < this.briefcases.length; bci++) {
+      var bc = this.briefcases[bci];
+      ctx.save();
+      ctx.translate(bc.x, bc.y);
+      ctx.rotate(bc.rot || 0);
+      ctx.fillStyle = bc.flash > 0 ? '#fff4d0' : '#8a5328';
+      ctx.fillRect(-14, -10, 28, 20);
+      ctx.strokeStyle = '#ffd166';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-14, -10, 28, 20);
+      ctx.strokeStyle = '#d9a85c';
+      ctx.beginPath();
+      ctx.arc(0, -10, 5, Math.PI, 0);
+      ctx.stroke();
+      ctx.fillStyle = '#ffd166';
+      ctx.fillRect(-3, -2, 6, 4);
+      ctx.restore();
+      var bhp = Math.max(0, bc.hp / bc.maxHp);
+      ctx.fillStyle = 'rgba(10,14,16,0.8)';
+      ctx.fillRect(bc.x - 16, bc.y - 24, 32, 4);
+      ctx.fillStyle = '#ffb347';
+      ctx.fillRect(bc.x - 16, bc.y - 24, 32 * bhp, 4);
+    }
+
+    /* mortar markers and the lobbed egg in flight */
+    for (var mi = 0; mi < this.mortars.length; mi++) {
+      var mo = this.mortars[mi];
+      var mk = Math.min(1, mo.t / (mo.flight || 1.1));
+      ctx.save();
+      ctx.globalAlpha = 0.18 + mk * 0.4;
+      ctx.fillStyle = 'rgba(255,120,50,0.2)';
+      ctx.beginPath(); ctx.arc(mo.tx, mo.ty, mo.radius || 140, 0, TAU); ctx.fill();
+      ctx.strokeStyle = '#ffb347';
+      ctx.lineWidth = 2 + mk * 3;
+      ctx.beginPath(); ctx.arc(mo.tx, mo.ty, mo.radius || 140, 0, TAU); ctx.stroke();
+      ctx.globalAlpha = 0.9;
+      var mx = mo.x + (mo.tx - mo.x) * mk;
+      var my = mo.y + (mo.ty - mo.y) * mk - Math.sin(Math.PI * mk) * (mo.arc || 120);
+      ctx.fillStyle = '#d8f08a';
+      ctx.beginPath(); ctx.ellipse(mx, my, 10, 13, 0, 0, TAU); ctx.fill();
+      ctx.strokeStyle = '#6a8a3a';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
     }
 
     // particles — additive sparks, expanding shockwave rings and soft puffs

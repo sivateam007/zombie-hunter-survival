@@ -331,12 +331,12 @@
 
     slime1:   { name: 'Slime',         hp: 10,   speed: 150, dmg: 3,  range: 10,  cd: 1.0,  scale: .85, coins: 100,  variant: 'crawler' },
     slime2:   { name: 'Big Slime',     hp: 100,  speed: 100, dmg: 5,  range: 10,  cd: 1.0,  scale: .85, coins: 300,  variant: 'crawler' },
-    bat:      { name: 'Bat',           hp: 10,   speed: 500, dmg: 3,  range: 40,  cd: 1.0,  scale: .85, coins: 100,  variant: 'crawler' },
-    toxic1:   { name: 'Toxic',         hp: 10,   speed: 200, dmg: 5,  range: 10,  cd: 1.0,  scale: 1.0, coins: 300,  variant: 'spitter' },
-    toxic2:   { name: 'Toxic Brute',   hp: 150,  speed: 250, dmg: 7,  range: 10,  cd: 1.0,  scale: 1.0, coins: 1000, variant: 'spitter' },
+    bat:      { name: 'Bat',           hp: 10,   speed: 500, dmg: 3,  range: 40,  cd: 1.0,  scale: .85, coins: 100,  variant: 'crawler', mass: 2 },
+    toxic1:   { name: 'Toxic',         hp: 10,   speed: 200, dmg: 5,  range: 10,  cd: 1.0,  scale: 1.0, coins: 300,  variant: 'spitter', mass: 2 },
+    toxic2:   { name: 'Toxic Brute',   hp: 150,  speed: 250, dmg: 7,  range: 10,  cd: 1.0,  scale: 1.0, coins: 1000, variant: 'spitter', mass: 2 },
     manager:  { name: 'Manager',       hp: 15,   speed: 100, dmg: 3,  range: 50,  cd: 1.0,  scale: .85, coins: 300,  variant: 'walker' },
     cop:      { name: 'Cop',           hp: 25,   speed: 100, dmg: 5,  range: 50,  cd: 1.0,  scale: .85, coins: 300,  variant: 'walker', ranged: true, shotSpeed: 520 },
-    reptile:  { name: 'Reptile',       hp: 50,   speed: 250, dmg: 6,  range: 40,  cd: 1.0,  scale: .85, coins: 300,  variant: 'runner' },
+    reptile:  { name: 'Reptile',       hp: 50,   speed: 250, dmg: 6,  range: 40,  cd: 1.0,  scale: .85, coins: 300,  variant: 'runner', mass: 1 },
     slug:     { name: 'Slug',          hp: 500,  speed: 50,  dmg: 20, range: 10,  cd: 1.0,  scale: .85, coins: 3000, variant: 'brute' },
     builder:  { name: 'Builder',       hp: 300,  speed: 100, dmg: 10, range: 40,  cd: 1.0,  scale: .85, coins: 1000, variant: 'brute' },
     spider1:  { name: 'Spider',        hp: 200,  speed: 150, dmg: 20, range: 40,  cd: 1.0,  scale: .85, coins: 1000, variant: 'crawler' },
@@ -346,34 +346,78 @@
     assault1: { name: 'Assault',       hp: 400,  speed: 150, dmg: 7,  range: 50,  cd: 1.0,  scale: .85, coins: 3000, variant: 'runner', ranged: true, shotSpeed: 540 },
     assault2: { name: 'Assault Elite', hp: 400,  speed: 150, dmg: 7,  range: 50,  cd: 1.0,  scale: .85, coins: 3000, variant: 'runner', ranged: true, shotSpeed: 540, spreadShots: 3 },
 
-    miniboss_builder: { name: 'MINIBOSS: BUILDER', hp: 4000, speed: 150, dmg: 20, range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'butcher', miniboss: true },
-    miniboss_fighter: { name: 'MINIBOSS: FIGHTER', hp: 5500, speed: 200, dmg: 25, range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'butcher', miniboss: true },
-    miniboss_spider:  { name: 'MINIBOSS: SPIDER',  hp: 5000, speed: 300, dmg: 40, range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'crawler', miniboss: true },
-    miniboss_reptile: { name: 'MINIBOSS: REPTILE', hp: 3500, speed: 300, dmg: 30, range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'runner', miniboss: true },
-    miniboss_toxic1:  { name: 'MINIBOSS: TOXIC',   hp: 3000, speed: 200, dmg: 30, range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'spitter', miniboss: true },
-    miniboss_toxic2:  { name: 'MINIBOSS: TOXIC II', hp: 3500, speed: 250, dmg: 35, range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'spitter', miniboss: true },
-    miniboss_soldier: { name: 'MINIBOSS: SOLDIER', hp: 4500, speed: 100, dmg: 7,  range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'walker', miniboss: true, ranged: true, shotSpeed: 560,
+    miniboss_builder: { name: 'MINIBOSS: BUILDER', hp: 4000, speed: 150, dmg: 20, range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'butcher', miniboss: true, mass: 5 },
+    miniboss_fighter: { name: 'MINIBOSS: FIGHTER', hp: 5500, speed: 200, dmg: 25, range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'butcher', miniboss: true, mass: 5 },
+    miniboss_spider:  { name: 'MINIBOSS: SPIDER',  hp: 5000, speed: 300, dmg: 40, range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'crawler', miniboss: true, mass: 5 },
+    miniboss_reptile: { name: 'MINIBOSS: REPTILE', hp: 3500, speed: 300, dmg: 30, range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'runner', miniboss: true, mass: 5 },
+    miniboss_toxic1:  { name: 'MINIBOSS: TOXIC',   hp: 3000, speed: 200, dmg: 30, range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'spitter', miniboss: true, mass: 5 },
+    miniboss_toxic2:  { name: 'MINIBOSS: TOXIC II', hp: 3500, speed: 250, dmg: 35, range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'spitter', miniboss: true, mass: 5 },
+    miniboss_soldier: { name: 'MINIBOSS: SOLDIER', hp: 4500, speed: 100, dmg: 7,  range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'walker', miniboss: true, mass: 5, ranged: true, shotSpeed: 560,
       pattern: { kind: 'ring', count: 8, cd: 2.4, range: 700, dmg: 6 } },
-    miniboss_tower:   { name: 'MINIBOSS: TOWER',   hp: 6000, speed: 0,   dmg: 5,  range: 125, cd: 0.45, scale: .9, coins: 10000, variant: 'brute', miniboss: true, static: true, ranged: true, shotSpeed: 520,
+    miniboss_tower:   { name: 'MINIBOSS: TOWER',   hp: 6000, speed: 0,   dmg: 5,  range: 125, cd: 0.45, scale: .9, coins: 10000, variant: 'brute', miniboss: true, mass: 5, static: true, ranged: true, shotSpeed: 520,
       pattern: { kind: 'ring', count: 8, cd: 1.8, range: 900, dmg: 5 } }
   };
 
   /* ------------------------------- bosses ------------------------------- */
   var BOSS_TYPES = {
-    boss_soldier: { name: 'BOSS: SOLDIER', hp: 8000,  speed: 110, dmg: 18, range: 46, cd: 0.9, scale: 1.7, coins: 20000, variant: 'boss',
-      pattern: { kind: 'fan', count: 5, spread: 0.32, cd: 1.8, range: 700, dmg: 9 } },
-    boss_tower:   { name: 'BOSS: TOWER',   hp: 9000,  speed: 0,   dmg: 12, range: 150, cd: 0.8, scale: 1.7, coins: 20000, variant: 'warden', static: true, ranged: true, shotSpeed: 520,
-      pattern: { kind: 'ring', count: 12, cd: 1.8, range: 900, dmg: 9 } },
-    boss_dragon:  { name: 'BOSS: DRAGON',  hp: 12000, speed: 130, dmg: 24, range: 52, cd: 0.9, scale: 1.8, coins: 25000, variant: 'butcher',
-      pattern: { kind: 'stream', count: 10, gap: 0.12, cd: 2.8, range: 800, dmg: 10 } },
-    boss_reptile: { name: 'BOSS: REPTILE', hp: 10000, speed: 170, dmg: 22, range: 50, cd: 0.9, scale: 1.7, coins: 22000, variant: 'matron',
-      pattern: { kind: 'summon', type: 'reptile', count: 3, cd: 4.5, range: 900 } },
-    boss_mutant:  { name: 'BOSS: MUTANT',  hp: 14000, speed: 100, dmg: 28, range: 54, cd: 0.9, scale: 1.9, coins: 28000, variant: 'butcher',
-      pattern: { kind: 'summon', type: 'slime2', count: 3, cd: 4.5, range: 900 } },
-    boss_spider:  { name: 'BOSS: SPIDER',  hp: 11000, speed: 180, dmg: 26, range: 50, cd: 0.9, scale: 1.7, coins: 24000, variant: 'crawler',
-      pattern: { kind: 'summon', type: 'spider1', count: 3, cd: 4.0, range: 900 } },
-    boss_fighter: { name: 'BOSS: FIGHTER', hp: 9000,  speed: 150, dmg: 20, range: 48, cd: 0.9, scale: 1.7, coins: 20000, variant: 'boss',
-      pattern: { kind: 'fan', count: 3, spread: 0.45, cd: 1.6, range: 700, dmg: 8 } }
+    /* Each boss now runs the original's behaviour-list shape: a cycle of
+       movement / attack steps rather than one repeating volley. The old
+       signature `pattern` stays as the first readable attack and is also a
+       step, so rings, fans, streams and summons remain in play. */
+    boss_soldier: { name: 'BOSS: SOLDIER', hp: 8000,  speed: 110, dmg: 18, range: 46, cd: 0.9, scale: 1.7, coins: 20000, variant: 'boss', mass: 5,
+      pattern: { kind: 'fan', count: 5, spread: 0.32, cd: 1.8, range: 700, dmg: 9 },
+      behaviour: [
+        { kind: 'fan', count: 5, spread: 0.32, duration: 1.8, range: 700, dmg: 9 },
+        { kind: 'fan', count: 5, spread: 0.32, duration: 1.8, range: 700, dmg: 9 },
+        { kind: 'mortar', count: 1, duration: 2.5, range: 900, dmg: 24, radius: 110, flight: 1.05 },
+        { kind: 'fan', count: 5, spread: 0.32, duration: 1.8, range: 700, dmg: 9 }
+      ] },
+    boss_tower:   { name: 'BOSS: TOWER',   hp: 9000,  speed: 0,   dmg: 12, range: 150, cd: 0.8, scale: 1.7, coins: 20000, variant: 'warden', static: true, ranged: true, shotSpeed: 520, mass: 5,
+      pattern: { kind: 'ring', count: 12, cd: 1.8, range: 900, dmg: 9 },
+      behaviour: [
+        { kind: 'ring', count: 12, duration: 1.8, range: 900, dmg: 9 },
+        { kind: 'fan', count: 4, spread: 0.45, duration: 1.5, range: 900, dmg: 8 },
+        { kind: 'ring', count: 12, duration: 1.8, range: 900, dmg: 9 },
+        { kind: 'fan', count: 4, spread: 0.45, duration: 1.5, range: 900, dmg: 8 }
+      ] },
+    boss_dragon:  { name: 'BOSS: DRAGON',  hp: 12000, speed: 130, dmg: 24, range: 52, cd: 0.9, scale: 1.8, coins: 25000, variant: 'butcher', mass: 5,
+      pattern: { kind: 'stream', count: 10, gap: 0.12, cd: 2.8, range: 800, dmg: 10 },
+      behaviour: [
+        { kind: 'stream', count: 10, gap: 0.12, duration: 3.0, range: 800, dmg: 10 },
+        { kind: 'fan', count: 5, spread: 0.32, duration: 1.7, range: 750, dmg: 9 },
+        { kind: 'stream', count: 10, gap: 0.12, duration: 3.0, range: 800, dmg: 10 }
+      ] },
+    boss_reptile: { name: 'BOSS: REPTILE', hp: 10000, speed: 170, dmg: 22, range: 50, cd: 0.9, scale: 1.7, coins: 22000, variant: 'matron', mass: 5,
+      pattern: { kind: 'summon', type: 'reptile', count: 3, cd: 4.5, range: 900 },
+      behaviour: [
+        { kind: 'charge', windup: 0.7, dash: 0.5, speed: 700, duration: 2.8, range: 1200 },
+        { kind: 'charge', windup: 0.7, dash: 0.5, speed: 700, duration: 2.8, range: 1200 },
+        { kind: 'charge', windup: 0.7, dash: 0.5, speed: 700, duration: 2.8, range: 1200 },
+        { kind: 'summon', type: 'reptile', count: 4, duration: 2.2, range: 900 }
+      ] },
+    boss_mutant:  { name: 'BOSS: MUTANT',  hp: 14000, speed: 100, dmg: 28, range: 54, cd: 0.9, scale: 1.9, coins: 28000, variant: 'butcher', mass: 5,
+      pattern: { kind: 'summon', type: 'slime2', count: 3, cd: 4.5, range: 900 },
+      behaviour: [
+        { kind: 'charge', windup: 0.5, dash: 0.5, speed: 720, duration: 2.4, range: 1200 },
+        { kind: 'teleport', windup: 0.35, dist: 260, duration: 1.4 },
+        { kind: 'summon', type: 'slime2', count: 4, duration: 2.3, range: 900 },
+        { kind: 'charge', windup: 0.5, dash: 0.5, speed: 720, duration: 2.4, range: 1200 }
+      ] },
+    boss_spider:  { name: 'BOSS: SPIDER',  hp: 11000, speed: 180, dmg: 26, range: 50, cd: 0.9, scale: 1.7, coins: 24000, variant: 'crawler', mass: 5,
+      pattern: { kind: 'summon', type: 'spider1', count: 3, cd: 4.0, range: 900 },
+      behaviour: [
+        { kind: 'mortar', count: 1, duration: 2.2, range: 900, dmg: 24, radius: 170, flight: 1.1 },
+        { kind: 'summon', type: 'spider1', count: 3, duration: 2.0, range: 900 },
+        { kind: 'mortar', count: 1, duration: 2.2, range: 900, dmg: 24, radius: 170, flight: 1.1 },
+        { kind: 'fan', count: 3, spread: 0.65, duration: 1.7, range: 800, dmg: 9 }
+      ] },
+    boss_fighter: { name: 'BOSS: FIGHTER', hp: 9000,  speed: 150, dmg: 20, range: 48, cd: 0.9, scale: 1.7, coins: 20000, variant: 'boss', mass: 5,
+      pattern: { kind: 'fan', count: 3, spread: 0.45, cd: 1.6, range: 700, dmg: 8 },
+      behaviour: [
+        { kind: 'charge', windup: 0.7, dash: 0.45, speed: 760, duration: 2.5, range: 1100 },
+        { kind: 'fan', count: 3, spread: 0.45, duration: 1.6, range: 700, dmg: 8 },
+        { kind: 'charge', windup: 0.7, dash: 0.45, speed: 760, duration: 2.5, range: 1100 }
+      ] }
   };
 
   ZH.ENEMY_TYPES = ENEMY_TYPES;
@@ -447,6 +491,7 @@
       shotSpeed: def.shotSpeed || 520,
       stationary: !!def.static,
       miniboss: !!def.miniboss,
+      mass: def.mass || 0,
       pattern: def.pattern || null,
       ringPhase: 0,
       seed: Math.random() * 100
@@ -487,7 +532,10 @@
       shotSpeed: def.shotSpeed || 520,
       spreadShots: def.spreadShots || 3,
       stationary: !!def.static,
+      mass: def.mass || 5,
       pattern: def.pattern || null,
+      behaviour: def.behaviour ? def.behaviour.slice() : (def.pattern ? [def.pattern] : []),
+      step: 0, stepT: 0, stepStarted: false, act: null,
       ringPhase: 0,
       seed: Math.random() * 100
     };
@@ -614,6 +662,19 @@
           world.hazards.push({
             x: z.x, y: z.y, r: 42,
             dmg: ACID[z.type][0], life: ACID[z.type][1], tick: 0
+          });
+        }
+      }
+      /* deadshot: the manager's briefcase is a destroyable projectile, not
+         another acid pool. It travels at .28 px/ms and hits for 10. */
+      if (z.type === 'manager' && world.player) {
+        world.briefcases = world.briefcases || [];
+        var ba = Math.atan2(world.player.y - z.y, world.player.x - z.x) + rand(-0.22, 0.22);
+        if (world.briefcases.length < 12) {
+          world.briefcases.push({
+            x: z.x, y: z.y, vx: Math.cos(ba) * 280, vy: Math.sin(ba) * 280,
+            hp: 20, maxHp: 20, r: 14, dmg: 10,
+            rot: rand(0, TAU), rotSpeed: 0.6, life: 8, flash: 0
           });
         }
       }
@@ -1405,6 +1466,264 @@
     if (ZH.Audio) ZH.Audio.play('spit');
   }
 
+  function tickBossStream(world, z, dt) {
+    if (!z.stream) return;
+    z.stream.t -= dt;
+    if (z.stream.t > 0) return;
+    var p = world.player;
+    var sa = Math.atan2(p.y - z.y, p.x - z.x) + rand(-0.05, 0.05);
+    world.enemyBullets.push({
+      x: z.x, y: z.y,
+      vx: Math.cos(sa) * z.stream.speed, vy: Math.sin(sa) * z.stream.speed,
+      dmg: z.stream.dmg, life: 2.4, r: 6, enemy: true, boss: true
+    });
+    z.stream.left--;
+    z.stream.t = z.stream.gap;
+    if (z.stream.left <= 0) z.stream = null;
+  }
+
+  /* bosses stay inside the warning fence even during a dash or a teleport */
+  function clampInZone(world, z) {
+    var br = world.bossZoneRect;
+    if (!br || !z) return;
+    var r = z.r || 0;
+    if (z.x < br.x0 + r) z.x = br.x0 + r;
+    if (z.x > br.x1 - r) z.x = br.x1 - r;
+    if (z.y < br.y0 + r) z.y = br.y0 + r;
+    if (z.y > br.y1 - r) z.y = br.y1 - r;
+  }
+
+  function clampHunter(world) {
+    var p = world.player, br = world.bossZoneRect;
+    if (!p || !world.bossZoneActive || !br) return;
+    if (p.x < br.x0) p.x = br.x0;
+    if (p.x > br.x1) p.x = br.x1;
+    if (p.y < br.y0) p.y = br.y0;
+    if (p.y > br.y1) p.y = br.y1;
+  }
+
+  /* Collision mass: the original's 1/2/5 bodies push the hunter out of the
+     way. It is a positional shove, not a bite; the mass decides how hard. */
+  function shoveHunter(world, z) {
+    var p = world.player;
+    if (!p || p.dead || !z.mass) return;
+    var dx = p.x - z.x, dy = p.y - z.y;
+    var d = Math.hypot(dx, dy) || 1;
+    var need = (z.r || 13) + (p.r || 12);
+    if (d >= need) return;
+    var push = (need - d + 1.2) * (0.45 + z.mass * 0.18);
+    p.x += (dx / d) * push;
+    p.y += (dy / d) * push;
+    clampHunter(world);
+    world.shoveCount = (world.shoveCount || 0) + 1;
+  }
+
+  function hurtHunter(world, raw, shake) {
+    var p = world.player;
+    if (!p || p.dead) return 0;
+    var ar = Math.min(0.8, (attribsOf(p).defense || 0) / 100);
+    var dmg = raw * (1 - ar);
+    if (ZH.Powers) dmg = ZH.Powers.onBite(world, null, dmg);
+    if (dmg <= 0) return 0;
+    p.hp -= dmg;
+    if (ZH.Missions) ZH.Missions.update(10, dmg);   /* RECEIVE_X_DMG */
+    if (p.hp <= 0) { p.hp = 0; p.dead = true; }
+    world.shake = Math.max(world.shake || 0, shake || 5);
+    world.hurtT = 0.3;
+    if (ZH.Anim && ZH.Anim.hurt) ZH.Anim.hurt();
+    return dmg;
+  }
+
+  /* ---- lobbed egg / grenade mortar: a real arc with a landing marker ---- */
+  function spawnMortar(world, z, step) {
+    var p = world.player;
+    if (!p) return;
+    world.mortars = world.mortars || [];
+    var count = step.count || 1;
+    var spread = step.spread || 0;
+    for (var i = 0; i < count; i++) {
+      if (world.mortars.length >= 24) break;
+      world.mortars.push({
+        x: z.x, y: z.y,
+        tx: p.x + rand(-spread, spread), ty: p.y + rand(-spread, spread),
+        t: 0, flight: step.flight || 1.1,
+        radius: step.radius || 140, dmg: step.dmg || 24,
+        arc: step.arc || 120
+      });
+    }
+    if (ZH.Audio) ZH.Audio.play('spit');
+  }
+
+  function updateMortars(world, dt) {
+    var list = world.mortars;
+    if (!list || !list.length) return;
+    var p = world.player;
+    for (var i = list.length - 1; i >= 0; i--) {
+      var m = list[i];
+      m.t += dt;
+      if (m.t < m.flight) continue;
+      /* it lands on the marked spot, then bursts */
+      if (p && !p.dead && Math.hypot(p.x - m.tx, p.y - m.ty) <= m.radius + p.r) {
+        hurtHunter(world, m.dmg, 7);
+      }
+      world.mortarBooms = (world.mortarBooms || 0) + 1;
+      world.shake = Math.max(world.shake || 0, 7);
+      if (world.particles) {
+        for (var k = 0; k < 10; k++) {
+          var a = rand(0, TAU), sp = rand(80, 260);
+          world.particles.push({
+            x: m.tx + rand(-8, 8), y: m.ty + rand(-6, 6),
+            vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+            life: rand(0.2, 0.4), max: 0.4, size: rand(1.6, 3.4),
+            color: k % 2 ? 'rgba(255,154,70,0.9)' : 'rgba(190,255,120,0.85)'
+          });
+        }
+        world.particles.push({
+          x: m.tx, y: m.ty, vx: 0, vy: 0, ring: true,
+          life: 0.32, max: 0.32, size: m.radius,
+          color: 'rgba(255,180,90,0.9)'
+        });
+      }
+      list.splice(i, 1);
+    }
+  }
+
+  /* ---- manager's briefcase: rotating, shootable, 10 damage on contact ---- */
+  function updateBriefcases(world, dt) {
+    var list = world.briefcases;
+    if (!list || !list.length) return;
+    var p = world.player;
+    for (var i = list.length - 1; i >= 0; i--) {
+      var b = list[i];
+      b.life -= dt;
+      b.flash = Math.max(0, (b.flash || 0) - dt);
+      if (b.life <= 0) { list.splice(i, 1); continue; }
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      b.rot += (b.rotSpeed || 0.6) * dt;
+      if (p && !p.dead && Math.hypot(p.x - b.x, p.y - b.y) < b.r + p.r) {
+        hurtHunter(world, b.dmg || 10, 5);
+        world.briefcaseHits = (world.briefcaseHits || 0) + 1;
+        if (world.particles) {
+          for (var k = 0; k < 5; k++) {
+            var a = rand(0, TAU), sp = rand(60, 180);
+            world.particles.push({
+              x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+              life: 0.24, max: 0.24, size: 2, color: 'rgba(255,230,170,0.9)'
+            });
+          }
+        }
+        list.splice(i, 1);
+      }
+    }
+  }
+
+  function startBossStep(world, z, step) {
+    var p = world.player;
+    if (!step || !p) return;
+    if (step.kind === 'charge') {
+      z.act = {
+        kind: 'charge', phase: 'windup', t: 0,
+        windup: step.windup || 0.7, dash: step.dash || 0.5,
+        speed: step.speed || 700,
+        ang: Math.atan2(p.y - z.y, p.x - z.x)
+      };
+      z.facing = Math.cos(z.act.ang) >= 0 ? 1 : -1;
+    } else if (step.kind === 'teleport') {
+      z.act = { kind: 'teleport', phase: 'windup', t: 0, windup: step.windup || 0.35, dist: step.dist || 260 };
+    } else if (step.kind === 'mortar') {
+      z.act = null;
+      spawnMortar(world, z, step);
+    } else if (step.kind === 'ring' || step.kind === 'fan' ||
+               step.kind === 'stream' || step.kind === 'summon') {
+      z.act = null;
+      bossPattern(world, z, step);
+    } else {
+      z.act = null;
+    }
+  }
+
+  function updateBossAct(world, z, dt) {
+    var act = z.act;
+    if (!act) return;
+    act.t += dt;
+    if (act.kind === 'charge') {
+      if (act.phase === 'windup') {
+        z.facing = Math.cos(act.ang) >= 0 ? 1 : -1;
+        if (act.t >= act.windup) {
+          act.phase = 'dash'; act.t = 0;
+          world.chargeDashes = (world.chargeDashes || 0) + 1;
+        }
+        return;
+      }
+      if (act.phase === 'dash') {
+        z.x += Math.cos(act.ang) * act.speed * dt;
+        z.y += Math.sin(act.ang) * act.speed * dt;
+        clampInZone(world, z);
+        if (act.t >= act.dash) { act.phase = 'recover'; act.t = 0; }
+      }
+    } else if (act.kind === 'teleport') {
+      if (act.phase === 'windup') {
+        if (act.t >= act.windup) {
+          var p = world.player;
+          var ang = rand(0, TAU);
+          z.x = p.x + Math.cos(ang) * (act.dist || 260);
+          z.y = p.y + Math.sin(ang) * (act.dist || 260);
+          clampInZone(world, z);
+          act.phase = 'appear'; act.t = 0;
+          world.teleports = (world.teleports || 0) + 1;
+          if (world.particles) {
+            for (var k = 0; k < 8; k++) {
+              var pa = rand(0, TAU), pr = rand(20, 70);
+              world.particles.push({
+                x: z.x + Math.cos(pa) * pr, y: z.y + Math.sin(pa) * pr,
+                vx: 0, vy: 0, life: 0.3, max: 0.3, size: rand(1.5, 3),
+                color: 'rgba(200,150,255,0.85)'
+              });
+            }
+          }
+        }
+        return;
+      }
+      if (act.phase === 'appear' && act.t >= 0.25) z.act = null;
+    }
+  }
+
+  function updateBossBehaviour(world, z, dt, dist) {
+    var p = world.player;
+    var steps = z.behaviour;
+    if (!p || !steps || !steps.length) return;
+    var step = steps[z.step % steps.length];
+    if (!z.stepStarted) {
+      z.stepT = 0;
+      startBossStep(world, z, step);
+      z.stepStarted = true;
+    }
+    z.stepT += dt;
+    if (z.stream) tickBossStream(world, z, dt);
+    if (z.act) updateBossAct(world, z, dt);
+
+    var busy = z.act &&
+      ((z.act.kind === 'charge' && z.act.phase !== 'recover') || z.act.kind === 'teleport');
+    if (!busy && !z.stationary) {
+      var dx = p.x - z.x, dy = p.y - z.y;
+      var d = Math.hypot(dx, dy) || 1;
+      if (d > (z.range || 50) * 0.9) {
+        z.x += (dx / d) * z.speed * dt;
+        z.y += (dy / d) * z.speed * dt;
+      }
+      z.facing = dx >= 0 ? 1 : -1;
+    }
+
+    if (z.stepT >= (step.duration || 1.5)) {
+      z.step = (z.step + 1) % steps.length;
+      z.stepT = 0;
+      z.stepStarted = false;
+      z.act = null;
+    }
+    clampInZone(world, z);
+  }
+
   /** the boss zone clears every normal body, exactly like the original */
   ZH.clearNonBosses = function (list) {
     var removed = 0;
@@ -1443,6 +1762,14 @@
       var dist = Math.hypot(dx, dy) || 1;
       var stopAt = z.ranged ? (z.range || 50) * 0.85 : (z.range || 30) * 0.7;
 
+      /* scripted bosses run a multi-step list: chase, charge with a windup,
+         teleport, and their old signature volleys as attack steps */
+      if (z.behaviour && z.behaviour.length) {
+        updateBossBehaviour(world, z, dt, dist);
+        shoveHunter(world, z);
+        continue;
+      }
+
       /* leash: a hunter who outruns the horde would otherwise leave the whole
          wave behind on the far side of the city. Far stragglers re-enter at
          the edge of the fight instead of jogging across 6 km of map. */
@@ -1461,21 +1788,12 @@
         z.facing = dx >= 0 ? 1 : -1;
       }
 
+      /* heavy bodies shoulder the hunter aside instead of only walking into
+         them: mass 1 / 2 / 5, exactly the original's collision weights */
+      if (z.mass) shoveHunter(world, z);
+
       /* the dragon's stream keeps firing between its pattern volleys */
-      if (z.stream) {
-        z.stream.t -= dt;
-        if (z.stream.t <= 0) {
-          var sa = Math.atan2(p.y - z.y, p.x - z.x) + rand(-0.05, 0.05);
-          world.enemyBullets.push({
-            x: z.x, y: z.y,
-            vx: Math.cos(sa) * z.stream.speed, vy: Math.sin(sa) * z.stream.speed,
-            dmg: z.stream.dmg, life: 2.4, r: 6, enemy: true, boss: true
-          });
-          z.stream.left--;
-          z.stream.t = z.stream.gap;
-          if (z.stream.left <= 0) z.stream = null;
-        }
-      }
+      tickBossStream(world, z, dt);
       z.cdT -= dt;
       if (z.pattern) {
         if (z.cdT <= 0 && dist <= (z.pattern.range || 800)) {
@@ -1505,6 +1823,8 @@
           }
         }
       }
+
+      if (z.boss) clampInZone(world, z);
 
       if (world.arena) {
         /* open world: nothing to clamp to */
@@ -1585,6 +1905,44 @@
         }
       } else if (!b.enemy && b.target) {
         b.target = null;
+      }
+
+      /* the manager's briefcase is a real target: shoot it down before it
+         reaches the hunter (10 damage, 20 hp, exactly the destroyable
+         deadshot projectile in the original) */
+      if (!b.enemy && world.briefcases && world.briefcases.length) {
+        var bcHit = null;
+        for (var bc = 0; bc < world.briefcases.length; bc++) {
+          var brief = world.briefcases[bc];
+          if (Math.hypot(b.x - brief.x, b.y - brief.y) < brief.r + (b.r || 5)) {
+            bcHit = brief;
+            break;
+          }
+        }
+        if (bcHit) {
+          bcHit.hp -= b.dmg;
+          bcHit.flash = 0.15;
+          if (world.particles) {
+            for (var bs = 0; bs < 3; bs++) {
+              world.particles.push({
+                x: b.x, y: b.y, vx: rand(-90, 90), vy: rand(-90, 20),
+                life: 0.2, max: 0.2, size: 2, color: 'rgba(255,226,150,0.9)'
+              });
+            }
+          }
+          if (bcHit.hp <= 0) {
+            world.briefcaseBreaks = (world.briefcaseBreaks || 0) + 1;
+            if (world.floaters && world.floaters.length < 70) {
+              world.floaters.push({
+                text: 'BRIEFCASE DOWN', x: bcHit.x, y: bcHit.y - 24,
+                vy: -42, life: 0.8, max: 0.8, size: 14, color: '#ffd166'
+              });
+            }
+            world.briefcases.splice(world.briefcases.indexOf(bcHit), 1);
+          }
+          list.splice(i, 1);
+          continue;
+        }
       }
 
       /* firebomb: explodes on contact or when it lands */
@@ -1854,11 +2212,13 @@
   ZH.createSurvivor = createSurvivor;
   ZH.createEnemy = createEnemy;
   ZH.createBoss = createBoss;
-  ZH.createBoss = createBoss;
   ZH.updateSurvivor = updateSurvivor;
   ZH.updateEnemies = updateEnemies;
   ZH.updateProjectiles = updateProjectiles;
   ZH.updatePickups = updatePickups;
+  ZH.updateMortars = updateMortars;
+  ZH.updateBriefcases = updateBriefcases;
+  ZH.spawnMortar = spawnMortar;
   ZH.fireWeapon = fireWeapon;
   ZH.targetRange = targetRange;
   ZH.viewRange = viewRange;

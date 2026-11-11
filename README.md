@@ -12,7 +12,7 @@ card stagger, count-up and banner.
 
 ![chapters](https://img.shields.io/badge/chapters-11-ffb347)
 ![missions](https://img.shields.io/badge/missions-20-ffb347)
-![boss types](https://img.shields.io/badge/boss%20types-6-e0492f)
+![boss types](https://img.shields.io/badge/boss%20types-7-e0492f)
 ![weapons](https://img.shields.io/badge/weapons-20-9be15d)
 ![districts](https://img.shields.io/badge/districts-25-6da8ff)
 ![deps](https://img.shields.io/badge/npm%20dependencies-0-8d9793)
@@ -52,7 +52,7 @@ and every input source can be blended mid-run without switching modes.
 
 ## What is in the game
 
-**Eleven chapters, twenty missions, six boss types**
+**Eleven chapters, twenty missions, seven boss types**
 
 | # | Chapter | District | Boss zone |
 | --- | --- | --- | --- |
@@ -124,8 +124,11 @@ zombies burst in from a full ring around the player, faster and tougher as the r
 is not a strategy here.
 
 **Scripted boss fights** — a boss zone seals the street, clears the horde and clamps the hunter
-inside a visible fence. Each boss has a signature pattern: 12-way tower rings, soldier fans, a
-ten-shot dragon stream, or reptile, mutant and spider summons.
+inside a visible fence. Each boss cycles a multi-step list, not one repeating volley: the tower
+rings and fans, the soldier fans and lobs grenades, the dragon streams and fans, the reptile
+charges, and the mutant charges and teleports. Charges show a dashed windup lane; the spider's
+egg mortar marks its landing circle before it bursts. Managers drop a rotating briefcase that can
+be shot down before it hits for 10, and mass-5 bodies shoulder the hunter aside.
 
 **A board with a crowd on it** — sixty cat callsigns seed the leaderboard on both the Node server
 and the offline fallback, so a fresh install never opens onto a single line.

@@ -77,15 +77,15 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 
 | Original behaviour | Ours | Status |
 |---|---|---|
-| Boss behaviour lists: chase / charge with 700 ms windup / roam / retreat / teleport / spawn adds | one signature pattern per boss (ring, fan, stream or summon) | 🟡 scripted subset |
-| Timed boss patterns: 12-way rings, delayed second volleys, 10-shot streams @350 ms, egg mortars (radius 190), poison fans, grenades | 12-way tower rings, soldier fans, a 10-shot dragon stream and summons | ✅ |
+| Boss behaviour lists: chase / charge with 700 ms windup / roam / retreat / teleport / spawn adds | multi-step lists with chase, telegraphed charge (700/500 ms windup, dash, recovery), teleport, mortar and the old ring/fan/stream/summon steps; no roam/retreat segments | ✅ core vocabulary (partial sequence fidelity) |
+| Timed boss patterns: 12-way rings, delayed second volleys, 10-shot streams @350 ms, egg mortars (radius 190), poison fans, grenades | 12-way tower rings, soldier fans, a 10-shot dragon stream, spider egg mortars (170 px, 24 dmg, marked arc) and follow-up fans | ✅ |
 | Boss-zone fence: 80 px grid rect, **1,000–3,072 px** (stage 7–8 largest), player collides, **all normal enemies killed at the boss**, player moved inside; stages 4–8 send **two bosses per zone** | fence drawn, normal bodies cleared at spawn, player clamped, two-boss zones | ✅ |
 | Per-boss HP bars + boss music | single HUD bar, no music | 🟡 |
-| `deadshot` on death: acid pools (toxic1/2, slime1/2, miniboss toxins), manager's destroyable briefcase (10 dmg) | acid pools; no briefcase | 🟡 |
+| `deadshot` on death: acid pools (toxic1/2, slime1/2, miniboss toxins), manager's destroyable briefcase (10 dmg) | acid pools; manager drops a rotating 20 hp briefcase that can be shot down and hits for 10 | ✅ |
 | `deadspawn`: slime2 → 2× slime1, slug → 2× slime2 | both splits implemented | ✅ |
 | Per-shot `angleInc` tables: assault1 3 staggered shots (2.5/2.8/3.1 s), assault2 ±20° fan, miniboss_soldier 8-way, miniboss_tower 8-way @450 ms | assault bursts and both miniboss 8-way rings | ✅ |
 | Miniboss deaddrops (bomb / medkit / magnet / chest / 500–1500 coins) | ✅ per type | ✅ |
-| Collision `mass` 1/2/5 shoving the hunter | enemy separation only, no player shove | 🟡 |
+| Collision `mass` 1/2/5 shoving the hunter | reptiles mass 1, bats/toxics mass 2, minibosses and bosses mass 5 push the hunter (clamped to the fence) | ✅ |
 | Static turrets (tower1/2, miniboss_tower) | ✅ | ✅ |
 | Far-body recycling at the `MAX_ENEMIES = 500` / wave `max` cap | leash teleport | 🟡 different approach |
 
@@ -122,7 +122,7 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 | Cadence | LOW 700 / MID 350 / HI 100 ms | 1.25 / 0.8 / 0.5 s at medium, ramping; first 2 min unchanged | 🟡 deliberately lighter |
 | Concurrency | up to wave `max` (as high as 300), `MAX_ENEMIES = 500` | 6→27 near / 22→88 hard by minute 20 | 🟡 deliberate |
 | Pre-boss warning | 3 s `INCOMING_BOSS` / `INCOMING_MINIBOSS` banner | ✅ 3 s WARNING + red flash + audio | ✅ |
-| Boss escort | all non-boss waves frozen while bosses live | escort grows 2 → 10 | 🟡 ours adds enemies |
+| Boss escort | all non-boss waves frozen while bosses live; boss zones add none | boss zone clears all normal bodies and adds no escort | ✅ |
 | Treasure | box every **15 s** at the screen edge | same | ✅ |
 | Stage progression | one stage per run, back to the menu | clear wave 20, next stage auto-deploys with the run carried over | ✅ ours adds |
 | Idle pressure | none | standing still fills a siege meter, then bursts of tougher zombies ring the player | ✅ ours adds |
@@ -143,8 +143,8 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 
 ## 10. Ranked gaps
 
-1. **Full boss behaviour lists** — charge windups, teleport and the remaining 2–18 step sequences; the signature ring / fan / stream / summon patterns are in.
-2. **Manager briefcase and mass shove** — the destroyable 10-damage briefcase and body mass pushing the hunter.
+1. **Full sequence fidelity** — we run the core step vocabulary (chase, charge, teleport, mortar, ring, fan, stream, summon) but not every original 2–18 step chain: roam/retreat segments, the soldier's delayed second volley and the spider's poison-fan acid fragments are still simplified.
+2. **Per-boss HP bars and music** — one shared HUD bar and no boss music bed.
 3. **Music and platform services** — three music beds, rewarded ads and suspended-run snapshots.
 4. **Magnet = gems only** — ours vacuums every drop by design.
 

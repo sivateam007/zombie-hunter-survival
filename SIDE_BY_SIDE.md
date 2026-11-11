@@ -83,8 +83,8 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Miniboss tower | 8-way @450 ms cd | 8-way ring every 1.8 s | ✅ | shots array | `miniboss_tower.pattern` |
 | Acid on death | 6 types, 1–3 s pools | acid pools (3/5/7 dmg) via `world.hazards` | ✅ | `deadshot` blocks | `damageEnemy` + hazard tick |
 | Corpse split | slime2→2 slime1, slug→2 slime2 | implemented on death | ✅ | `deadspawn` | 2 children, 0.25 s spawn delay |
-| Manager briefcase | destroyable 10-dmg projectile | plain melee/ranged body | ❌ | `deadshot{frame:shot_briefcase}` | no briefcase |
-| Mass shove | mass 1/2/5 pushes hunter | separation only | ❌ | `mass` values | `entities.js` separation loop |
+| Manager briefcase | destroyable 10-dmg projectile | rotating 20 hp briefcase drops on death, is shot down by bullets, hits for 10 | ✅ | `deadshot{frame:shot_briefcase}` | `ZH.updateBriefcases`, bullet collision |
+| Mass shove | mass 1/2/5 pushes hunter | reptiles 1, bats/toxics 2, minibosses/bosses 5 push the hunter; fence-clamped | ✅ | `mass` values | `shoveHunter` |
 | Miniboss HP | 2500–6000 | 3000–6000 (toxics inflated) | 🟡 | table | `ENEMY_TYPES` |
 | Miniboss drops | tower→1500 coin, toxic2→500 coin, spider→3-card chest | tower→1500, toxic2→500, spider→3-card chest | ✅ | `deaddrop` | `DROP_DATA` map |
 | Static turrets | yes | yes | ✅ | `static:!0` | table |
@@ -95,13 +95,13 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 |---|---|---|---|---|---|
 | Boss count | 6 | 7 (`boss_fighter` extra) | 🟡 | `BossesData` | `ZH.BOSS_TYPES` |
 | Boss HP | 7,500–10,000 | 8,000–14,000 | 🟡 | table | runtime |
-| Scripted steps | 2–18 steps per boss | one signature pattern per boss | 🟡 | `behaviour[]` | `pattern` in `BOSS_TYPES` |
-| Charge windup | 700/500 ms | none | ❌ | `duration[0]` | no charge state |
-| Teleport | mutant, 1 s | none | ❌ | step 3 | no teleport code |
-| Summon adds | reptile 4, mutant 4, spider 3 | 3 adds on reptile / mutant / spider | ✅ | `spawns[]` | `bossPattern` summon |
-| 12-way tower ring | yes | 12-way ring every 1.8 s | ✅ | 12 shots | `boss_tower.pattern` |
-| Dragon stream | 10 shots @350 ms | 10 shots @120 ms | ✅ | shots with delays | `boss_dragon.pattern` |
-| Spider egg mortar | r190, 20 dmg | spider summons instead | 🟡 | ATTACK steps | `boss_spider.pattern` |
+| Scripted steps | 2–18 steps per boss | multi-step lists with chase, charge, teleport, mortar and the old ring/fan/stream/summon steps; no roam/retreat | ✅/🟡 | `behaviour[]` | `updateBossBehaviour` |
+| Charge windup | 700/500 ms | 700/500 ms telegraphed lane, dash, recovery | ✅ | `duration[0]` | `BOSS_TYPES.behaviour` charge steps |
+| Teleport | mutant, 1 s | 350 ms purple windup, 260 px reposition, clamped | ✅ | step 3 | `startBossStep` / `updateBossAct` |
+| Summon adds | reptile 4, mutant 4, spider 3 | reptile 4, mutant 4, spider 3 as list steps | ✅ | `spawns[]` | `bossPattern` summon |
+| 12-way tower ring | yes | 12-way ring and fan follow-up | ✅ | 12 shots | `boss_tower.behaviour` |
+| Dragon stream | 10 shots @350 ms | 10 shots @120 ms plus a fan follow-up | ✅ | shots with delays | `boss_dragon.behaviour` |
+| Spider egg mortar | r190, 20 dmg | marked arc, 170 px radius, 24 dmg, lands and explodes | ✅ | ATTACK steps | `spawnMortar` / `updateMortars` |
 | Boss-zone **data** | rect 1000–3072 px | present, same sizes, 2 bosses in S4–S8 | ✅ | level JSON | `levels.js` + runtime |
 | Boss-zone **enforcement** | fence, player confined, kill all mobs | fence drawn, player clamped, normal bodies cleared | ✅ | `BossZone` collision | `bossZoneFence` / `clearNonBosses` |
 | Per-boss HP bars | one per boss | single bar | 🟡 | HUD | `pushHud` single boss |
@@ -157,23 +157,16 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Blast FX | explosion anim | shockwave ring + light | ✅ | source | `game.js` render |
 | Weather/districts | per-stage background | 19 districts, rain/ash | ➕ | — | `arena.js` |
 
-## 11. Verified-missing list (each confirmed twice)
+## 11. Still genuinely missing after this pass
 
 | # | Missing system | Check 1 | Check 2 |
 |---|---|---|---|
-| 1 | Boss behaviour interpreter | 30+ step entries in `teardown.json` | `createBoss` has no phase/step state |
-| 2 | Boss arena confinement | rect sizes in level data | `activateBossZone` spawns only, no fence/collision |
-| 3 | Kill-all-at-boss | `killAllEnemiesAtBoss()` in source | escort is added instead |
-| 4 | Acid `deadshot` pools | 6 enemy blocks + boss step | no `acid`/`hazard` symbols in `js/` |
-| 5 | `deadspawn` splits | slime2/slug blocks | no split on death |
-| 6 | Manager briefcase | `shot_briefcase.png`, 10 dmg | no briefcase projectile |
-| 7 | Food pickup | `BONUS_FOOD=5`, heals 100 | no `food` type |
-| 8 | 1/3/5 chest cards | `ShowSkillSlots(data)` with 1/3/5 | `showLevelUp()` always 3 |
-| 9 | Chest reroll sink | `1500×(n+1)`, max 3 | single 500×n sink, max 5 |
-| 10 | 5 s victory hold | `DELAY_GAME_WON=5000` | results opened inline |
-| 11 | Music playback | 3 beds with volumes | `startMusic` never invoked |
-| 12 | Player mass collision | `mass` 1/2/5 | separation only, no shove |
-| 13 | Gems-only magnet | `pullOnlyExps` behaviour | magnet flags all drops |
+| 1 | Full 2–18-step fidelity | original step chains include roam and retreat segments | our lists cycle chase / charge / teleport / attacks; no roam/retreat or delayed second volley |
+| 2 | Spider poison-fan fragments | poison fan leaves a 10-dmg acid fragment | our spider cycles mortar / summon / fan without fragments |
+| 3 | Per-boss HP bars | one bar per boss in the original | one shared HUD boss bar |
+| 4 | Music beds | menu / run / boss tracks | no boss or menu bed wired |
+| 5 | Rewarded ads and suspended runs | platform ad and snapshot services | not implemented |
+| 6 | Gems-only magnet | `pullOnlyExps` behaviour | our magnet marks every drop |
 
 ## 12. Corrections to earlier notes
 
@@ -203,10 +196,11 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Chests can open 1/3/5 cards; drops carry the count | `ui.js` `showLevelUp(count)`, `pickOffers(count)` | source reviewed; treasure passes `pk.value` |
 | Cache-busting versions bumped | `index.html` entities 29 · game 36 · ui 20 · BUILD 23 | file inspected |
 
-**Still open:** boss step interpreter, arena fence art and kill-all-at-boss,
-manager briefcase, gems-only magnet, heavy-body shove, chest-specific reroll
-sink, rewarded ads and suspended runs, and the three distinct music beds
-(we start one bed).
+**Still open after later passes:** full step-sequence fidelity (roam/retreat,
+delayed volleys, poison fragments), per-boss HP bars, the music beds, rewarded
+ads and suspended runs, and the gems-only magnet. The boss step interpreter,
+arena fence, manager briefcase, heavy-body shove and chest-specific reroll sink
+are now implemented; see §18–§19.
 
 ## 14. Implemented in this pass — contracts and the coffer
 
@@ -277,3 +271,19 @@ All 12 test files pass; browser ran BUILD 31 with `frameErrors: 0`.
 | Chests keep the original's 1,500 × (n+1) reroll sink and three-reroll cap, separate from level-up rerolls | `ui.js` `luChest` | browser: `REROLL · 1500` |
 
 All 13 test files pass; browser ran BUILD 32 with `frameErrors: 0`.
+
+## 19. Boss behaviour, briefcase, shove and egg mortar
+
+| Change | Where | Verified by |
+|---|---|---|
+| Bosses cycle multi-step lists instead of one repeating pattern: chase → charge / teleport / mortar / summon / ring / fan / stream → next step | `BOSS_TYPES.behaviour`, `updateBossBehaviour`, `startBossStep` | `boss.test.js`: every boss exposes a list and the old ring/fan/stream/summon steps remain |
+| Charge has a 700/500 ms windup, a locked dash and a recovery; a dashed lane and growing ring draw during the windup | `updateBossAct`, `game.js` render | `boss.test.js`: windup phase, no movement, then dash; browser: 30 windup frames, `dashMoved: 72`, `chargeDashes: 1` |
+| Mutant teleports 260 px after a 350 ms purple windup; the destination is clamped inside the boss-zone rect | `startBossStep`, `updateBossAct`, `clampInZone` | `boss.test.js`; browser: `teleported: true`, `teleportInFence: true` |
+| Spider egg mortar is a lobbed projectile with a marked landing circle; it lands, bursts for 24 damage in a 170 px radius and leaves a shockwave | `spawnMortar`, `updateMortars`, `game.js` render | `boss.test.js`: still airborne at 0.45 s, booms at 1.25 s; browser: `midAir: 1`, `mortarBooms: 1`, HP 100 → 76 |
+| Manager drops a rotating 20 hp briefcase; bullets damage it, 30 damage destroys it, and an unshot one deals 10 on contact | `damageEnemy`, `updateBriefcases`, projectile collision | `boss.test.js`; browser: 20 → 12 hp, destroyed, `briefcaseBreaks: 1` |
+| Mass 1/2/5 bodies shove the hunter; bosses/minibosses use mass 5 and the shove is fence-clamped | `shoveHunter`, `mass` in enemy tables | `boss.test.js`: player displaced 28.6 px; browser: `shoveCount: 1`, `shoveDelta: -28.6` |
+| Bosses stay clamped during a dash and teleport, and normal bodies are still cleared on zone entry | `clampInZone`, `activateBossZone` | browser: `fence: true`, `bosses: 2`, tower volley still 12 rounds |
+
+Browser ran BUILD 33 with `frameErrors: 0`; the forced zone showed a telegraphed charge, a teleport, a landing mortar, a destroyed briefcase and a mass shove, with the tower's 12-way ring still intact.
+
+**Still honestly missing:** full 2–18-step sequence fidelity (roam/retreat, delayed second volleys, poison-fan fragments), per-boss HP bars and boss/menu music, rewarded ads and suspended-run snapshots, and the gems-only magnet.
