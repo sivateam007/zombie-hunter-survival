@@ -991,11 +991,93 @@ window.ZH = window.ZH || {};
      half-empty magazine (so the player can top up before a boss instead of
      waiting to run dry). Pressing it with full magazines answers instead of
      doing nothing silently. */
+  Game.ringReloadEnabled = function () {
+    var s = ZH.Save && ZH.Save.get ? ZH.Save.get().settings : null;
+    return !(s && s.ringReload === false);
+  };
+
+  Game.ringWeapon = function (name) {
+    var p = this.player;
+    var w = p && p.weapons && p.weapons[name];
+    var base = ZH.WEAPONS && ZH.WEAPONS[name];
+    if (!w || !base) return null;
+    var eff = ZH.effectiveWeapon ? ZH.effectiveWeapon(name, w, p.supplies) : name;
+    var def = (ZH.WEAPONS && ZH.WEAPONS[eff]) || base;
+    return { w: w, def: def, base: base, max: def.mag || base.mag };
+  };
+
+  Game.beginRingReload = function (name, w, def, missing, seconds) {
+    var p = this.player;
+    if (!p || !w || !def) return null;
+    if (p.reloadRing) {
+      var old = this.ringWeapon(p.reloadRing.name);
+      if (old) old.w.reloading = 0;
+      ZH.finishReloadRing(p);
+    }
+    var r = ZH.startReloadRing(p, { name: name, count: missing, time: seconds });
+    if (!r) return null;
+    w.reloading = 9999;   /* hold the trigger until the ring closes */
+    w.manual = true;
+    if (ZH.Audio) ZH.Audio.play('reload');
+    if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast('RELOAD · TAP IN THE NOTCH', 'info');
+    return r;
+  };
+
+  Game.seatReloadRing = function () {
+    var p = this.player;
+    var r = p && p.reloadRing;
+    if (!r || !r.active) return false;
+    var rw = this.ringWeapon(r.name);
+    var res = ZH.seatReloadRing(p);
+    if (!res || !res.ok) {
+      if (ZH.Audio) ZH.Audio.play('empty');
+      return false;
+    }
+    if (rw) {
+      var share = Math.max(1, Math.ceil(rw.max / r.total));
+      rw.w.mag = Math.min(rw.max, (rw.w.mag || 0) + share);
+    }
+    if (ZH.Audio) ZH.Audio.play('reload');
+    if (res.done || (rw && rw.w.mag >= rw.max)) this.completeRingReload(true);
+    return true;
+  };
+
+  Game.completeRingReload = function (fill) {
+    var p = this.player;
+    var r = p && p.reloadRing;
+    if (!r) return null;
+    var rw = this.ringWeapon(r.name);
+    if (rw) {
+      if (fill !== false) rw.w.mag = rw.max;
+      rw.w.reloading = 0;
+    }
+    var done = ZH.finishReloadRing(p);
+    if (done && done.hot) {
+      p.hotT = ZH.RELOAD_RING.hotTime;
+      if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast('HOT MAG · +20% DMG', 'good');
+    } else if (ZH.Anim && ZH.Anim.toast) {
+      ZH.Anim.toast('MAG READY', 'info');
+    }
+    if (ZH.Audio) ZH.Audio.play('reloadDone');
+    return done;
+  };
+
+  Game.cancelReloadRing = function () {
+    var p = this.player;
+    if (!p || !p.reloadRing) return;
+    var rw = this.ringWeapon(p.reloadRing.name);
+    if (rw) rw.w.reloading = 0;
+    ZH.finishReloadRing(p);
+  };
+
   Game.RELOAD_MANUAL_MUL = 0.6;
   Game.reload = function () {
     var p = this.player;
     if (!p || !p.weapons || p.dead || this.state !== 'playing') return false;
-    var started = 0, full = 0;
+    var ringOn = this.ringReloadEnabled();
+    /* the ring is already spinning: R is the seat input */
+    if (ringOn && p.reloadRing && p.reloadRing.active) return this.seatReloadRing();
+    var started = 0, full = 0, ringStarted = 0;
     for (var name in p.weapons) {
       var w = p.weapons[name];
       var base = ZH.WEAPONS && ZH.WEAPONS[name];
@@ -1005,15 +1087,25 @@ window.ZH = window.ZH || {};
       var def = (ZH.WEAPONS && ZH.WEAPONS[eff]) || base;
       if (def.ammo === false) continue;          /* melee / orbit guns never reload */
       if (w.mag == null || !isFinite(w.mag)) { w.mag = def.mag; w.reloading = 0; }
-      if (w.mag >= (def.mag || base.mag)) { full++; continue; }
+      var max = def.mag || base.mag;
+      if (w.mag >= max) { full++; continue; }
       if (w.reloading > 0) { started++; continue; }
+      if (ringOn && name === p.primaryWeapon) {
+        var missing = Math.max(1, Math.ceil(max - w.mag));
+        this.beginRingReload(name, w, def, missing, (def.reload || 1.5) * this.RELOAD_MANUAL_MUL);
+        ringStarted++;
+        started++;
+        continue;
+      }
       w.reloading = (def.reload || 1.5) * this.RELOAD_MANUAL_MUL;
       w.manual = true;
       started++;
     }
     if (started) {
-      if (ZH.Audio) ZH.Audio.play('reload');
-      if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast('RELOADING', 'info');
+      if (!ringStarted) {
+        if (ZH.Audio) ZH.Audio.play('reload');
+        if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast('RELOADING', 'info');
+      }
       return true;
     }
     /* nothing to do: say so, so the button never feels dead */
@@ -1255,8 +1347,9 @@ window.ZH = window.ZH || {};
     var magMax = w.mag || 1;
     var magNow = live.mag == null ? magMax : Math.max(0, Math.round(live.mag));
     if (w.ammo === false) { magNow = '∞'; magMax = '∞'; }
-    var relTotal = w.reload || 1.5;
-    var relLeft = live.reloading || 0;
+    var ring = p.reloadRing && p.reloadRing.active ? p.reloadRing : null;
+    var relTotal = ring ? ring.time : (w.reload || 1.5);
+    var relLeft = ring ? Math.max(0, ring.time - ring.elapsed) : (live.reloading || 0);
     // find the active boss for the boss bar
     var boss = null;
     for (var i = 0; i < this.zombies.length; i++) {
@@ -1270,6 +1363,7 @@ window.ZH = window.ZH || {};
       jetActive: !!p.jetActive,
       mag: magNow, weapon: w,
       reloading: relLeft > 0,
+      ring: !!ring,
       reloadFrac: relLeft > 0 ? Math.min(1, 1 - relLeft / relTotal) : 0,
       coins: this.coins, score: this.score,
       wave: ZH.waveNumber ? ZH.waveNumber(this.elapsed, this.mode === 'endless') : 1,
@@ -1522,6 +1616,52 @@ window.ZH = window.ZH || {};
         ctx.strokeStyle = 'rgba(255,206,130,0.75)';
         ctx.lineWidth = 2;
         ctx.beginPath(); ctx.ellipse(e.x, e.y + 11, 18, 7, 0, 0, TAU); ctx.stroke();
+        /* ring reload: the missing rounds orbit the cat; the notch at the
+           top is the seat, and a round inside it is the one a tap loads */
+        var rr = e.reloadRing;
+        if (rr && rr.active) {
+          var notch = -Math.PI / 2;
+          var R = 38;
+          ctx.save();
+          ctx.strokeStyle = 'rgba(255,206,130,0.22)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, R, notch - rr.window, notch + rr.window);
+          ctx.stroke();
+          for (var pi = 0; pi < rr.pips.length; pi++) {
+            var pa = rr.pips[pi].a;
+            var near = Math.abs(((pa - notch + Math.PI * 3) % (Math.PI * 2)) - Math.PI) <= rr.window;
+            ctx.fillStyle = near ? '#ffe066' : 'rgba(255,196,110,0.85)';
+            ctx.beginPath();
+            ctx.arc(e.x + Math.cos(pa) * R, e.y + Math.sin(pa) * R, near ? 5 : 3.2, 0, TAU);
+            ctx.fill();
+            if (near) {
+              ctx.strokeStyle = 'rgba(255,224,102,0.55)';
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.arc(e.x + Math.cos(pa) * R, e.y + Math.sin(pa) * R, 8, 0, TAU);
+              ctx.stroke();
+            }
+          }
+          ctx.strokeStyle = '#ffe066';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(e.x, e.y - R + 5);
+          ctx.lineTo(e.x, e.y - R - 7);
+          ctx.stroke();
+          ctx.restore();
+        }
+        /* HOT MAG: a short gold aura, so the reward is visible in the world */
+        if ((e.hotT || 0) > 0) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(255,224,102,' +
+            (0.35 + 0.35 * Math.min(1, e.hotT / 1.5)).toFixed(2) + ')';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, 45, 0, TAU);
+          ctx.stroke();
+          ctx.restore();
+        }
         if (e.jetActive) {
           /* twin jets: a short blue-core flame that flickers under the rig */
           ctx.fillStyle = 'rgba(0,0,0,0.26)';
@@ -2082,6 +2222,9 @@ window.ZH = window.ZH || {};
     if (!p || !p.weapons) return;
     var world = this;
     dt = dt || 0.016;
+    if (p.reloadRing && p.reloadRing.active && ZH.tickReloadRing(p, dt) === 'timeout') {
+      this.completeRingReload(true);
+    }
     for (var name in p.weapons) {
       var st = p.weapons[name];
       var base = ZH.WEAPONS && ZH.WEAPONS[name];
@@ -2137,8 +2280,12 @@ window.ZH = window.ZH || {};
 
       /* magazine dry: auto-reload (the button just starts it early) */
       if (usesAmmo && st.mag <= 0) {
-        st.reloading = base.reload || 1.5;
-        if (ZH.Audio) ZH.Audio.play('reload');
+        if (name === p.primaryWeapon && this.ringReloadEnabled()) {
+          this.beginRingReload(name, st, def, def.mag || base.mag, base.reload || 1.5);
+        } else {
+          st.reloading = base.reload || 1.5;
+          if (ZH.Audio) ZH.Audio.play('reload');
+        }
         continue;
       }
 
@@ -2151,8 +2298,12 @@ window.ZH = window.ZH || {};
         /* last round gone: start the reload straight away instead of waiting
            for the cooldown to expire first */
         if (st.mag <= 0) {
-          st.reloading = base.reload || 1.5;
-          if (ZH.Audio) ZH.Audio.play('reload');
+          if (name === p.primaryWeapon && this.ringReloadEnabled()) {
+            this.beginRingReload(name, st, def, def.mag || base.mag, base.reload || 1.5);
+          } else {
+            st.reloading = base.reload || 1.5;
+            if (ZH.Audio) ZH.Audio.play('reload');
+          }
         }
       }
     }

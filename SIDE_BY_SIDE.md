@@ -257,3 +257,12 @@ boss zone. Shorter waves would have cut content off the end of every stage.
 All 11 test files pass; browser ran BUILD 30 with `frameErrors: 0`. Lifesteal
 is the one deliberate exception: those survivor powers still return health when
 they deal damage, but nothing ticks health back on a timer.
+
+## 17. Ring reload
+
+| Change | Where | Verified by |
+|---|---|---|
+| Manual reload and the primary gun's auto-reload spin up to six missing rounds around the hunter; tapping R/RELOAD seats the round in the notch, and four perfect seats arm a 5 s +20% damage HOT MAG | `ZH.RELOAD_RING`, `entities.js`, `Game.reload`, `autoFire`, player render | `reload.test.js`; browser: pips, seat, HOT MAG |
+| Pause → RELOAD switches back to the old flat 60%-faster reload | `settings.ringReload`, `ui.js` | browser toggle |
+
+All 12 test files pass; browser ran BUILD 31 with `frameErrors: 0`.

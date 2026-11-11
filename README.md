@@ -104,6 +104,10 @@ is applied to every new run after the permanent skills.
 **No free healing** — health never ticks back up. Medkits, food and gift boxes are the only heals;
 lifesteal survivor powers still return a share of the damage they deal.
 
+**Ring reload** — press R (or RELOAD) to set the missing rounds orbiting the hunter. Tap again as a
+round crosses the notch to seat it; four of six perfect seats arm **HOT MAG** (+20% damage for 5
+seconds). Pause → RELOAD switches between ring and classic reload.
+
 **A living city** — multi-lane ambient traffic with headlights cruises the road districts, canal
 chunks are crossed by several footbridges, and blocks carry more barricades, wrecks, crates,
 containers and other roadside obstacles. Traffic and props are decorative and never alter zombie AI.

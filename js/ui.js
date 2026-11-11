@@ -1120,7 +1120,7 @@ window.ZH = window.ZH || {};
       var reloadBtnEl = $('btn-reload');
       if (reloadBtnEl) {
         reloadBtnEl.classList.toggle('is-cooling', !!d.reloading);
-        reloadBtnEl.textContent = d.reloading ? 'RELOADING' : 'RELOAD';
+        reloadBtnEl.textContent = d.ring ? 'SEAT' : (d.reloading ? 'RELOADING' : 'RELOAD');
       }
 
       if (last.coins !== d.coins) {
@@ -1214,6 +1214,13 @@ window.ZH = window.ZH || {};
       if (m) m.textContent = label;
       var pm = $('btn-pause-mute');
       if (pm) pm.querySelector('span').textContent = label;
+      this.syncReloadMode();
+    },
+
+    syncReloadMode: function () {
+      var on = ZH.Save.get().settings.ringReload !== false;
+      var b = $('btn-reload-mode');
+      if (b) b.querySelector('span').textContent = 'RELOAD: ' + (on ? 'RING' : 'CLASSIC');
     },
 
     applyAudio: function () {
@@ -1367,6 +1374,14 @@ window.ZH = window.ZH || {};
         G.quit();
       });
       on('btn-pause-mute', 'click', function () { self.toggleMute(); });
+      on('btn-reload-mode', 'click', function () {
+        var ringOn = ZH.Save.get().settings.ringReload !== false;
+        ZH.Save.setSetting('ringReload', !ringOn);
+        if (G && G.cancelReloadRing) G.cancelReloadRing();
+        self.syncReloadMode();
+        ZH.Audio.play('click');
+        ZH.Anim.toast && ZH.Anim.toast('RELOAD: ' + (ringOn ? 'CLASSIC' : 'RING'), 'info');
+      });
 
       on('btn-next', 'click', function () { ZH.Audio.play('click'); G.nextLevel(); });
       on('btn-retry', 'click', function () { ZH.Audio.play('click'); G.retry(); });

@@ -21,7 +21,7 @@ window.ZH = window.ZH || {};
     skills: { power: 1, health: 1, defense: 1, firstaid: 1, fortune: 1, learning: 1 },
     upgrades: {},
     stats: { kills: 0, shots: 0, deaths: 0, bestEndless: 0, endlessKills: 0, playTime: 0, levelsCleared: 0 },
-    settings: { muted: false, shake: true, quality: 'high' },
+    settings: { muted: false, shake: true, quality: 'high', ringReload: true },
     /* safehouse roster: the first survivor is free, the rest are bought */
     characters: ['hunter'],
     character: 'hunter',

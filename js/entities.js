@@ -54,6 +54,94 @@
     return ZH.healthMultiplier(levelMultiplier, waveCycle);
   };
 
+  /* ----------------------------- ring reload -----------------------------
+     The missing rounds orbit the hunter while the magazine refills. Tapping
+     reload while a round crosses the loading notch seats it perfectly; enough
+     perfect seats arm a short HOT MAG damage window. The ring owns only the
+     presentation and timing — the game owns the magazine. */
+  ZH.RELOAD_RING = {
+    speed: 4.2,          /* radians per second                         */
+    window: 0.5,         /* half-width of the loading notch, radians   */
+    maxPips: 6,          /* readable at a glance on a phone            */
+    minTime: 0.55,       /* a reload never becomes instant             */
+    hotFrac: 0.6,        /* share of perfect seats that arms HOT MAG   */
+    hotTime: 5,          /* seconds of boosted damage                  */
+    hotMul: 1.2          /* +20% damage while HOT MAG runs             */
+  };
+
+  function wrapAngle(a) {
+    while (a > Math.PI) a -= Math.PI * 2;
+    while (a < -Math.PI) a += Math.PI * 2;
+    return a;
+  }
+
+  /** start a ring for `count` missing rounds; returns the ring state */
+  ZH.startReloadRing = function (p, opts) {
+    if (!p) return null;
+    opts = opts || {};
+    var count = Math.max(1, Math.min(ZH.RELOAD_RING.maxPips, Math.floor(opts.count || 1)));
+    var step = (Math.PI * 2) / count;
+    var pips = [];
+    for (var i = 0; i < count; i++) pips.push({ a: wrapAngle(-Math.PI / 2 + 0.35 + i * step) });
+    p.reloadRing = {
+      active: true,
+      name: opts.name || '',
+      pips: pips,
+      total: count,
+      seated: 0,
+      perfect: 0,
+      elapsed: 0,
+      time: Math.max(ZH.RELOAD_RING.minTime, opts.time || 1),
+      speed: ZH.RELOAD_RING.speed,
+      window: ZH.RELOAD_RING.window
+    };
+    return p.reloadRing;
+  };
+
+  /** advance the orbit; returns 'timeout' when the window closes */
+  ZH.tickReloadRing = function (p, dt) {
+    var r = p && p.reloadRing;
+    if (!r || !r.active) return null;
+    var d = Math.max(0, dt || 0);
+    r.elapsed += d;
+    for (var i = 0; i < r.pips.length; i++) {
+      r.pips[i].a = wrapAngle(r.pips[i].a + r.speed * d);
+    }
+    if (r.elapsed >= r.time) return 'timeout';
+    return null;
+  };
+
+  /** seat the round nearest the loading notch; false when the tap is early */
+  ZH.seatReloadRing = function (p) {
+    var r = p && p.reloadRing;
+    if (!r || !r.active || !r.pips.length) return null;
+    var notch = -Math.PI / 2;
+    var best = -1, bestD = Infinity;
+    for (var i = 0; i < r.pips.length; i++) {
+      var d = Math.abs(wrapAngle(r.pips[i].a - notch));
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    if (best < 0 || bestD > r.window) return { ok: false };
+    r.pips.splice(best, 1);
+    r.seated++;
+    r.perfect++;
+    return { ok: true, perfect: r.perfect, seated: r.seated, done: r.pips.length === 0 };
+  };
+
+  /** close the ring and report the reward; the game fills the magazine */
+  ZH.finishReloadRing = function (p) {
+    var r = p && p.reloadRing;
+    if (!r) return null;
+    var res = {
+      perfect: r.perfect,
+      total: r.total,
+      hot: r.perfect >= Math.ceil(r.total * ZH.RELOAD_RING.hotFrac)
+    };
+    r.active = false;
+    p.reloadRing = null;
+    return res;
+  };
+
   /* ----------------------------- jetpack -----------------------------
      A tactical short-burst jet, not a slow balloon: ignition costs a chunk of
      fuel and kicks the hunter forward for a moment, the tank gives ~4 s of
@@ -760,7 +848,8 @@
     var scale = ZH.damageMultiplier(
       (world && world.stage && world.stage.multiplier) || 1,
       (world && world.waveCycle) || 0);
-    var dmg = def.dmg * atk * mul * (1 + (a.attack_bonus || 0)) * scale;
+    var hot = (world && world.player && world.player.hotT > 0) ? ZH.RELOAD_RING.hotMul : 1;
+    var dmg = def.dmg * atk * mul * (1 + (a.attack_bonus || 0)) * scale * hot;
     var speed = (def.speed || 600) * (1 + (a.shot_speed_bonus || 0));
     var range = (def.range || 400) * (1 + (a.shot_range_bonus || 0));
     var cd = def.cooldown * (1 - Math.min(0.7, a.cooldown_bonus || 0));
@@ -1166,6 +1255,8 @@
     if (p.dead) { p.deadT += dt; return; }
     /* recoil kick from the last shot, purely cosmetic: the rig leans back */
     if (p.recoil) p.recoil = Math.max(0, p.recoil - dt * 1.4);
+    /* HOT MAG is a short reward window, never a permanent buff */
+    if (p.hotT > 0) p.hotT = Math.max(0, p.hotT - dt);
 
     var mx = p.moveX, my = p.moveY;
     var len = Math.hypot(mx, my);
