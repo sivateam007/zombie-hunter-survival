@@ -2152,8 +2152,11 @@
       pk.life -= dt;
       if (pk.life <= 0) { list.splice(i, 1); continue; }
       var d = Math.hypot(pk.x - p.x, pk.y - p.y);
+      /* the original's magnet pulls gems only: only exp drops are vacuumed,
+         by proximity (pickup range) or by an explicit magnet pickup */
+      var isGem = (pk.type === 'exp');
       var pullSpeed = pk.pulling ? 900 : 260;
-      if (d < pickupRange || pk.pulling) {
+      if ((isGem && d < pickupRange) || pk.pulling) {
         pk.x += (p.x - pk.x) / (d || 1) * pullSpeed * dt;
         pk.y += (p.y - pk.y) / (d || 1) * pullSpeed * dt;
       }
@@ -2220,10 +2223,11 @@
           if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast('BOMB · ' + cleared + ' CLEARED', 'good');
           if (ZH.Audio) ZH.Audio.play('slam');
         } else if (pk.type === 'magnet') {
-          /* vacuum every drop on the ground toward the hunter */
+          /* vacuum gems only, like the original's magnet */
           for (var mi = 0; mi < world.pickups.length; mi++) {
             var mp = world.pickups[mi];
             if (mp === pk) continue;
+            if (mp.type !== 'exp') continue;
             mp.pulling = 1;
           }
           if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast('MAGNET', 'good');

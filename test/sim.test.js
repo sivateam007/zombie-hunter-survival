@@ -144,14 +144,17 @@ ZH.WEAPON_ORDER.forEach((id) => {
 {
   const w = makeWorld();
   w.pickups.push({ type: 'magnet', x: w.player.x, y: w.player.y, life: 5 });
-  const far = { type: 'coin', x: w.player.x + 600, y: w.player.y, life: 5, value: 5 };
+  const far = { type: 'exp', x: w.player.x + 600, y: w.player.y, life: 5, value: 5 };
+  const coin = { type: 'coin', x: w.player.x + 600, y: w.player.y + 40, life: 5, value: 5 };
   w.pickups.push(far);
+  w.pickups.push(coin);
   ZH.updatePickups(w.pickups, 1 / 60, w);
-  assert.strictEqual(far.pulling, 1, 'the magnet marks distant drops');
+  assert.strictEqual(far.pulling, 1, 'the magnet marks distant gems');
+  assert.ok(!coin.pulling, 'the magnet ignores non-gem drops');
   const before = Math.hypot(far.x - w.player.x, far.y - w.player.y);
   ZH.updatePickups(w.pickups, 1 / 60, w);
   const after = Math.hypot(far.x - w.player.x, far.y - w.player.y);
-  assert.ok(after < before, 'a marked drop flies to the hunter');
+  assert.ok(after < before, 'a marked gem flies to the hunter');
 }
 
 /* ---------- 10. minibosses keep the original deaddrop table ---------- */

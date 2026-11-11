@@ -127,7 +127,7 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Coin faces | 100/300/500/1000/1500 | `value` 5 default, gifts 250–800 | 🟡 | coin sprites/data | drop code |
 | Box drop table | coin15/coin×3 20/pile15/pouch10/magnet10/medkit25/bomb5 | rare 0.4 % bomb, 1 % medikit | 🟡 | `BOMB_*` table | `entities.js` drops |
 | Bomb effect | 10×attack in 900 px | 10×attack in 900 px, bosses included | ✅ | `BOMB_BONUS_RADIUS` | bomb branch |
-| Magnet | pulls **gems only** | vacuums every drop | 🟡 | pickup code | `pk.pulling` loop |
+| Magnet | pulls **gems only** | pulls gems only | ✅ | pickup code | `pk.pulling` loop (gems only) |
 | Food | heals 100 | food drop heals 100 | ✅ | `BONUS_FOOD` | pickup branch + render |
 | Medkit | heals `firstaid` | heals 45/60 | 🟡 | pickup code | values |
 | Treasure cards | 1/3/5 cards | 1/3/5 supported; drops carry the count | 🟡 | `ShowSkillSlots(data)` | `showLevelUp(count)`; reroll still shared |
