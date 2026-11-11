@@ -105,6 +105,9 @@ window.ZH = window.ZH || {};
     showMenu: function (opts) {
       opts = opts || {};
       this.showOnly('screen-menu');
+      if (ZH.Audio && ZH.Audio.startMenuMusic) ZH.Audio.startMenuMusic();
+      var rb = $('btn-resume-run');
+      if (rb) rb.style.display = (G.hasSuspendedRun && G.hasSuspendedRun()) ? '' : 'none';
       this.el.hud.classList.remove('is-active');
       this.el.hud.setAttribute('aria-hidden', 'true');
       this.updateMenuStats();
@@ -1348,6 +1351,14 @@ window.ZH = window.ZH || {};
       }
       on('btn-campaign', 'click', function () { ZH.Audio.play('click'); self.showLevels(menuOpts && menuOpts.onLevels); });
       on('btn-endless', 'click', function () { ZH.Audio.play('click'); G.startEndless(); });
+      on('btn-resume-run', 'click', function () {
+        ZH.Audio.play('click');
+        if (G.resumeSuspendedRun && G.resumeSuspendedRun()) {
+          if (self.hideScreens) self.hideScreens();
+        } else {
+          self.showMenu();
+        }
+      });
       on('btn-shop', 'click', function () { ZH.Audio.play('click'); self.showShop(); });
       on('btn-missions', 'click', function () { ZH.Audio.play('click'); self.showMissions(); });
       on('btn-board', 'click', function () { ZH.Audio.play('click'); self.showLeaderboard('endless'); });

@@ -154,7 +154,19 @@ window.ZH = window.ZH || {};
     started = true;
     musicMode = mode || 'run';
     var t = c.currentTime;
-    if (musicMode === 'boss') {
+    if (musicMode === 'menu') {
+      /* very light, airy bed for the menu */
+      var m1 = c.createOscillator(); m1.type = 'sine'; m1.frequency.value = 110;
+      var m2 = c.createOscillator(); m2.type = 'sine'; m2.frequency.value = 165;
+      var mg = c.createGain(); mg.gain.value = 0.08;
+      m1.connect(mg); m2.connect(mg); mg.connect(musicBus);
+      m1.start(t); m2.start(t);
+      var msrc = c.createBufferSource(); msrc.buffer = noiseBuf; msrc.loop = true;
+      var mbq = c.createBiquadFilter(); mbq.type = 'highpass'; mbq.frequency.value = 600; mbq.Q.value = 0.4;
+      var mg2 = c.createGain(); mg2.gain.value = 0.04;
+      msrc.connect(mbq); mbq.connect(mg2); mg2.connect(musicBus); msrc.start(t);
+      musicNodes = [m1, m2, msrc];
+    } else if (musicMode === 'boss') {
       /* heavier, faster bed for boss zones */
       var b1 = c.createOscillator(); b1.type = 'sawtooth'; b1.frequency.value = 41;
       var b2 = c.createOscillator(); b2.type = 'square'; b2.frequency.value = 62;
@@ -191,6 +203,7 @@ window.ZH = window.ZH || {};
 
   function startMusic() { buildMusic('run'); }
   function startBossMusic() { buildMusic('boss'); }
+  function startMenuMusic() { buildMusic('menu'); }
 
   function setMuted(v) {
     muted = !!v;
@@ -210,6 +223,7 @@ window.ZH = window.ZH || {};
     play: play,
     startMusic: startMusic,
     startBossMusic: startBossMusic,
+    startMenuMusic: startMenuMusic,
     stopMusic: stopMusic,
     setMuted: setMuted,
     setVolume: setVolume,

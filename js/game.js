@@ -1115,6 +1115,7 @@ window.ZH = window.ZH || {};
 
   Game.pause = function () {
     if (this.state !== 'playing') return;
+    this.suspendRun();
     this.state = 'paused';
     /* drop the stick: otherwise the last drag vector survives the pause and
        the hunter walks off by itself the moment the game resumes */
@@ -2537,7 +2538,48 @@ window.ZH = window.ZH || {};
     p.hp = Math.max(1, Math.round(p.maxHp * run.hpFrac));
   };
 
+  /* Suspended run: a lightweight snapshot so a run can be resumed later.
+     Only the portable parts of the run are stored; the stage clock restarts. */
+  Game.suspendRun = function () {
+    if (!this.player || this.state !== 'playing') return false;
+    var snap = {
+      stageId: this.stageId || 0,
+      mode: this.mode || 'campaign',
+      elapsed: this.elapsed || 0,
+      score: this.score || 0,
+      coins: this.coins || 0,
+      run: this.captureRun()
+    };
+    try { window.localStorage.setItem('mzh_suspended', JSON.stringify(snap)); } catch (e) { return false; }
+    return true;
+  };
+
+  Game.hasSuspendedRun = function () {
+    try { return !!window.localStorage.getItem('mzh_suspended'); } catch (e) { return false; }
+  };
+
+  Game.clearSuspendedRun = function () {
+    try { window.localStorage.removeItem('mzh_suspended'); } catch (e) {}
+  };
+
+  Game.resumeSuspendedRun = function () {
+    var raw = null;
+    try { raw = window.localStorage.getItem('mzh_suspended'); } catch (e) { return false; }
+    if (!raw) return false;
+    var snap = null;
+    try { snap = JSON.parse(raw); } catch (e) { this.clearSuspendedRun(); return false; }
+    if (!snap || !snap.run) { this.clearSuspendedRun(); return false; }
+    this.startStage(snap.stageId || 0, null, snap.mode || 'campaign');
+    this.restoreRun(snap.run);
+    this.elapsed = snap.elapsed || 0;
+    this.score = snap.score || 0;
+    this.coins = snap.coins || 0;
+    this.clearSuspendedRun();
+    return true;
+  };
+
   Game.finishStage = function (win) {
+    this.clearSuspendedRun && this.clearSuspendedRun();
     this.state = 'results';
     if (document.body) document.body.classList.remove('in-game');
     var p = this.player;
