@@ -52,6 +52,7 @@ assert.strictEqual(w.enemyBullets.length, 12, 'one tower volley is twelve rounds
 /* dragon: the stream emits its ten rounds over time */
 w = makeWorld(); p = w.player;
 b = ZH.createBoss('boss_dragon', p.x + 120, p.y, null, 1);
+b.step = 1; b.stepStarted = false;
 w.zombies.push(b);
 for (let i = 0; i < 140; i++) ZH.updateEnemies(w.zombies, 1 / 60, w);
 assert.ok(w.enemyBullets.length >= 10, 'the dragon stream fires ten rounds');
@@ -59,7 +60,7 @@ assert.ok(w.enemyBullets.length >= 10, 'the dragon stream fires ten rounds');
 /* reptile: the summon step still adds four bodies after its charge sequence */
 w = makeWorld(); p = w.player;
 b = ZH.createBoss('boss_reptile', p.x + 120, p.y, null, 1);
-b.step = 3; b.stepStarted = false;
+b.step = 4; b.stepStarted = false;
 w.zombies.push(b);
 ZH.updateEnemies(w.zombies, 0.02, w);
 assert.strictEqual(w.zombies.length, 5, 'boss plus four summoned reptiles');
@@ -68,7 +69,7 @@ assert.strictEqual(w.zombies.filter((z) => z.type === 'reptile').length, 4);
 /* charge: windup telegraph, then a real dash, then recovery */
 w = makeWorld(); p = w.player;
 b = ZH.createBoss('boss_reptile', p.x + 300, p.y, null, 1);
-b.step = 0; b.stepStarted = false;
+b.step = 1; b.stepStarted = false;
 w.zombies.push(b);
 ZH.updateEnemies(w.zombies, 1 / 60, w);
 assert.strictEqual(b.act.kind, 'charge');

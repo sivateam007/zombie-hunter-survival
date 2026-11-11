@@ -386,13 +386,13 @@
     boss_dragon:  { name: 'BOSS: DRAGON',  hp: 12000, speed: 130, dmg: 24, range: 52, cd: 0.9, scale: 1.8, coins: 25000, variant: 'butcher', mass: 5,
       pattern: { kind: 'stream', count: 10, gap: 0.12, cd: 2.8, range: 800, dmg: 10 },
       behaviour: [
-        { kind: 'stream', count: 10, gap: 0.12, duration: 3.0, range: 800, dmg: 10 },
-        { kind: 'fan', count: 5, spread: 0.32, duration: 1.7, range: 750, dmg: 9 },
+        { kind: 'chase', duration: 4.0, speed: 0.25 },
         { kind: 'stream', count: 10, gap: 0.12, duration: 3.0, range: 800, dmg: 10 }
       ] },
     boss_reptile: { name: 'BOSS: REPTILE', hp: 10000, speed: 170, dmg: 22, range: 50, cd: 0.9, scale: 1.7, coins: 22000, variant: 'matron', mass: 5,
       pattern: { kind: 'summon', type: 'reptile', count: 3, cd: 4.5, range: 900 },
       behaviour: [
+        { kind: 'chase', duration: 6.0, speed: 0.2 },
         { kind: 'charge', windup: 0.7, dash: 0.5, speed: 700, duration: 2.8, range: 1200 },
         { kind: 'charge', windup: 0.7, dash: 0.5, speed: 700, duration: 2.8, range: 1200 },
         { kind: 'charge', windup: 0.7, dash: 0.5, speed: 700, duration: 2.8, range: 1200 },
