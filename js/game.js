@@ -595,7 +595,11 @@ window.ZH = window.ZH || {};
         y0: pc.y - bh / 2, y1: pc.y + bh / 2, w: bw, h: bh
       };
     }
-    ZH.Anim.banner('BOSS APPROACHING', 'The zone is sealed');
+    /* the original clears the street when the boss lands: the arena is the
+       boss fight, not the boss plus a leftover horde */
+    if (ZH.clearNonBosses) ZH.clearNonBosses(this.zombies);
+    this.bossZoneFence = this.bossZoneRect;
+    ZH.Anim.banner('ARENA SEALED', 'BOSS APPROACHING');
     if (ZH.Anim && ZH.Anim.flash) ZH.Anim.flash('214,42,32', { peak: 1, duration: 620 });
     var bosses = wave.bosses || [];
     for (var i = 0; i < bosses.length; i++) {
@@ -604,16 +608,7 @@ window.ZH = window.ZH || {};
         (this.stage && this.stage.multiplier) || 1);
       if (b) this.zombies.push(b);
     }
-    /* a boss never walks in alone: the longer the run, the larger its escort,
-       so a boss zone is a fight and not a duel in an empty street */
-    var escort = 2 + Math.min(8, Math.floor((this.elapsed || 0) / 150));
-    for (var e = 0; e < escort; e++) {
-      if (this.zombies.length >= (this.hordeHard || ZH.HORDE.hardCap)) break;
-      var ep = this.findSpawnPoint(720);
-      var ez = ZH.createEnemy(e % 3 === 0 ? 'zombieB' : 'zombieA', ep.x, ep.y,
-        (this.stage && this.stage.multiplier) || 1, this.diff, this.waveCycle || 0);
-      if (ez) this.zombies.push(ez);
-    }
+    /* the original's boss zones have no escort: the pattern is the fight */
   };
 
   Game.findSpawnPoint = function (dist, biasAngle) {
@@ -1253,6 +1248,7 @@ window.ZH = window.ZH || {};
         this.bossZoneActive = false;
         this.bossZoneT = 0;
         this.bossZoneRect = null;
+        this.bossZoneFence = null;
         if (this.ui && ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('ZONE CLEAR', 'The horde resumes');
       }
     }
@@ -1576,6 +1572,22 @@ window.ZH = window.ZH || {};
         ctx.fillText(look[0], 0, 5);
         ctx.textAlign = 'left';
       }
+      ctx.restore();
+    }
+
+    /* the sealed arena is visible: a warning fence on the rect the player
+       is already clamped inside, so the edge never feels arbitrary */
+    var br = this.bossZoneFence;
+    if (this.bossZoneActive && br) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,74,48,0.8)';
+      ctx.lineWidth = 5;
+      ctx.setLineDash([18, 10]);
+      ctx.strokeRect(br.x0, br.y0, br.w, br.h);
+      ctx.setLineDash([]);
+      ctx.strokeStyle = 'rgba(255,196,90,0.22)';
+      ctx.lineWidth = 14;
+      ctx.strokeRect(br.x0, br.y0, br.w, br.h);
       ctx.restore();
     }
 

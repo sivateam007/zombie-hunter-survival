@@ -79,8 +79,8 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Roster | 28 combat + box + treasure | 28 combat | ✅/🟡 | `EnemiesData` | `ZH.ENEMY_TYPES` |
 | Assault1 | 3 shots at 2500/2800/3100 ms | staggered burst | ✅ | shots array | `entities.js` enemy fire |
 | Assault2 | −20/0/+20° fan | spread fan | ✅ | shots array | enemy fire |
-| Miniboss soldier | 8-way ring | 8-way ring? | 🟡 | 8 shot entries | single fan in code — verify per-type |
-| Miniboss tower | 8-way @450 ms cd | cd 0.45, one aimed shot | 🟡 | shots array | `BOSS/ENEMY_TYPES` table |
+| Miniboss soldier | 8-way ring | 8-way ring every 2.4 s | ✅ | 8 shot entries | `miniboss_soldier.pattern` |
+| Miniboss tower | 8-way @450 ms cd | 8-way ring every 1.8 s | ✅ | shots array | `miniboss_tower.pattern` |
 | Acid on death | 6 types, 1–3 s pools | acid pools (3/5/7 dmg) via `world.hazards` | ✅ | `deadshot` blocks | `damageEnemy` + hazard tick |
 | Corpse split | slime2→2 slime1, slug→2 slime2 | implemented on death | ✅ | `deadspawn` | 2 children, 0.25 s spawn delay |
 | Manager briefcase | destroyable 10-dmg projectile | plain melee/ranged body | ❌ | `deadshot{frame:shot_briefcase}` | no briefcase |
@@ -95,15 +95,15 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 |---|---|---|---|---|---|
 | Boss count | 6 | 7 (`boss_fighter` extra) | 🟡 | `BossesData` | `ZH.BOSS_TYPES` |
 | Boss HP | 7,500–10,000 | 8,000–14,000 | 🟡 | table | runtime |
-| Scripted steps | 2–18 steps per boss | chase + shoot | ❌ | `behaviour[]` | no behaviour list in `createBoss`/update |
+| Scripted steps | 2–18 steps per boss | one signature pattern per boss | 🟡 | `behaviour[]` | `pattern` in `BOSS_TYPES` |
 | Charge windup | 700/500 ms | none | ❌ | `duration[0]` | no charge state |
 | Teleport | mutant, 1 s | none | ❌ | step 3 | no teleport code |
-| Summon adds | reptile 4, mutant 4, spider 3 | none | ❌ | `spawns[]` | no spawn step |
-| 12-way tower ring | yes | single shot | ❌ | 12 shots | boss fire code |
-| Dragon stream | 10 shots @350 ms | none | ❌ | shots with delays | boss fire code |
-| Spider egg mortar | r190, 20 dmg | none | ❌ | ATTACK steps | no grenade AI |
+| Summon adds | reptile 4, mutant 4, spider 3 | 3 adds on reptile / mutant / spider | ✅ | `spawns[]` | `bossPattern` summon |
+| 12-way tower ring | yes | 12-way ring every 1.8 s | ✅ | 12 shots | `boss_tower.pattern` |
+| Dragon stream | 10 shots @350 ms | 10 shots @120 ms | ✅ | shots with delays | `boss_dragon.pattern` |
+| Spider egg mortar | r190, 20 dmg | spider summons instead | 🟡 | ATTACK steps | `boss_spider.pattern` |
 | Boss-zone **data** | rect 1000–3072 px | present, same sizes, 2 bosses in S4–S8 | ✅ | level JSON | `levels.js` + runtime |
-| Boss-zone **enforcement** | fence, player confined, kill all mobs | player clamped in the rect; no fence art or kill-all | 🟡 | `BossZone` collision | `bossZoneRect` in `updateSurvivor` |
+| Boss-zone **enforcement** | fence, player confined, kill all mobs | fence drawn, player clamped, normal bodies cleared | ✅ | `BossZone` collision | `bossZoneFence` / `clearNonBosses` |
 | Per-boss HP bars | one per boss | single bar | 🟡 | HUD | `pushHud` single boss |
 
 ## 7. Stages and waves
@@ -131,7 +131,7 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Food | heals 100 | food drop heals 100 | ✅ | `BONUS_FOOD` | pickup branch + render |
 | Medkit | heals `firstaid` | heals 45/60 | 🟡 | pickup code | values |
 | Treasure cards | 1/3/5 cards | 1/3/5 supported; drops carry the count | 🟡 | `ShowSkillSlots(data)` | `showLevelUp(count)`; reroll still shared |
-| Chest reroll | 1,500×(n+1), max 3 | shared 500×n, max 5 | ❌ | `MAX_CHESTS_REROLLS` | `lu-reroll` |
+| Chest reroll | 1,500×(n+1), max 3 | chest 1,500×(n+1), max 3; level-up 500×n, max 5 | ✅ | `MAX_CHESTS_REROLLS` | `lu-reroll` + `G.luChest` |
 | Level-up reroll | 500×(n+1) max 5 | same | ✅ | price helper | `ui.js` |
 | Gift box | none | random reward | ➕ | — | gift branch |
 
@@ -266,3 +266,14 @@ they deal damage, but nothing ticks health back on a timer.
 | Pause → RELOAD switches back to the old flat 60%-faster reload | `settings.ringReload`, `ui.js` | browser toggle |
 
 All 12 test files pass; browser ran BUILD 31 with `frameErrors: 0`.
+
+## 18. Boss parity pass
+
+| Change | Where | Verified by |
+|---|---|---|
+| Boss zones seal visibly, clear every normal body on entry, and still clamp the hunter inside the rect | `Game.activateBossZone`, `bossZoneFence`, `ZH.clearNonBosses` | `boss.test.js`; browser |
+| Bosses carry one readable signature pattern: 12-way tower ring, soldier fan, 10-shot dragon stream, reptile/mutant/spider summons | `BOSS_TYPES.pattern`, `bossPattern` | `boss.test.js` |
+| Miniboss soldier and tower fire 8-way rings on their own clock | `ENEMY_TYPES.pattern` | `boss.test.js` |
+| Chests keep the original's 1,500 × (n+1) reroll sink and three-reroll cap, separate from level-up rerolls | `ui.js` `luChest` | browser: `REROLL · 1500` |
+
+All 13 test files pass; browser ran BUILD 32 with `frameErrors: 0`.

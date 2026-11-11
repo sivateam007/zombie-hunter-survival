@@ -123,6 +123,10 @@ supplies carried over, so a campaign is one continuous run rather than a trip ba
 zombies burst in from a full ring around the player, faster and tougher as the run goes on. Camping
 is not a strategy here.
 
+**Scripted boss fights** — a boss zone seals the street, clears the horde and clamps the hunter
+inside a visible fence. Each boss has a signature pattern: 12-way tower rings, soldier fans, a
+ten-shot dragon stream, or reptile, mutant and spider summons.
+
 **A board with a crowd on it** — sixty cat callsigns seed the leaderboard on both the Node server
 and the offline fallback, so a fresh install never opens onto a single line.
 

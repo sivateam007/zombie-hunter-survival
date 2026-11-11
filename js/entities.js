@@ -352,19 +352,28 @@
     miniboss_reptile: { name: 'MINIBOSS: REPTILE', hp: 3500, speed: 300, dmg: 30, range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'runner', miniboss: true },
     miniboss_toxic1:  { name: 'MINIBOSS: TOXIC',   hp: 3000, speed: 200, dmg: 30, range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'spitter', miniboss: true },
     miniboss_toxic2:  { name: 'MINIBOSS: TOXIC II', hp: 3500, speed: 250, dmg: 35, range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'spitter', miniboss: true },
-    miniboss_soldier: { name: 'MINIBOSS: SOLDIER', hp: 4500, speed: 100, dmg: 7,  range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'walker', miniboss: true, ranged: true, shotSpeed: 560 },
-    miniboss_tower:   { name: 'MINIBOSS: TOWER',   hp: 6000, speed: 0,   dmg: 5,  range: 125, cd: 0.45, scale: .9, coins: 10000, variant: 'brute', miniboss: true, static: true, ranged: true, shotSpeed: 520 }
+    miniboss_soldier: { name: 'MINIBOSS: SOLDIER', hp: 4500, speed: 100, dmg: 7,  range: 60, cd: 1.0, scale: .85, coins: 10000, variant: 'walker', miniboss: true, ranged: true, shotSpeed: 560,
+      pattern: { kind: 'ring', count: 8, cd: 2.4, range: 700, dmg: 6 } },
+    miniboss_tower:   { name: 'MINIBOSS: TOWER',   hp: 6000, speed: 0,   dmg: 5,  range: 125, cd: 0.45, scale: .9, coins: 10000, variant: 'brute', miniboss: true, static: true, ranged: true, shotSpeed: 520,
+      pattern: { kind: 'ring', count: 8, cd: 1.8, range: 900, dmg: 5 } }
   };
 
   /* ------------------------------- bosses ------------------------------- */
   var BOSS_TYPES = {
-    boss_soldier: { name: 'BOSS: SOLDIER', hp: 8000,  speed: 110, dmg: 18, range: 46, cd: 0.9, scale: 1.7, coins: 20000, variant: 'boss' },
-    boss_tower:   { name: 'BOSS: TOWER',   hp: 9000,  speed: 0,   dmg: 12, range: 150, cd: 0.8, scale: 1.7, coins: 20000, variant: 'warden', static: true, ranged: true, shotSpeed: 520 },
-    boss_dragon:  { name: 'BOSS: DRAGON',  hp: 12000, speed: 130, dmg: 24, range: 52, cd: 0.9, scale: 1.8, coins: 25000, variant: 'butcher' },
-    boss_reptile: { name: 'BOSS: REPTILE', hp: 10000, speed: 170, dmg: 22, range: 50, cd: 0.9, scale: 1.7, coins: 22000, variant: 'matron' },
-    boss_mutant:  { name: 'BOSS: MUTANT',  hp: 14000, speed: 100, dmg: 28, range: 54, cd: 0.9, scale: 1.9, coins: 28000, variant: 'butcher' },
-    boss_spider:  { name: 'BOSS: SPIDER',  hp: 11000, speed: 180, dmg: 26, range: 50, cd: 0.9, scale: 1.7, coins: 24000, variant: 'crawler' },
-    boss_fighter: { name: 'BOSS: FIGHTER', hp: 9000,  speed: 150, dmg: 20, range: 48, cd: 0.9, scale: 1.7, coins: 20000, variant: 'boss' }
+    boss_soldier: { name: 'BOSS: SOLDIER', hp: 8000,  speed: 110, dmg: 18, range: 46, cd: 0.9, scale: 1.7, coins: 20000, variant: 'boss',
+      pattern: { kind: 'fan', count: 5, spread: 0.32, cd: 1.8, range: 700, dmg: 9 } },
+    boss_tower:   { name: 'BOSS: TOWER',   hp: 9000,  speed: 0,   dmg: 12, range: 150, cd: 0.8, scale: 1.7, coins: 20000, variant: 'warden', static: true, ranged: true, shotSpeed: 520,
+      pattern: { kind: 'ring', count: 12, cd: 1.8, range: 900, dmg: 9 } },
+    boss_dragon:  { name: 'BOSS: DRAGON',  hp: 12000, speed: 130, dmg: 24, range: 52, cd: 0.9, scale: 1.8, coins: 25000, variant: 'butcher',
+      pattern: { kind: 'stream', count: 10, gap: 0.12, cd: 2.8, range: 800, dmg: 10 } },
+    boss_reptile: { name: 'BOSS: REPTILE', hp: 10000, speed: 170, dmg: 22, range: 50, cd: 0.9, scale: 1.7, coins: 22000, variant: 'matron',
+      pattern: { kind: 'summon', type: 'reptile', count: 3, cd: 4.5, range: 900 } },
+    boss_mutant:  { name: 'BOSS: MUTANT',  hp: 14000, speed: 100, dmg: 28, range: 54, cd: 0.9, scale: 1.9, coins: 28000, variant: 'butcher',
+      pattern: { kind: 'summon', type: 'slime2', count: 3, cd: 4.5, range: 900 } },
+    boss_spider:  { name: 'BOSS: SPIDER',  hp: 11000, speed: 180, dmg: 26, range: 50, cd: 0.9, scale: 1.7, coins: 24000, variant: 'crawler',
+      pattern: { kind: 'summon', type: 'spider1', count: 3, cd: 4.0, range: 900 } },
+    boss_fighter: { name: 'BOSS: FIGHTER', hp: 9000,  speed: 150, dmg: 20, range: 48, cd: 0.9, scale: 1.7, coins: 20000, variant: 'boss',
+      pattern: { kind: 'fan', count: 3, spread: 0.45, cd: 1.6, range: 700, dmg: 8 } }
   };
 
   ZH.ENEMY_TYPES = ENEMY_TYPES;
@@ -438,6 +447,8 @@
       shotSpeed: def.shotSpeed || 520,
       stationary: !!def.static,
       miniboss: !!def.miniboss,
+      pattern: def.pattern || null,
+      ringPhase: 0,
       seed: Math.random() * 100
     };
     if (def.miniboss) {
@@ -476,6 +487,8 @@
       shotSpeed: def.shotSpeed || 520,
       spreadShots: def.spreadShots || 3,
       stationary: !!def.static,
+      pattern: def.pattern || null,
+      ringPhase: 0,
       seed: Math.random() * 100
     };
   }
@@ -1353,6 +1366,57 @@
     }
   }
 
+  /* A scripted boss volley: rings, fans, a dragon's timed stream, or a summon.
+     These are the original's behaviour-list attacks reduced to one readable
+     pattern per boss, on a clock the player can learn and dodge. */
+  function bossPattern(world, z, pattern) {
+    var p = world.player;
+    var base = Math.atan2(p.y - z.y, p.x - z.x);
+    var dmg = pattern.dmg || Math.max(5, Math.round((z.dmg || 10) * 0.6));
+    var speed = pattern.speed || z.shotSpeed || 480;
+    var pushShot = function (ang) {
+      world.enemyBullets.push({
+        x: z.x, y: z.y,
+        vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
+        dmg: dmg, life: 2.6, r: 6, enemy: true, boss: true
+      });
+    };
+    if (pattern.kind === 'ring') {
+      var count = pattern.count || 8;
+      z.ringPhase = (z.ringPhase || 0) + 0.26;
+      for (var i = 0; i < count; i++) pushShot(z.ringPhase + (i * Math.PI * 2) / count);
+    } else if (pattern.kind === 'fan') {
+      var n = pattern.count || 3;
+      var spread = pattern.spread || 0.35;
+      for (var j = 0; j < n; j++) pushShot(base + (j - (n - 1) / 2) * spread);
+    } else if (pattern.kind === 'stream') {
+      z.stream = { left: pattern.count || 10, t: 0, gap: pattern.gap || 0.12, dmg: dmg, speed: speed };
+    } else if (pattern.kind === 'summon') {
+      var adds = pattern.count || 3;
+      var mult = (world.stage && world.stage.multiplier) || 1;
+      for (var k = 0; k < adds; k++) {
+        var ang = rand(0, TAU), rr = 150 + rand(0, 80);
+        var e = createEnemy(pattern.type, z.x + Math.cos(ang) * rr, z.y + Math.sin(ang) * rr,
+          mult, world.diff, world.waveCycle || 0);
+        if (e) { e.spawnT = 0.3; world.zombies.push(e); }
+      }
+      if (ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('SUMMON', 'Adds incoming');
+    }
+    if (ZH.Audio) ZH.Audio.play('spit');
+  }
+
+  /** the boss zone clears every normal body, exactly like the original */
+  ZH.clearNonBosses = function (list) {
+    var removed = 0;
+    if (!list) return 0;
+    for (var i = list.length - 1; i >= 0; i--) {
+      if (!list[i] || list[i].boss) continue;
+      list.splice(i, 1);
+      removed++;
+    }
+    return removed;
+  };
+
   function updateEnemies(list, dt, world) {
     var p = world.player;
     separateHorde(list);
@@ -1397,8 +1461,28 @@
         z.facing = dx >= 0 ? 1 : -1;
       }
 
+      /* the dragon's stream keeps firing between its pattern volleys */
+      if (z.stream) {
+        z.stream.t -= dt;
+        if (z.stream.t <= 0) {
+          var sa = Math.atan2(p.y - z.y, p.x - z.x) + rand(-0.05, 0.05);
+          world.enemyBullets.push({
+            x: z.x, y: z.y,
+            vx: Math.cos(sa) * z.stream.speed, vy: Math.sin(sa) * z.stream.speed,
+            dmg: z.stream.dmg, life: 2.4, r: 6, enemy: true, boss: true
+          });
+          z.stream.left--;
+          z.stream.t = z.stream.gap;
+          if (z.stream.left <= 0) z.stream = null;
+        }
+      }
       z.cdT -= dt;
-      if (z.cdT <= 0 && dist <= (z.range || 30) * 1.6) {
+      if (z.pattern) {
+        if (z.cdT <= 0 && dist <= (z.pattern.range || 800)) {
+          z.cdT = z.pattern.cd;
+          bossPattern(world, z, z.pattern);
+        }
+      } else if (z.cdT <= 0 && dist <= (z.range || 30) * 1.6) {
         z.cdT = z.cd;
         if (z.ranged) {
           enemyShoot(world, z, dist);
@@ -1652,7 +1736,7 @@
           // the original drops a treasure chest that opens 1/3/5 skill cards
           world.coins = (world.coins || 0) + 500;
           if (ZH.Missions) { ZH.Missions.update(7, 500); ZH.Missions.update(12, 1); }
-          if (world.ui && world.ui.showLevelUp) world.ui.showLevelUp(pk.value || 3);
+          if (world.ui && world.ui.showLevelUp) world.ui.showLevelUp(pk.value || 3, 'chest');
         } else if (pk.type === 'medikit') {
           var healed = Math.min(p.maxHp, p.hp + (pk.value || 50)) - p.hp;
           p.hp += healed;
@@ -1769,6 +1853,7 @@
 
   ZH.createSurvivor = createSurvivor;
   ZH.createEnemy = createEnemy;
+  ZH.createBoss = createBoss;
   ZH.createBoss = createBoss;
   ZH.updateSurvivor = updateSurvivor;
   ZH.updateEnemies = updateEnemies;

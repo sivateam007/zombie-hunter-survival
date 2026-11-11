@@ -438,9 +438,10 @@ window.ZH = window.ZH || {};
       return picked;
     },
 
-    showLevelUp: function (count) {
+    showLevelUp: function (count, source) {
       if (!G || !G.player) return;
       G.luCount = Math.max(1, Math.min(5, count || 3));
+      G.luChest = source === 'chest';
       var picked = UI.pickOffers(G.luCount);
       if (!picked || picked.length === 0) {
         // nothing left to offer — never trap the player in 'levelup'
@@ -597,16 +598,19 @@ window.ZH = window.ZH || {};
         });
       }
 
-      /* reroll the three offers, paid from run scrap (500 x n, max 5) */
+      /* level-up rerolls cost 500 x n (max 5); a chest keeps the original's
+         separate 1,500 x n sink and its three-reroll cap */
       var rerollBtn = panel.querySelector('#lu-reroll');
       if (rerollBtn) {
         if (!G.luReroll) G.luReroll = 0;
         var rerolls = G.luReroll;
-        if (rerolls >= 5) {
+        var maxRerolls = G.luChest ? 3 : 5;
+        var rerollBase = G.luChest ? 1500 : 500;
+        if (rerolls >= maxRerolls) {
           rerollBtn.disabled = true;
           rerollBtn.textContent = 'MAX REROLLS';
         } else {
-          var cost = 500 * (rerolls + 1);
+          var cost = rerollBase * (rerolls + 1);
           rerollBtn.textContent = 'REROLL · ' + cost;
           rerollBtn.addEventListener('click', function () {
             if ((G.coins || 0) < cost) {

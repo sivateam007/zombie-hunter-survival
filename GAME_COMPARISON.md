@@ -15,7 +15,7 @@ Legend: **✅ done**, **🟡 partial**, **❌ missing**.
 |---|---|---|---|
 | Genre | Arena survivor, move = aim, auto-fire | Same | ✅ |
 | Win condition | Survive **1,200,000 ms** (20 min) | Same 1,200 s | ✅ |
-| Victory delay | `DELAY_GAME_WON = 5,000 ms` hold | Results screen immediately | ❌ |
+| Victory delay | `DELAY_GAME_WON = 5,000 ms` hold | 5 s victory hold, then results | ✅ |
 | Difficulty | NORMAL / HARD (×2 HP+dmg, ×1.15 speed) / INSANE (×4, ×1.5) | Same three tiers | ✅ |
 | Continues | `2,500 × n`, max **2** | Same | ✅ |
 | Stage unlock | previous stage record ≥ 20 min | same record gate | ✅ |
@@ -77,13 +77,13 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 
 | Original behaviour | Ours | Status |
 |---|---|---|
-| Boss behaviour lists: chase / charge with 700 ms windup / roam / retreat / teleport / spawn adds | bosses walk at you | ❌ **largest gap** |
-| Timed boss patterns: 12-way rings, delayed second volleys, 10-shot streams @350 ms, egg mortars (radius 190), poison fans, grenades | one straight shot each | ❌ |
-| Boss-zone fence: 80 px grid rect, **1,000–3,072 px** (stage 7–8 largest), player collides, **all normal enemies killed at the boss**, player moved inside; stages 4–8 send **two bosses per zone** | timer freeze only; you can walk out | ❌ |
+| Boss behaviour lists: chase / charge with 700 ms windup / roam / retreat / teleport / spawn adds | one signature pattern per boss (ring, fan, stream or summon) | 🟡 scripted subset |
+| Timed boss patterns: 12-way rings, delayed second volleys, 10-shot streams @350 ms, egg mortars (radius 190), poison fans, grenades | 12-way tower rings, soldier fans, a 10-shot dragon stream and summons | ✅ |
+| Boss-zone fence: 80 px grid rect, **1,000–3,072 px** (stage 7–8 largest), player collides, **all normal enemies killed at the boss**, player moved inside; stages 4–8 send **two bosses per zone** | fence drawn, normal bodies cleared at spawn, player clamped, two-boss zones | ✅ |
 | Per-boss HP bars + boss music | single HUD bar, no music | 🟡 |
-| `deadshot` on death: acid pools (toxic1/2, slime1/2, miniboss toxins), manager's destroyable briefcase (10 dmg) | none | ❌ |
-| `deadspawn`: slime2 → 2× slime1, slug → 2× slime2 | none | ❌ |
-| Per-shot `angleInc` tables: assault1 3 staggered shots (2.5/2.8/3.1 s), assault2 ±20° fan, miniboss_soldier 8-way, miniboss_tower 8-way @450 ms | single spread value | 🟡 |
+| `deadshot` on death: acid pools (toxic1/2, slime1/2, miniboss toxins), manager's destroyable briefcase (10 dmg) | acid pools; no briefcase | 🟡 |
+| `deadspawn`: slime2 → 2× slime1, slug → 2× slime2 | both splits implemented | ✅ |
+| Per-shot `angleInc` tables: assault1 3 staggered shots (2.5/2.8/3.1 s), assault2 ±20° fan, miniboss_soldier 8-way, miniboss_tower 8-way @450 ms | assault bursts and both miniboss 8-way rings | ✅ |
 | Miniboss deaddrops (bomb / medkit / magnet / chest / 500–1500 coins) | ✅ per type | ✅ |
 | Collision `mass` 1/2/5 shoving the hunter | enemy separation only, no player shove | 🟡 |
 | Static turrets (tower1/2, miniboss_tower) | ✅ | ✅ |
@@ -96,9 +96,9 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 | Exp gems | ✅, magnet pulls **gems only** | ✅, magnet marks every drop | 🟡 |
 | Coins | 300 / 500 / 1,000 / 1,500 sprites | ✅ | ✅ |
 | Medikit | heals `firstaid` attribute | ✅ | ✅ |
-| Food | heals **100** flat | none | ❌ |
+| Food | heals **100** flat | food drop heals 100 | ✅ |
 | Bomb | `10 × attack` damage in a **900 px** radius + shake | kills all normal bodies, chips bosses 8 %, white flash | 🟡 different formula |
-| Treasure chest | opens **1, 3 or 5 cards** (`ShowSkillSlots(data)`), reroll `1,500 × (n+1)`, max 3 | always 3 cards, shared 5-reroll sink | ❌ |
+| Treasure chest | opens **1, 3 or 5 cards** (`ShowSkillSlots(data)`), reroll `1,500 × (n+1)`, max 3 | 1/3/5 cards; chest reroll 1,500 × (n+1), max 3 | ✅ |
 | Magnet / gift box | magnet yes, others no | magnet pickup + gift boxes every 30 kills; force field removed | ➖ |
 
 ## 7. Progression and meta
@@ -143,13 +143,10 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 
 ## 10. Ranked gaps
 
-1. **Scripted boss AI** — charge/teleport/spawn-adds behaviour lists and timed volleys.
-2. **Boss-zone geometry** — 80 px fence, kill-all-at-boss, player confined.
-3. **`deadshot` + `deadspawn`** — acid pools on six enemy types, the manager's briefcase, slime/slug corpse splits.
-4. **Chest card counts (1/3/5) and the 1,500-based chest reroll sink.**
-5. **Food pickup** and the real bomb formula (`10 × attack`, 900 px).
-6. **Magnet = gems only**, and **player shove from `mass` bodies**.
-7. **Three distinct music tracks** — we start one bed.
+1. **Full boss behaviour lists** — charge windups, teleport and the remaining 2–18 step sequences; the signature ring / fan / stream / summon patterns are in.
+2. **Manager briefcase and mass shove** — the destroyable 10-damage briefcase and body mass pushing the hunter.
+3. **Music and platform services** — three music beds, rewarded ads and suspended-run snapshots.
+4. **Magnet = gems only** — ours vacuums every drop by design.
 
 ## 11. Where we are ahead
 
