@@ -134,7 +134,7 @@ p { margin: 0; line-height: 1.5; }
   display: flex;
   align-items: flex-start;
   gap: 18px;
-  padding: 14px 18px;
+  padding: max(14px, env(safe-area-inset-top)) 18px 14px;
   background: linear-gradient(180deg, rgba(4, 7, 8, 0.82), rgba(4, 7, 8, 0));
 }
 .hud-block { display: flex; flex-direction: column; gap: 2px; }
@@ -179,7 +179,7 @@ p { margin: 0; line-height: 1.5; }
 .credit-mark {
   position: absolute;
   left: 18px;
-  top: 50px;
+  top: calc(50px + env(safe-area-inset-top));
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.28em;
@@ -211,7 +211,7 @@ p { margin: 0; line-height: 1.5; }
 /* boss health */
 .boss-bar {
   position: absolute;
-  top: 74px;
+  top: calc(74px + env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
   width: min(440px, 68vw);
@@ -240,7 +240,7 @@ p { margin: 0; line-height: 1.5; }
   align-items: flex-end;
   justify-content: space-between;
   gap: 18px;
-  padding: 16px 20px;
+  padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
   background: linear-gradient(0deg, rgba(4, 7, 8, 0.86), rgba(4, 7, 8, 0));
 }
 .vitals { width: min(320px, 34vw); display: flex; flex-direction: column; gap: 6px; }
@@ -268,7 +268,7 @@ p { margin: 0; line-height: 1.5; }
 /* short windows (laptops, embeds): keep the whole timeline inside the frame
    instead of letting the newest row fall below the fold */
 @media (max-height: 640px) {
-  .hud-bottom { padding: 8px 14px; }
+  .hud-bottom { padding: 8px 14px calc(8px + env(safe-area-inset-bottom)); }
   .vitals { gap: 4px; }
   .dash-row .bar { height: 4px; }
   .jet-num { font-size: 10px; min-width: 34px; }
@@ -305,7 +305,7 @@ p { margin: 0; line-height: 1.5; }
 .weapon-slots {
   position: absolute;
   left: 20px;
-  bottom: 96px;
+  bottom: calc(96px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -315,7 +315,7 @@ p { margin: 0; line-height: 1.5; }
 .hud-items {
   position: absolute;
   left: 20px;
-  bottom: 44px;
+  bottom: calc(44px + env(safe-area-inset-bottom));
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
@@ -368,7 +368,7 @@ p { margin: 0; line-height: 1.5; }
 .enemy-count {
   position: absolute;
   right: 20px;
-  bottom: 96px;
+  bottom: calc(96px + env(safe-area-inset-bottom));
   font-size: 12px;
   letter-spacing: 0.12em;
   color: var(--dim);
@@ -1082,7 +1082,7 @@ p { margin: 0; line-height: 1.5; }
 
 .toast {
   position: absolute;
-  bottom: 130px;
+  bottom: calc(130px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   padding: 8px 16px;
@@ -1108,8 +1108,8 @@ p { margin: 0; line-height: 1.5; }
    --------------------------------------------------------- */
 .joystick {
   position: absolute;
-  left: 20px;
-  bottom: 112px;
+  left: max(20px, env(safe-area-inset-left));
+  bottom: calc(112px + env(safe-area-inset-bottom));
   width: 132px;
   height: 132px;
   display: none;
@@ -1155,8 +1155,8 @@ body.in-game .joystick { display: block; }
 
 .mobile-controls {
   position: absolute;
-  right: 16px;
-  bottom: 112px;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: calc(112px + env(safe-area-inset-bottom));
   display: none;
   gap: 12px;
   z-index: 22;
@@ -1202,16 +1202,16 @@ body.in-game .mobile-controls { display: flex; }
 
 @media (max-width: 640px) {
   .hud-top { padding: 10px 12px; gap: 10px; }
-  .joystick { left: 12px; bottom: 96px; width: 116px; height: 116px; }
+  .joystick { left: 12px; bottom: calc(96px + env(safe-area-inset-bottom)); width: 116px; height: 116px; }
   .joy-knob { width: 50px; height: 50px; margin: -25px 0 0 -25px; }
-  .mobile-controls { right: 10px; bottom: 96px; gap: 9px; }
+  .mobile-controls { right: 10px; bottom: calc(96px + env(safe-area-inset-bottom)); gap: 9px; }
   .touch-btn { width: 68px; height: 68px; font-size: 11px; }
   .hud-title { font-size: 12px; }
   .hud-level .hud-kicker { display: none; }
   .hud-wave { padding: 2px 10px; }
   .hud-wave-num { font-size: 16px; }
   .hud-pill { padding: 4px 8px; font-size: 12px; }
-  .hud-bottom { padding: 10px 12px; align-items: flex-end; }
+  .hud-bottom { padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); align-items: flex-end; }
   .vitals { width: 46vw; }
   .weapon-card { min-width: 0; width: 46vw; padding: 6px 10px; }
   .weapon-name { font-size: 12px; }
@@ -1228,14 +1228,14 @@ body.in-game .mobile-controls { display: flex; }
   .screen { padding: 8px; overflow: auto; }
   .result-actions { flex-wrap: wrap; }
   .result-actions .btn { flex: 1 1 100%; }
-  .toast { bottom: 108px; font-size: 11px; }
+  .toast { bottom: calc(108px + env(safe-area-inset-bottom)); font-size: 11px; }
   .board-head, .board-row { grid-template-columns: 26px 1fr 52px 56px 64px; font-size: 12px; padding: 7px 6px; }
 }
 
 @media (max-height: 560px) and (orientation: landscape) {
-  .joystick { bottom: 74px; width: 104px; height: 104px; }
+  .joystick { bottom: calc(74px + env(safe-area-inset-bottom)); width: 104px; height: 104px; }
   .joy-knob { width: 46px; height: 46px; margin: -23px 0 0 -23px; }
-  .mobile-controls { bottom: 74px; }
+  .mobile-controls { bottom: calc(74px + env(safe-area-inset-bottom)); }
   .touch-btn { width: 62px; height: 62px; font-size: 10px; }
   .menu-layout { grid-template-columns: 1fr 0.7fr; padding: 16px 24px; }
   .logo { font-size: clamp(34px, 7vw, 64px); }
