@@ -10,6 +10,10 @@ assert.ok(T.boss_reptile.behaviour.some((s) => s.kind === 'charge'), 'reptile ch
 assert.ok(T.boss_mutant.behaviour.some((s) => s.kind === 'charge'), 'mutant charges');
 assert.ok(T.boss_mutant.behaviour.some((s) => s.kind === 'teleport'), 'mutant teleports');
 assert.ok(T.boss_spider.behaviour.some((s) => s.kind === 'mortar'), 'spider lobs egg mortars');
+assert.ok(T.boss_spider.behaviour.some((s) => s.kind === 'roam'), 'spider roams between attacks');
+assert.ok(T.boss_spider.behaviour.some((s) => s.acid), 'spider fires a poison fan that leaves acid');
+assert.ok(T.boss_soldier.behaviour.some((s) => s.volleys && s.volleys > 1), 'soldier fires a delayed second volley');
+assert.ok(T.boss_soldier.behaviour.some((s) => s.kind === 'roam'), 'soldier roams between attacks');
 assert.ok(T.boss_tower.behaviour.some((s) => s.kind === 'ring'), 'tower keeps its ring step');
 assert.ok(T.boss_tower.behaviour.some((s) => s.kind === 'fan'), 'tower cycles a fan follow-up');
 assert.ok(T.boss_dragon.behaviour.some((s) => s.kind === 'stream'), 'dragon keeps its stream step');

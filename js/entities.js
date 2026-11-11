@@ -367,10 +367,12 @@
     boss_soldier: { name: 'BOSS: SOLDIER', hp: 8000,  speed: 110, dmg: 18, range: 46, cd: 0.9, scale: 1.7, coins: 20000, variant: 'boss', mass: 5,
       pattern: { kind: 'fan', count: 5, spread: 0.32, cd: 1.8, range: 700, dmg: 9 },
       behaviour: [
-        { kind: 'fan', count: 5, spread: 0.32, duration: 1.8, range: 700, dmg: 9 },
-        { kind: 'fan', count: 5, spread: 0.32, duration: 1.8, range: 700, dmg: 9 },
-        { kind: 'mortar', count: 1, duration: 2.5, range: 900, dmg: 30, radius: 80, flight: 1.05 },
-        { kind: 'fan', count: 5, spread: 0.32, duration: 1.8, range: 700, dmg: 9 }
+        { kind: 'fan', count: 5, spread: 0.32, duration: 1.8, range: 700, dmg: 9, volleys: 2, volleyGap: 0.5 },
+        { kind: 'roam', duration: 1.0, speed: 0.2 },
+        { kind: 'fan', count: 5, spread: 0.32, duration: 1.8, range: 700, dmg: 9, volleys: 2, volleyGap: 0.5 },
+        { kind: 'mortar', count: 1, duration: 2.0, range: 900, dmg: 30, radius: 80, flight: 1.05 },
+        { kind: 'roam', duration: 1.0, speed: 0.2 },
+        { kind: 'fan', count: 5, spread: 0.32, duration: 1.8, range: 700, dmg: 9, volleys: 2, volleyGap: 0.5 }
       ] },
     boss_tower:   { name: 'BOSS: TOWER',   hp: 9000,  speed: 0,   dmg: 12, range: 150, cd: 0.8, scale: 1.7, coins: 20000, variant: 'warden', static: true, ranged: true, shotSpeed: 520, mass: 5,
       pattern: { kind: 'ring', count: 12, cd: 1.8, range: 900, dmg: 9 },
@@ -407,9 +409,11 @@
       pattern: { kind: 'summon', type: 'spider1', count: 3, cd: 4.0, range: 900 },
       behaviour: [
         { kind: 'mortar', count: 1, duration: 2.2, range: 900, dmg: 20, radius: 190, flight: 1.1 },
-        { kind: 'summon', type: 'spider1', count: 3, duration: 2.0, range: 900 },
+        { kind: 'roam', duration: 1.0, speed: 0.2 },
         { kind: 'mortar', count: 1, duration: 2.2, range: 900, dmg: 20, radius: 190, flight: 1.1 },
-        { kind: 'fan', count: 3, spread: 0.65, duration: 1.7, range: 800, dmg: 9 }
+        { kind: 'summon', type: 'spider1', count: 3, duration: 2.0, range: 900 },
+        { kind: 'roam', duration: 1.0, speed: 0.2 },
+        { kind: 'mortar', count: 3, spread: 0.4, duration: 2.0, range: 800, dmg: 0, radius: 80, flight: 0.9, acid: true }
       ] },
     boss_fighter: { name: 'BOSS: FIGHTER', hp: 9000,  speed: 150, dmg: 20, range: 48, cd: 0.9, scale: 1.7, coins: 20000, variant: 'boss', mass: 5,
       pattern: { kind: 'fan', count: 3, spread: 0.45, cd: 1.6, range: 700, dmg: 8 },
@@ -1450,6 +1454,14 @@
       var n = pattern.count || 3;
       var spread = pattern.spread || 0.35;
       for (var j = 0; j < n; j++) pushShot(base + (j - (n - 1) / 2) * spread);
+      var volleys = pattern.volleys || 1;
+      var gap = pattern.volleyGap || 0.5;
+      if (volleys > 1) {
+        z.fanQueue = z.fanQueue || [];
+        for (var v = 1; v < volleys; v++) {
+          z.fanQueue.push({ t: v * gap, n: n, spread: spread, dmg: dmg, speed: speed });
+        }
+      }
     } else if (pattern.kind === 'stream') {
       z.stream = { left: pattern.count || 10, t: 0, gap: pattern.gap || 0.12, dmg: dmg, speed: speed };
     } else if (pattern.kind === 'summon') {
@@ -1548,7 +1560,8 @@
         tx: p.x + rand(-spread, spread), ty: p.y + rand(-spread, spread),
         t: 0, flight: step.flight || 1.1,
         radius: step.radius || 140, dmg: step.dmg || 24,
-        arc: step.arc || 120
+        arc: step.arc || 120,
+        acid: !!step.acid
       });
     }
     if (ZH.Audio) ZH.Audio.play('spit');
@@ -1563,7 +1576,14 @@
       m.t += dt;
       if (m.t < m.flight) continue;
       /* it lands on the marked spot, then bursts */
-      if (p && !p.dead && Math.hypot(p.x - m.tx, p.y - m.ty) <= m.radius + p.r) {
+      if (m.acid) {
+        /* poison fragment: no direct damage, leaves an acid pool */
+        world.hazards = world.hazards || [];
+        if (world.hazards.length < 40) {
+          world.hazards.push({ x: m.tx, y: m.ty, r: m.radius || 80,
+            dmg: 10, life: 1.2, tick: 0 });
+        }
+      } else if (p && !p.dead && Math.hypot(p.x - m.tx, p.y - m.ty) <= m.radius + p.r) {
         hurtHunter(world, m.dmg, 7);
       }
       world.mortarBooms = (world.mortarBooms || 0) + 1;
@@ -1585,6 +1605,24 @@
         });
       }
       list.splice(i, 1);
+    }
+  }
+
+  /* ---- acid hazards tick: lingering pools and poison fragments ---- */
+  function updateHazards(world, dt) {
+    var list = world.hazards;
+    if (!list || !list.length) return;
+    var p = world.player;
+    for (var i = list.length - 1; i >= 0; i--) {
+      var h = list[i];
+      h.life -= dt;
+      if (h.life <= 0) { list.splice(i, 1); continue; }
+      h.tick = (h.tick || 0) - dt;
+      if (h.tick > 0) continue;
+      h.tick = 0.5;
+      if (p && !p.dead && Math.hypot(p.x - h.x, p.y - h.y) <= (h.r || 40) + (p.r || 12)) {
+        hurtHunter(world, h.dmg || 5, 0);
+      }
     }
   }
 
@@ -1621,7 +1659,13 @@
   function startBossStep(world, z, step) {
     var p = world.player;
     if (!step || !p) return;
-    if (step.kind === 'charge') {
+    z.moveMode = null;
+    if (step.kind === 'roam' || step.kind === 'retreat') {
+      z.moveMode = step.kind;
+      z.roamAngle = rand(0, TAU);
+      z.roamT = 0;
+      z.act = null;
+    } else if (step.kind === 'charge') {
       z.act = {
         kind: 'charge', phase: 'windup', t: 0,
         windup: step.windup || 0.7, dash: step.dash || 0.5,
@@ -1634,6 +1678,7 @@
     } else if (step.kind === 'mortar') {
       z.act = null;
       spawnMortar(world, z, step);
+      if (step.acid) { /* acid mortars already flagged on the step */ }
     } else if (step.kind === 'ring' || step.kind === 'fan' ||
                step.kind === 'stream' || step.kind === 'summon') {
       z.act = null;
@@ -1701,18 +1746,52 @@
     }
     z.stepT += dt;
     if (z.stream) tickBossStream(world, z, dt);
+    if (z.fanQueue && z.fanQueue.length) {
+      for (var fq = z.fanQueue.length - 1; fq >= 0; fq--) {
+        z.fanQueue[fq].t -= dt;
+        if (z.fanQueue[fq].t > 0) continue;
+        var q = z.fanQueue.splice(fq, 1)[0];
+        var qbase = Math.atan2(world.player.y - z.y, world.player.x - z.x);
+        var qspeed = q.speed || z.shotSpeed || 480;
+        for (var qi = 0; qi < q.n; qi++) {
+          var qang = qbase + (qi - (q.n - 1) / 2) * q.spread;
+          world.enemyBullets.push({
+            x: z.x, y: z.y,
+            vx: Math.cos(qang) * qspeed, vy: Math.sin(qang) * qspeed,
+            dmg: q.dmg, life: 2.6, r: 6, enemy: true, boss: true
+          });
+        }
+        if (ZH.Audio) ZH.Audio.play('spit');
+      }
+    }
     if (z.act) updateBossAct(world, z, dt);
 
     var busy = z.act &&
       ((z.act.kind === 'charge' && z.act.phase !== 'recover') || z.act.kind === 'teleport');
     if (!busy && !z.stationary) {
-      var dx = p.x - z.x, dy = p.y - z.y;
-      var d = Math.hypot(dx, dy) || 1;
-      if (d > (z.range || 50) * 0.9) {
-        z.x += (dx / d) * z.speed * dt;
-        z.y += (dy / d) * z.speed * dt;
+      if (z.moveMode === 'roam') {
+        z.roamT = (z.roamT || 0) + dt;
+        if (z.roamT > 0.9) { z.roamAngle = rand(0, TAU); z.roamT = 0; }
+        var ra = z.roamAngle || 0;
+        var rspd = (z.speed || 100) * (typeof step.speed === 'number' ? step.speed : 0.5);
+        z.x += Math.cos(ra) * rspd * dt;
+        z.y += Math.sin(ra) * rspd * dt;
+        z.facing = Math.cos(ra) >= 0 ? 1 : -1;
+      } else if (z.moveMode === 'retreat') {
+        var rdx = z.x - p.x, rdy = z.y - p.y;
+        var rd = Math.hypot(rdx, rdy) || 1;
+        z.x += (rdx / rd) * z.speed * dt;
+        z.y += (rdy / rd) * z.speed * dt;
+        z.facing = rdx >= 0 ? 1 : -1;
+      } else {
+        var dx = p.x - z.x, dy = p.y - z.y;
+        var d = Math.hypot(dx, dy) || 1;
+        if (d > (z.range || 50) * 0.9) {
+          z.x += (dx / d) * z.speed * dt;
+          z.y += (dy / d) * z.speed * dt;
+        }
+        z.facing = dx >= 0 ? 1 : -1;
       }
-      z.facing = dx >= 0 ? 1 : -1;
     }
 
     if (z.stepT >= (step.duration || 1.5)) {
@@ -1720,6 +1799,8 @@
       z.stepT = 0;
       z.stepStarted = false;
       z.act = null;
+      z.fanQueue = null;
+      z.moveMode = null;
     }
     clampInZone(world, z);
   }
@@ -2217,6 +2298,7 @@
   ZH.updateProjectiles = updateProjectiles;
   ZH.updatePickups = updatePickups;
   ZH.updateMortars = updateMortars;
+  ZH.updateHazards = updateHazards;
   ZH.updateBriefcases = updateBriefcases;
   ZH.spawnMortar = spawnMortar;
   ZH.fireWeapon = fireWeapon;

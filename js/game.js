@@ -1205,6 +1205,7 @@ window.ZH = window.ZH || {};
     if (ZH.updateProjectiles) ZH.updateProjectiles(this.bullets, dt, this);
     if (ZH.updateProjectiles) ZH.updateProjectiles(this.enemyBullets, dt, this);
     if (ZH.updateMortars) ZH.updateMortars(this, dt);
+    if (ZH.updateHazards) ZH.updateHazards(this, dt);
     if (ZH.updateBriefcases) ZH.updateBriefcases(this, dt);
     if (ZH.updatePickups) ZH.updatePickups(this.pickups, dt, this);
     /* survivor power runtime: regeneration and burn ticks */
@@ -1443,6 +1444,18 @@ window.ZH = window.ZH || {};
       this.arena.draw(ctx, vx0, vy0, vx1, vy1);
     }
     this.drawTraffic(ctx);
+
+    // acid hazards
+    if (this.hazards) for (var hz = 0; hz < this.hazards.length; hz++) {
+      var h = this.hazards[hz];
+      ctx.save();
+      ctx.globalAlpha = Math.min(0.5, (h.life || 1) * 0.35);
+      ctx.fillStyle = 'rgba(120,220,80,0.35)';
+      ctx.beginPath();
+      ctx.arc(h.x, h.y, h.r || 40, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
 
     // decals
     for (var d = 0; d < this.decals.length; d++) {

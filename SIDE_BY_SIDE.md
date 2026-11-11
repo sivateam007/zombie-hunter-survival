@@ -161,8 +161,8 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 
 | # | Missing system | Check 1 | Check 2 |
 |---|---|---|---|
-| 1 | Full 2–18-step fidelity | original step chains include roam and retreat segments | our lists cycle chase / charge / teleport / attacks; no roam/retreat or delayed second volley |
-| 2 | Spider poison-fan fragments | poison fan leaves a 10-dmg acid fragment | our spider cycles mortar / summon / fan without fragments |
+| 1 | Full 2–18-step fidelity | original step chains include roam and retreat segments | roam and retreat movement steps now run; soldier fires a delayed second volley; spider's poison fan leaves a 10-dmg acid fragment. Remaining: full per-boss step counts and exact timings |
+| 2 | Spider poison-fan fragments | poison fan leaves a 10-dmg acid fragment | implemented as acid mortars that spawn 10-dmg acid pools (✅) |
 | 3 | Per-boss HP bars | one bar per boss in the original | one shared HUD boss bar |
 | 4 | Music beds | menu / run / boss tracks | no boss or menu bed wired |
 | 5 | Rewarded ads and suspended runs | platform ad and snapshot services | not implemented |
@@ -286,4 +286,15 @@ All 13 test files pass; browser ran BUILD 32 with `frameErrors: 0`.
 
 Browser ran BUILD 33 with `frameErrors: 0`; the forced zone showed a telegraphed charge, a teleport, a landing mortar, a destroyed briefcase and a mass shove, with the tower's 12-way ring still intact.
 
-**Still honestly missing:** full 2–18-step sequence fidelity (roam/retreat, delayed second volleys, poison-fan fragments), per-boss HP bars and boss/menu music, rewarded ads and suspended-run snapshots, and the gems-only magnet.
+**Still honestly missing:** exact per-boss step counts and timings, per-boss HP bars and boss/menu music, rewarded ads and suspended-run snapshots, and the gems-only magnet.
+
+## 20. Boss roam, delayed volleys and poison fragments
+
+| Change | Where | Verified by |
+|---|---|---|
+| Bosses run `roam` and `retreat` movement steps: roam wanders on a slowly rotating heading, retreat backs away from the hunter | `updateBossBehaviour`, `startBossStep` (`moveMode`) | probe: roam moved the boss; `boss.test.js` asserts the kinds exist |
+| Soldier fires a delayed second volley 0.5 s after the first, five rounds each | `bossPattern` fan `volleys`/`volleyGap`, `fanQueue` tick | probe: 5 → 10 rounds over 0.67 s |
+| Spider's poison fan is three acid mortars that land and leave 10-dmg acid pools instead of hitting directly | `spawnMortar` `acid` flag, `updateMortars` | probe: 3 mortars, 3 booms, 3 hazards; `boss.test.js` asserts an acid step |
+| Acid hazards now tick damage over time and render on the street | `updateHazards`, `game.js` | source reviewed |
+
+All 13 test files pass; cache-busting bumped to BUILD 35, entities v41, game v46.
