@@ -196,11 +196,7 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Chests can open 1/3/5 cards; drops carry the count | `ui.js` `showLevelUp(count)`, `pickOffers(count)` | source reviewed; treasure passes `pk.value` |
 | Cache-busting versions bumped | `index.html` entities 29 · game 36 · ui 20 · BUILD 23 | file inspected |
 
-**Still open after later passes:** full step-sequence fidelity (roam/retreat,
-delayed volleys, poison fragments), per-boss HP bars, the music beds, rewarded
-ads and suspended runs, and the gems-only magnet. The boss step interpreter,
-arena fence, manager briefcase, heavy-body shove and chest-specific reroll sink
-are now implemented; see §18–§19.
+**Still open after later passes:** rewarded ads (blocked on an ad-SDK choice). Full step-sequence fidelity (roam/retreat, delayed volleys, poison fragments), per-boss HP bars, the music beds, suspended runs and the gems-only magnet are now implemented; see §18–§20.
 
 ## 14. Implemented in this pass — contracts and the coffer
 
@@ -286,7 +282,7 @@ All 13 test files pass; browser ran BUILD 32 with `frameErrors: 0`.
 
 Browser ran BUILD 33 with `frameErrors: 0`; the forced zone showed a telegraphed charge, a teleport, a landing mortar, a destroyed briefcase and a mass shove, with the tower's 12-way ring still intact.
 
-**Still honestly missing:** exact per-boss step counts and timings, menu music bed (only run + boss beds exist), rewarded ads and suspended-run snapshots, and the gems-only magnet.
+**Still honestly missing:** rewarded ads (blocked on an ad-SDK choice; placeholder `ZH.Ads` no-ops). Per-boss step counts/timings, the menu music bed, suspended-run snapshots and the gems-only magnet are all implemented.
 
 ## 20. Boss roam, delayed volleys and poison fragments
 

@@ -19,7 +19,7 @@ Legend: **✅ done**, **🟡 partial**, **❌ missing**.
 | Difficulty | NORMAL / HARD (×2 HP+dmg, ×1.15 speed) / INSANE (×4, ×1.5) | Same three tiers | ✅ |
 | Continues | `2,500 × n`, max **2** | Same | ✅ |
 | Stage unlock | previous stage record ≥ 20 min | same record gate | ✅ |
-| Music | 3 beds (`music_menu`, `music_ingame`, `music_boss`) | SFX only | ❌ |
+| Music | 3 beds (`music_menu`, `music_ingame`, `music_boss`) | 3 beds (menu/run/boss) + SFX | ✅ |
 
 ## 2. Controls
 
@@ -137,7 +137,7 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 | Hit feedback | flash + blood sprites | flash, knockback, damage numbers, sparks, decals | ✅ ours richer |
 | Blast feedback | explosion animation | additive light + shockwave ring | ✅ |
 | Damage screen | red flash | edge pulse + low-HP pulse + bomb whiteout | ✅ |
-| Audio | 38 sounds incl. 3 music tracks | per-weapon/event SFX | 🟡 no music |
+| Audio | 38 sounds incl. 3 music tracks | per-weapon/event SFX + 3 music beds | ✅ |
 
 ---
 
