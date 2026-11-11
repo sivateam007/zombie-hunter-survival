@@ -85,7 +85,7 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Corpse split | slime2→2 slime1, slug→2 slime2 | implemented on death | ✅ | `deadspawn` | 2 children, 0.25 s spawn delay |
 | Manager briefcase | destroyable 10-dmg projectile | rotating 20 hp briefcase drops on death, is shot down by bullets, hits for 10 | ✅ | `deadshot{frame:shot_briefcase}` | `ZH.updateBriefcases`, bullet collision |
 | Mass shove | mass 1/2/5 pushes hunter | reptiles 1, bats/toxics 2, minibosses/bosses 5 push the hunter; fence-clamped | ✅ | `mass` values | `shoveHunter` |
-| Miniboss HP | 2500–6000 | 3000–6000 (toxics inflated) | 🟡 | table | `ENEMY_TYPES` |
+| Miniboss HP | 2500–6000 | 2500–6000 (toxics corrected) | ✅ | table | `ENEMY_TYPES` |
 | Miniboss drops | tower→1500 coin, toxic2→500 coin, spider→3-card chest | tower→1500, toxic2→500, spider→3-card chest | ✅ | `deaddrop` | `DROP_DATA` map |
 | Static turrets | yes | yes | ✅ | `static:!0` | table |
 
