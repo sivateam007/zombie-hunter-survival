@@ -2213,7 +2213,10 @@
           if (ZH.Missions) { ZH.Missions.update(7, 500); ZH.Missions.update(12, 1); }
           if (world.ui && world.ui.showLevelUp) world.ui.showLevelUp(pk.value || 3, 'chest');
         } else if (pk.type === 'medikit') {
-          var healed = Math.min(p.maxHp, p.hp + (pk.value || 50)) - p.hp;
+          /* the original medikit heals the FIRSTAID attribute, not a fixed
+             amount — a higher firstaid skill means a bigger medkit heal */
+          var healAmt = (p && p.firstaid) ? p.firstaid : (pk.value || 50);
+          var healed = Math.min(p.maxHp, p.hp + healAmt) - p.hp;
           p.hp += healed;
           /* 11 = HEAL_X_PTS: only the HP that actually fit counts */
           if (ZH.Missions && healed > 0) ZH.Missions.update(11, healed);
