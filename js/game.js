@@ -602,6 +602,7 @@ window.ZH = window.ZH || {};
     this.bossZoneFence = this.bossZoneRect;
     ZH.Anim.banner('ARENA SEALED', 'BOSS APPROACHING');
     if (ZH.Anim && ZH.Anim.flash) ZH.Anim.flash('214,42,32', { peak: 1, duration: 620 });
+    if (ZH.Audio && ZH.Audio.startBossMusic) ZH.Audio.startBossMusic();
     var bosses = wave.bosses || [];
     for (var i = 0; i < bosses.length; i++) {
       var pos = this.findSpawnPoint(800);
@@ -1253,6 +1254,7 @@ window.ZH = window.ZH || {};
         this.bossZoneT = 0;
         this.bossZoneRect = null;
         this.bossZoneFence = null;
+        if (ZH.Audio && ZH.Audio.startMusic) ZH.Audio.startMusic();
         if (this.ui && ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('ZONE CLEAR', 'The horde resumes');
       }
     }
@@ -1350,11 +1352,15 @@ window.ZH = window.ZH || {};
     var ring = p.reloadRing && p.reloadRing.active ? p.reloadRing : null;
     var relTotal = ring ? ring.time : (w.reload || 1.5);
     var relLeft = ring ? Math.max(0, ring.time - ring.elapsed) : (live.reloading || 0);
-    // find the active boss for the boss bar
-    var boss = null;
+    // find the active bosses for the boss bars (one per boss in the zone)
+    var bosses = [];
     for (var i = 0; i < this.zombies.length; i++) {
-      if (this.zombies[i].boss && !this.zombies[i].dead) { boss = this.zombies[i]; break; }
+      if (this.zombies[i].boss && !this.zombies[i].dead) {
+        bosses.push({ name: (this.zombies[i].name || this.zombies[i].type || 'BOSS'),
+          hp: this.zombies[i].hp, max: this.zombies[i].maxHp });
+      }
     }
+    var boss = bosses.length ? bosses[0] : null;
     this.ui.updateHud({
       hp: Math.max(0, p.hp), maxHp: p.maxHp,
       dashCd: p.dashCd || 0, dashMax: p.dashMax || 2.2,
@@ -1373,7 +1379,8 @@ window.ZH = window.ZH || {};
       levelName: this.stage ? this.stage.name : '',
       supplies: p.supplies || {},
       siege: Math.min(1, (this.stillT || 0) / ((ZH.SIEGE.grace || 0.8) + 2.0)),
-      boss: boss ? { name: (boss.name || boss.type || 'BOSS'), hp: boss.hp, max: boss.maxHp } : null
+      boss: boss ? { name: (boss.name || boss.type || 'BOSS'), hp: boss.hp, max: boss.maxHp } : null,
+      bosses: bosses.length ? bosses : null
     });
   };
 

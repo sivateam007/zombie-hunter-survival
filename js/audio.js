@@ -14,7 +14,17 @@ window.ZH = window.ZH || {};
   var noiseBuf = null;
   var muted = false;
   var started = false;
+  var musicMode = null;
   var musicNodes = [];
+
+  function stopMusic() {
+    for (var i = 0; i < musicNodes.length; i++) {
+      try { musicNodes[i].stop(); } catch (e) { /* already stopped */ }
+    }
+    musicNodes = [];
+    started = false;
+    musicMode = null;
+  }
 
   function ensure() {
     if (ctx) return ctx;
@@ -136,28 +146,51 @@ window.ZH = window.ZH || {};
     if (fn) { try { fn(); } catch (e) { /* audio is never fatal */ } }
   }
 
-  function startMusic() {
+  function buildMusic(mode) {
     var c = ensure();
-    if (!c || started) return;
+    if (!c) return;
+    if (started && musicMode === mode) return;
+    if (started) stopMusic();
     started = true;
+    musicMode = mode || 'run';
     var t = c.currentTime;
-    /* low drone */
-    var o1 = c.createOscillator(); o1.type = 'sine'; o1.frequency.value = 55;
-    var o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.value = 82.5;
-    var g = c.createGain(); g.gain.value = 0.16;
-    o1.connect(g); o2.connect(g); g.connect(musicBus);
-    o1.start(t); o2.start(t);
-    /* slow tremolo */
-    var lfo = c.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.11;
-    var lg = c.createGain(); lg.gain.value = 0.06;
-    lfo.connect(lg); lg.connect(g.gain); lfo.start(t);
-    /* wind bed */
-    var src = c.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
-    var bq = c.createBiquadFilter(); bq.type = 'lowpass'; bq.frequency.value = 520; bq.Q.value = 0.6;
-    var wg = c.createGain(); wg.gain.value = 0.1;
-    src.connect(bq); bq.connect(wg); wg.connect(musicBus); src.start(t);
-    musicNodes = [o1, o2, lfo, src];
+    if (musicMode === 'boss') {
+      /* heavier, faster bed for boss zones */
+      var b1 = c.createOscillator(); b1.type = 'sawtooth'; b1.frequency.value = 41;
+      var b2 = c.createOscillator(); b2.type = 'square'; b2.frequency.value = 62;
+      var bg = c.createGain(); bg.gain.value = 0.12;
+      b1.connect(bg); b2.connect(bg); bg.connect(musicBus);
+      b1.start(t); b2.start(t);
+      var blfo = c.createOscillator(); blfo.type = 'sine'; blfo.frequency.value = 0.35;
+      var blg = c.createGain(); blg.gain.value = 0.08;
+      blfo.connect(blg); blg.connect(bg.gain); blfo.start(t);
+      var bsrc = c.createBufferSource(); bsrc.buffer = noiseBuf; bsrc.loop = true;
+      var bbq = c.createBiquadFilter(); bbq.type = 'lowpass'; bbq.frequency.value = 320; bbq.Q.value = 1.2;
+      var bwg = c.createGain(); bwg.gain.value = 0.16;
+      bsrc.connect(bbq); bbq.connect(bwg); bwg.connect(musicBus); bsrc.start(t);
+      musicNodes = [b1, b2, blfo, bsrc];
+    } else {
+      /* low drone */
+      var o1 = c.createOscillator(); o1.type = 'sine'; o1.frequency.value = 55;
+      var o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.value = 82.5;
+      var g = c.createGain(); g.gain.value = 0.16;
+      o1.connect(g); o2.connect(g); g.connect(musicBus);
+      o1.start(t); o2.start(t);
+      /* slow tremolo */
+      var lfo = c.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.11;
+      var lg = c.createGain(); lg.gain.value = 0.06;
+      lfo.connect(lg); lg.connect(g.gain); lfo.start(t);
+      /* wind bed */
+      var src = c.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
+      var bq = c.createBiquadFilter(); bq.type = 'lowpass'; bq.frequency.value = 520; bq.Q.value = 0.6;
+      var wg = c.createGain(); wg.gain.value = 0.1;
+      src.connect(bq); bq.connect(wg); wg.connect(musicBus); src.start(t);
+      musicNodes = [o1, o2, lfo, src];
+    }
   }
+
+  function startMusic() { buildMusic('run'); }
+  function startBossMusic() { buildMusic('boss'); }
 
   function setMuted(v) {
     muted = !!v;
@@ -176,6 +209,8 @@ window.ZH = window.ZH || {};
   ZH.Audio = {
     play: play,
     startMusic: startMusic,
+    startBossMusic: startBossMusic,
+    stopMusic: stopMusic,
     setMuted: setMuted,
     setVolume: setVolume,
     unlock: unlock,

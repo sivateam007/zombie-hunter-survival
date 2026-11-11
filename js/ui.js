@@ -61,8 +61,6 @@ window.ZH = window.ZH || {};
         mode: $('hud-mode'),
         level: $('hud-level'),
         bossBar: $('boss-bar'),
-        bossFill: $('boss-fill'),
-        bossName: $('boss-name'),
         slots: $('weapon-slots'),
         items: $('hud-items'),
         banner: $('banner'),
@@ -1173,13 +1171,32 @@ window.ZH = window.ZH || {};
           }
         }
       }
-      if (d.boss) {
+      var bosses = (d.bosses && d.bosses.length) ? d.bosses :
+        (d.boss ? [d.boss] : []);
+      if (bosses.length) {
         e.bossBar.classList.add('is-active');
-        e.bossName.textContent = d.boss.name;
-        e.bossFill.style.width = (d.boss.hp / d.boss.max * 100).toFixed(1) + '%';
+        var entries = e.bossBar.querySelectorAll('.boss-entry');
+        if (entries.length !== bosses.length) {
+          e.bossBar.innerHTML = '';
+          for (var bi = 0; bi < bosses.length; bi++) {
+            var div = document.createElement('div');
+            div.className = 'boss-entry';
+            div.innerHTML = '<span class="boss-name"></span><div class="bar"><i class="boss-fill"></i></div>';
+            e.bossBar.appendChild(div);
+          }
+          entries = e.bossBar.querySelectorAll('.boss-entry');
+        }
+        for (var bj = 0; bj < bosses.length; bj++) {
+          var bb = bosses[bj];
+          var entry = entries[bj];
+          entry.querySelector('.boss-name').textContent = bb.name;
+          entry.querySelector('.boss-fill').style.width =
+            (Math.max(0, bb.hp) / bb.max * 100).toFixed(1) + '%';
+        }
         last.boss = true;
       } else if (last.boss) {
         e.bossBar.classList.remove('is-active');
+        e.bossBar.innerHTML = '';
         last.boss = false;
       }
     },

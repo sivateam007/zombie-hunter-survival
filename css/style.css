@@ -212,7 +212,8 @@ p { margin: 0; line-height: 1.5; }
   text-align: center;
 }
 .boss-bar.is-active { display: block; }
-.boss-bar > span {
+.boss-bar .boss-entry { margin-bottom: 6px; }
+.boss-bar .boss-name {
   display: block;
   font-size: 12px;
   letter-spacing: 0.22em;
