@@ -18,7 +18,7 @@
 <meta name="twitter:description" content="Survive 25 districts of zombie cats — unlock 35 survivors with special powers, upgrade your loadout, and clear every stage.">
 <meta name="twitter:image" content="og-image.jpg">
 <link rel="icon" href="favicon.ico" type="image/x-icon">
-<link rel="stylesheet" href="css/style.css?v=17">
+<link rel="stylesheet" href="css/style.css?v=18">
 </head>
 <body>
 <div id="app">
@@ -29,25 +29,6 @@
   <!-- ------------------------------- HUD ------------------------------- -->
   <div id="hud" class="hud" aria-hidden="true">
     <div class="hud-top">
-      <div class="hud-block hud-level">
-        <span class="hud-kicker" id="hud-mode">CAMPAIGN</span>
-        <span class="hud-title" id="hud-level">ASHFALL STREETS</span>
-      </div>
-      <div class="hud-wave">
-        <span class="hud-kicker">WAVE</span>
-        <span class="hud-wave-num" id="hud-wave">1</span>
-        <span class="hud-wave-max" id="hud-wave-max">/20</span>
-      </div>
-      <div class="hud-block hud-right">
-        <div class="hud-pill"><span class="pip coin"></span><span id="hud-coins">0</span></div>
-        <div class="hud-pill"><span class="pip score"></span><span id="hud-score">0</span></div>
-        <button id="btn-pause" class="icon-btn" aria-label="Pause">II</button>
-      </div>
-    </div>
-
-    <div id="boss-bar" class="boss-bar"></div>
-
-    <div class="hud-bottom">
       <div class="vitals">
         <div class="vitals-row">
           <span class="hud-kicker">VITALS</span>
@@ -69,7 +50,25 @@
           <span class="siege-num" id="siege-text">CLEAR</span>
         </div>
       </div>
+      <div class="hud-block hud-level">
+        <span class="hud-kicker" id="hud-mode">CAMPAIGN</span>
+        <span class="hud-title" id="hud-level">ASHFALL STREETS</span>
+      </div>
+      <div class="hud-wave">
+        <span class="hud-kicker">WAVE</span>
+        <span class="hud-wave-num" id="hud-wave">1</span>
+        <span class="hud-wave-max" id="hud-wave-max">/20</span>
+      </div>
+      <div class="hud-block hud-right">
+        <div class="hud-pill"><span class="pip coin"></span><span id="hud-coins">0</span></div>
+        <div class="hud-pill"><span class="pip score"></span><span id="hud-score">0</span></div>
+        <button id="btn-pause" class="icon-btn" aria-label="Pause">II</button>
+      </div>
+    </div>
 
+    <div id="boss-bar" class="boss-bar"></div>
+
+    <div class="hud-bottom">
       <div class="weapon-card">
         <div class="weapon-info">
           <span class="hud-kicker" id="hud-weapon-type">SIDEARM</span>
@@ -85,7 +84,7 @@
     <div id="weapon-slots" class="weapon-slots"></div>
     <div id="hud-items" class="hud-items"></div>
     <div class="enemy-count"><span class="pip hostile"></span><span id="hud-left">0</span> LEFT</div>
-    <div class="credit-mark">DEVELOPED BY <b>SIVA</b><span class="build"> · BUILD 56</span></div>
+    <div class="credit-mark">DEVELOPED BY <b>SIVA</b><span class="build"> · BUILD 57</span></div>
   </div>
 
   <!-- --------------------------- touch controls --------------------------- -->
