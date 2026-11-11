@@ -55,6 +55,7 @@ window.ZH = window.ZH || {};
         coins: $('hud-coins'),
         score: $('hud-score'),
         wave: $('hud-wave'),
+        waveMax: $('hud-wave-max'),
         left: $('hud-left'),
         mode: $('hud-mode'),
         level: $('hud-level'),
@@ -290,11 +291,11 @@ window.ZH = window.ZH || {};
           ' · ' + chapter.name;
       $('brief-text').textContent = mode === 'endless'
         ? 'The waves never stop. Survive as long as you can.'
-        : 'Survive ' + Math.round((ZH.TIME_LEVEL_COMPLETED || 1200) / 60) +
-          ' minutes. The horde runs on the original wave schedule and the boss zone freezes the clock.';
+        : (ZH.WAVES_PER_STAGE || 20) + ' waves of ' + (ZH.WAVE_SECONDS || 60) +
+          ' seconds. Survive wave 20 and the next stage deploys with your run carried over; boss zones freeze the clock.';
       $('brief-objective').textContent = mode === 'endless'
         ? 'Survive as long as you can.'
-        : 'Survive ' + Math.round((ZH.TIME_LEVEL_COMPLETED || 1200) / 60) + ' minutes and clear every boss zone.';
+        : 'Clear all ' + (ZH.WAVES_PER_STAGE || 20) + ' waves. The next stage deploys automatically.';
       var roster = ZH.stageRoster ? ZH.stageRoster(level) : [];
       $('brief-horde').textContent = mode === 'endless' ? 'Everything, eventually'
         : (roster.map(function (k) { return ZH.enemyName ? ZH.enemyName(k) : k; }).join(', ') || 'Zombies');
@@ -781,7 +782,7 @@ window.ZH = window.ZH || {};
         }).join('') : '<div class="board-empty">No survivors logged yet. Be the first.</div>';
         if (note) {
           note.textContent = res.offline
-            ? 'Offline — showing your local record. Start the Node server to sync the global board.'
+            ? 'Offline — showing the practice board and your local record. Start the Node server to sync the global board.'
             : 'Live from the survivor log · ' + rows.length + ' entries';
         }
       });
@@ -1110,10 +1111,12 @@ window.ZH = window.ZH || {};
         e.score.textContent = d.score.toLocaleString();
         last.score = d.score;
       }
-      if (last.wave !== d.wave || last.left !== d.left) {
+      if (last.wave !== d.wave || last.left !== d.left || last.waveMax !== d.waveMax) {
         e.wave.textContent = d.wave;
+        if (e.waveMax) e.waveMax.textContent = d.waveMax ? '/' + d.waveMax : '';
         e.left.textContent = d.left;
         last.wave = d.wave;
+        last.waveMax = d.waveMax;
         last.left = d.left;
       }
       if (last.mode !== d.mode) {

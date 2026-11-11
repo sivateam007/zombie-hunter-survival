@@ -108,6 +108,16 @@ as a whole-second countdown with a draining timeline and the same ring around th
 **Endless Night** — an endless escalating wave curve where every fifth wave is a boss. Your best
 wave is submitted to the server leaderboard.
 
+**Twenty-wave stages** — every stage is 20 waves of 60 seconds, the authored 20-minute survival
+window. Clear wave 20 and the next stage deploys automatically with your level, XP, weapons and
+supplies carried over, so a campaign is one continuous run rather than a trip back to the menu.
+
+**Idle siege** — standing still for more than a moment draws extra zombies from close range on a
+cadence that tightens as the run goes on. Camping is a tactic, not a free pass.
+
+**A board with a crowd on it** — sixty cat callsigns seed the leaderboard on both the Node server
+and the offline fallback, so a fresh install never opens onto a single line.
+
 **Readability and feel** — bullet tracers, muzzle bloom, blood decals that stay on the ground,
 rolling dash ghosts, hit markers, camera lead toward the aim, screen shake that can be turned off,
 low-health vignette, warning rings before a boss ability, floating damage/scrap text and a
@@ -130,6 +140,7 @@ js/ui.js              screens, shop, briefing, results, leaderboard, HUD
 js/anim.js            anime.js motion helper
 js/audio.js           synthesised WebAudio SFX and the ambient bed
 js/storage.js         localStorage save, unlocks, upgrades, records
+js/roster.js          cat callsigns shared by the offline board and the server seed
 js/net.js             leaderboard client with an offline fallback
 js/main.js            bootstrap
 server/index.js       static file server + leaderboard API (no dependencies)
@@ -161,7 +172,8 @@ Crawlers add a ground-hugging rotation, spitters get a glowing acid gut, bosses 
 * `POST /api/score` — `{ name, mode, wave, kills, score }`
 
 Rows are validated, clamped, deduped per callsign (best run wins), capped per mode and written
-atomically to `data/leaderboard.json`. Static serving denies `server/`, `data/`, `test/` and any
+atomically to `data/leaderboard.json`. On startup the server seeds the sixty cat callsigns from
+`js/roster.js` (idempotent, best run kept); `SEED_BOARD=off` disables it for isolated testing. Static serving denies `server/`, `data/`, `test/` and any
 dotfile, blocks path traversal, and revalidates code on every load so a deploy can never serve a
 stale build. If the API is unreachable the client falls back to your local record.
 

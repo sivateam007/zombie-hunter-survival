@@ -28,7 +28,11 @@ async function waitForHealth(timeoutMs) {
 async function run() {
   const child = spawn(process.execPath, [path.join(ROOT, 'server', 'index.js')], {
     cwd: ROOT,
-    env: Object.assign({}, process.env, { PORT: String(PORT), DATA_FILE: dataFile, HOST: '127.0.0.1' }),
+    env: Object.assign({}, process.env, {
+      PORT: String(PORT), DATA_FILE: dataFile, HOST: '127.0.0.1',
+      /* this file checks real submissions in isolation, not the practice board */
+      SEED_BOARD: 'off'
+    }),
     stdio: ['ignore', 'pipe', 'pipe']
   });
   let stderr = '';

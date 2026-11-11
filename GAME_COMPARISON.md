@@ -108,7 +108,7 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 | XP curve | `floor(1000 × 1.25^(level−1))`; gains `3 × floor(v + v·exp% + v·learning%)` | Same formula | ✅ |
 | Level-up | pauses scene, 3 cards, reroll `500 × (n+1)`, max 5 | Same, max 5 | ✅ |
 | Meta skills | POWER/HEALTH/ARMOR/AID/FORTUNE/LEARNING, max 30, price ladder to 435,000 | Same six, same curve | ✅ |
-| Stages | **8**, waves 33/35/36/43/43/53/66/61, 2 boss zones each, ladder ends at 630 s, run to 1,200 s | 20 stages, mirrored ladders for 1–7 plus a 30-wave stage 8 and endless | ✅ ours extends |
+| Stages | **8**, waves 33/35/36/43/43/53/66/61, 2 boss zones each, ladder ends at 630 s, run to 1,200 s | 20 stages, mirrored ladders for 1–7 plus a 30-wave stage 8 and endless; each stage is 20 × 60 s waves and clears into the next automatically | ✅ ours extends |
 | Missions | **15 entries** (13 tracked types incl. daily login/ad-watch/kills/bosses/survive/spend/earn/exp/damage/heal/crates, plus the 4- and 10-mission chains), 3 active per cycle with ×2/×4 reward tiers | 6 slots on the same table, ×2/×4 tiers, 24 h refresh, chains | ✅ |
 | Idle coffer | 25 coins / 15 min, cap 168 h = 16,800; a fresh save starts at **+158 h** | same curve; +158 h start is worth 1,000 coins | ✅ |
 | Characters | one hunter | 35 rigged survivors with powers | ✅ ours adds |
@@ -124,6 +124,9 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 | Pre-boss warning | 3 s `INCOMING_BOSS` / `INCOMING_MINIBOSS` banner | ✅ 3 s WARNING + red flash + audio | ✅ |
 | Boss escort | all non-boss waves frozen while bosses live | escort grows 2 → 10 | 🟡 ours adds enemies |
 | Treasure | box every **15 s** at the screen edge | same | ✅ |
+| Stage progression | one stage per run, back to the menu | clear wave 20, next stage auto-deploys with the run carried over | ✅ ours adds |
+| Idle pressure | none | standing still arms an escalating close-range siege | ✅ ours adds |
+| Board population | platform score service | 60 seeded cat callsigns + real submissions | ✅ ours adds |
 
 ## 9. Presentation
 
@@ -145,8 +148,7 @@ Ours: the same 28-type roster; **7 bosses** with 8,000–14,000 HP, including
 4. **Chest card counts (1/3/5) and the 1,500-based chest reroll sink.**
 5. **Food pickup** and the real bomb formula (`10 × attack`, 900 px).
 6. **Magnet = gems only**, and **player shove from `mass` bodies**.
-7. **5 s victory beat** and a **music bed**.
-8. **Missions (13 types) + 168 h coffer.**
+7. **Three distinct music tracks** — we start one bed.
 
 ## 11. Where we are ahead
 

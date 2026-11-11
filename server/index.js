@@ -8,6 +8,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { createLedger } = require('./ledger');
+const roster = require('../js/roster');
 
 const ROOT = path.resolve(__dirname, '..');
 const PORT = Number(process.env.PORT) || 8080;
@@ -15,6 +16,16 @@ const HOST = process.env.HOST || '0.0.0.0';
 const DATA_FILE = process.env.DATA_FILE || path.join(ROOT, 'data', 'leaderboard.json');
 
 const ledger = createLedger(DATA_FILE);
+
+/* A board with one row reads as a dead game: seed the cat callsigns once.
+   SEED_BOARD=off keeps the ranking tests deterministic. */
+if (process.env.SEED_BOARD !== 'off') {
+  let seeded = 0;
+  ['endless', 'campaign'].forEach((mode) => {
+    seeded += ledger.seed(roster.ghosts(mode));
+  });
+  if (seeded) console.log(`Practice board: ${seeded} callsigns seeded`);
+}
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',

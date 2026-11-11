@@ -8,6 +8,7 @@ const FILES = [
   'aim.test.js',
   'sim.test.js',
   'density.test.js',
+  'waves.test.js',
   'jetpack.test.js',
   'shield.test.js',
   'storage.test.js',

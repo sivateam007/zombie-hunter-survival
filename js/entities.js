@@ -217,6 +217,50 @@
     return copy(ramp[ramp.length - 1]);
   };
 
+  /* ------------------- waves, stages and the idle siege -------------------
+     A stage is 20 waves of 60 seconds — exactly the authored
+     TIME_LEVEL_COMPLETED window — so "survive wave 20" and "survive 20
+     minutes" are the same moment. The HUD counts 1..20 instead of running
+     past the stage length, and the next stage deploys automatically. */
+  ZH.WAVE_SECONDS = 60;
+  ZH.WAVES_PER_STAGE = 20;
+
+  ZH.waveNumber = function (elapsed, endless) {
+    var n = Math.floor(Math.max(0, elapsed || 0) / ZH.WAVE_SECONDS) + 1;
+    if (endless) return n;
+    return Math.max(1, Math.min(ZH.WAVES_PER_STAGE, n));
+  };
+
+  /* Standing still is a choice with a price: the street notices. Once the
+     hunter has held position for `grace` seconds the siege feeds extra bodies
+     from close range on a cadence that tightens with the run clock, up to a
+     bounded overspill above the normal field cap. */
+  ZH.SIEGE = {
+    grace: 1.5,
+    extraCap: 12,
+    cadence: [
+      { at: 0,    s: 1.7 },
+      { at: 300,  s: 1.25 },
+      { at: 600,  s: 1.0 },
+      { at: 900,  s: 0.8 },
+      { at: 1200, s: 0.65 }
+    ]
+  };
+
+  ZH.siegeCadence = function (seconds) {
+    var c = (ZH.SIEGE && ZH.SIEGE.cadence) || [];
+    var t = Math.max(0, isFinite(seconds) ? seconds : 0);
+    if (!c.length) return 1.5;
+    if (t <= c[0].at) return c[0].s;
+    for (var i = 1; i < c.length; i++) {
+      var a = c[i - 1], b = c[i];
+      if (t > b.at) continue;
+      var k = (t - a.at) / Math.max(1, b.at - a.at);
+      return a.s + (b.s - a.s) * k;
+    }
+    return c[c.length - 1].s;
+  };
+
   /** advance the protection clock by dt (kept separate so it is testable) */
   ZH.tickShield = function (p, dt) {
     if (!p) return 0;

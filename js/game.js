@@ -80,9 +80,10 @@ window.ZH = window.ZH || {};
     return ZH.DIFFICULTIES[0];
   };
 
-  Game.startStage = function (stageId, primaryWeapon) {
+  Game.startStage = function (stageId, primaryWeapon, mode) {
     var stage = ZH.STAGES[stageId] || ZH.STAGES[0];
     if (!stage) return;
+    this.mode = mode || 'campaign';
     /* roll the daily contracts / coffer before the run starts */
     if (ZH.Missions) ZH.Missions.ensure();
     this.stageId = stageId || 0;
@@ -150,6 +151,14 @@ window.ZH = window.ZH || {};
     this.continueCount = 0;
     this.continueOffers = 0;
     this.expToNext = 1000;
+    this.victoryT = 0;
+    /* idle-siege + wave tracker state is per stage */
+    this.stillT = 0;
+    this.siegeT = 0;
+    this.siegeWarned = false;
+    this._lastPX = null;
+    this._lastPY = null;
+    this.waveShown = 1;
     if (window.ZH && ZH.Anim) ZH.Anim.banner(stage.name,
       (this.player.power ? this.player.power.name : 'SURVIVE 20 MINUTES'));
     this.lastTs = performance.now();
@@ -315,17 +324,17 @@ window.ZH = window.ZH || {};
   };
 
   Game.startEndless = function () {
-    // Start endless mode - use stage 0 or create endless
-    Game.startStage(0);
+    /* stage 0's streets, but no stage clock: endless never auto-advances */
+    Game.startStage(0, null, 'endless');
     Game.elapsed = 0;
     Game.coins = 0; Game.score = 0; Game.exp = 0;
   };
 
   Game.retry = function () {
     if (this.stageId !== undefined) {
-      this.startStage(this.stageId);
+      this.startStage(this.stageId, null, this.mode || 'campaign');
     } else {
-      this.startStage(0);
+      this.startStage(0, null, this.mode || 'campaign');
     }
   };
 
@@ -337,7 +346,7 @@ window.ZH = window.ZH || {};
 
   Game.nextLevel = function () {
     if (this.stageId < (ZH.STAGES ? ZH.STAGES.length - 1 : 0)) {
-      this.startStage(this.stageId + 1);
+      this.startStage(this.stageId + 1, null, this.mode || 'campaign');
     } else {
       this.quit();
     }
@@ -367,6 +376,37 @@ window.ZH = window.ZH || {};
     interval: { LOW: 1.1, MID: 0.65, HI: 0.32 },
     nearCap: 22,
     hardCap: 70
+  };
+
+  /* ------------------------------ idle siege ------------------------------
+     A hunter who plants their feet gets surrounded: extra bodies arrive from
+     close range on the ZH.siegeCadence clock, above the normal field cap but
+     bounded by SIEGE.extraCap so a still player is pressured, not erased. */
+  Game.updateSiege = function (dt) {
+    var p = this.player;
+    if (!p || p.dead || this.bossZoneActive) { this.stillT = 0; this.siegeT = 0; return; }
+    var lx = this._lastPX == null ? p.x : this._lastPX;
+    var ly = this._lastPY == null ? p.y : this._lastPY;
+    this._lastPX = p.x;
+    this._lastPY = p.y;
+    var moved = Math.hypot(p.x - lx, p.y - ly);
+    var standing = moved < 0.9 && !(p.dashT > 0) && !p.jetActive;
+    this.stillT = standing ? (this.stillT || 0) + dt : 0;
+    if (this.stillT < (ZH.SIEGE.grace || 1.5)) { this.siegeT = 0; return; }
+    if (!this.siegeWarned) {
+      this.siegeWarned = true;
+      if (ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('THEY SMELL YOU', 'MOVE — THE HORDE IS CLOSING IN');
+    }
+    this.siegeT = (this.siegeT || 0) + dt;
+    if (this.siegeT < ZH.siegeCadence(this.elapsed)) return;
+    this.siegeT = 0;
+    var cap = (this.hordeHard || ZH.HORDE.hardCap) + (ZH.SIEGE.extraCap || 10);
+    if (this.zombies.length >= cap) return;
+    var types = ['zombieA', 'zombieB', 'zombieC', 'zombieD'];
+    var pos = this.findSpawnPoint(340);
+    var z = ZH.createEnemy(types[(Math.random() * types.length) | 0], pos.x, pos.y,
+      (this.stage && this.stage.multiplier) || 1, this.diff, this.waveCycle || 0);
+    if (z) this.zombies.push(z);
   };
 
   Game.updateWaves = function (dt) {
@@ -1024,6 +1064,21 @@ window.ZH = window.ZH || {};
     this.bombFlash = Math.max(0, (this.bombFlash || 0) - dt);
     /* a live boss zone freezes the level clock (original behaviour) */
     if (!this.bossZoneActive) this.elapsed += dt;
+    /* every fifth wave gets a banner, so progress is legible at a glance */
+    if (!this.bossZoneActive && ZH.waveNumber) {
+      var waveNow = ZH.waveNumber(this.elapsed, this.mode === 'endless');
+      if (waveNow !== this.waveShown) {
+        this.waveShown = waveNow;
+        if (waveNow % 5 === 0) {
+          if (ZH.Anim && ZH.Anim.banner) {
+            ZH.Anim.banner('WAVE ' + waveNow +
+              (this.mode === 'endless' ? '' : '/' + ZH.WAVES_PER_STAGE),
+              this.mode === 'endless' ? 'THE NIGHT DEEPENS' : 'KEEP MOVING');
+          }
+          if (ZH.Audio && ZH.Audio.play) ZH.Audio.play('waveStart');
+        }
+      }
+    }
 
     var p = this.player;
     this.pollGamepad();
@@ -1042,6 +1097,7 @@ window.ZH = window.ZH || {};
     }
 
     if (ZH.updateSurvivor) ZH.updateSurvivor(p, dt, this);
+    this.updateSiege(dt);
     if (ZH.updateEnemies) ZH.updateEnemies(this.zombies, dt, this);
     if (ZH.updateProjectiles) ZH.updateProjectiles(this.bullets, dt, this);
     if (ZH.updateProjectiles) ZH.updateProjectiles(this.enemyBullets, dt, this);
@@ -1195,7 +1251,8 @@ window.ZH = window.ZH || {};
       reloading: relLeft > 0,
       reloadFrac: relLeft > 0 ? Math.min(1, 1 - relLeft / relTotal) : 0,
       coins: this.coins, score: this.score,
-      wave: Math.floor(this.elapsed / 30) + 1,
+      wave: ZH.waveNumber ? ZH.waveNumber(this.elapsed, this.mode === 'endless') : 1,
+      waveMax: this.mode === 'endless' ? 0 : (ZH.WAVES_PER_STAGE || 20),
       left: this.zombies.length,
       mode: this.mode || 'campaign',
       levelName: this.stage ? this.stage.name : '',
@@ -2173,6 +2230,55 @@ window.ZH = window.ZH || {};
     if (ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('BACK ON YOUR FEET', 'One more chance');
   };
 
+  /* Campaign clears are one continuous run: level, weapons, supplies and the
+     current vitals move to the next district. The stage clock, collected
+     scrap and the per-stage kill count start over (scrap is banked once by
+     finishStage, and recordRun must not see the same kills twice). */
+  Game.captureRun = function () {
+    var p = this.player;
+    if (!p) return null;
+    var weapons = {};
+    var src = p.weapons || {};
+    for (var k in src) {
+      if (!Object.prototype.hasOwnProperty.call(src, k)) continue;
+      var w = src[k] || {};
+      weapons[k] = { mag: w.mag, reloading: w.reloading, level: w.level, evolved: w.evolved };
+    }
+    return {
+      level: p.level || 1,
+      exp: p.exp || 0,
+      hpFrac: p.maxHp ? Math.max(0.05, Math.min(1, p.hp / p.maxHp)) : 1,
+      weapons: weapons,
+      primaryWeapon: p.primaryWeapon || p.weapon,
+      supplies: JSON.parse(JSON.stringify(p.supplies || {}))
+    };
+  };
+
+  Game.restoreRun = function (run) {
+    if (!run) return;
+    var p = this.player;
+    if (!p) return;
+    p.level = Math.max(1, run.level || 1);
+    p.exp = Math.max(0, run.exp || 0);
+    if (run.supplies) p.supplies = run.supplies;
+    p.weapons = p.weapons || {};
+    if (run.weapons) {
+      for (var k in run.weapons) {
+        if (!Object.prototype.hasOwnProperty.call(run.weapons, k)) continue;
+        var saved = run.weapons[k] || {};
+        if (!p.weapons[k]) p.weapons[k] = {};
+        var w = p.weapons[k];
+        w.mag = saved.mag;
+        w.reloading = saved.reloading;
+        w.level = saved.level || 1;
+        w.evolved = saved.evolved;
+      }
+    }
+    if (run.primaryWeapon && p.weapons[run.primaryWeapon]) p.primaryWeapon = run.primaryWeapon;
+    this.recomputeAttribs();
+    p.hp = Math.max(1, Math.round(p.maxHp * run.hpFrac));
+  };
+
   Game.finishStage = function (win) {
     this.state = 'results';
     if (document.body) document.body.classList.remove('in-game');
@@ -2195,7 +2301,7 @@ window.ZH = window.ZH || {};
       stage: this.stage ? this.stage.name : 'Unknown',
       levelName: this.stage ? this.stage.name : 'Unknown',
       nextLevel: win && this.stageId < (ZH.STAGES ? ZH.STAGES.length - 1 : 0),
-      wave: Math.floor(this.elapsed / 30) + 1,
+      wave: ZH.waveNumber ? ZH.waveNumber(this.elapsed, this.mode === 'endless') : 1,
       time: this.elapsed,
       kills: p ? p.kills : 0,
       score: score,
@@ -2211,9 +2317,22 @@ window.ZH = window.ZH || {};
         time: this.elapsed,
         coins: 0,
         died: !win,
-        wave: Math.floor(this.elapsed / 30) + 1
+        wave: ZH.waveNumber ? ZH.waveNumber(this.elapsed, this.mode === 'endless') : 1
       });
       if (win) ZH.Save.clearLevel(this.stageId, 0);
+    }
+    /* Survive wave 20 and the next district deploys by itself; the campaign
+       is one continuous run rather than a trip back to the menu. */
+    var nextId = (this.stageId || 0) + 1;
+    var lastStage = !ZH.STAGES || nextId >= ZH.STAGES.length;
+    if (win && this.mode !== 'endless' && !lastStage) {
+      var carried = this.captureRun();
+      var nextName = (ZH.STAGES[nextId] && ZH.STAGES[nextId].name) || 'NEXT DISTRICT';
+      if (ZH.Anim && ZH.Anim.banner) ZH.Anim.banner('STAGE CLEAR', 'DEPLOYING TO ' + nextName);
+      this.startStage(nextId, null, 'campaign');
+      this.restoreRun(carried);
+      if (ZH.Anim && ZH.Anim.toast) ZH.Anim.toast('Next stage deployed · your run carried over', 'good');
+      return;
     }
     if (this.ui) this.ui.showResults(this.result);
   };

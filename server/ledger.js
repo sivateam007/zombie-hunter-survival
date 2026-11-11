@@ -83,6 +83,15 @@ function createLedger(filePath, options) {
     return rows.filter((r) => r.mode === m).sort(compare).slice(0, limit || 50);
   }
 
+  function trim() {
+    /* trim per mode, keeping the strongest */
+    MODES.forEach((m) => {
+      const inMode = rows.filter((r) => r.mode === m).sort(compare);
+      const keep = new Set(inMode.slice(0, cap).map((r) => r.name));
+      rows = rows.filter((r) => r.mode !== m || keep.has(r.name));
+    });
+  }
+
   function add(entry) {
     const row = normalise(entry);
     if (!row) return { ok: false, error: 'invalid' };
@@ -99,17 +108,29 @@ function createLedger(filePath, options) {
       rows.push(row);
     }
 
-    /* trim per mode, keeping the strongest */
-    MODES.forEach((m) => {
-      const inMode = rows.filter((r) => r.mode === m).sort(compare);
-      const keep = new Set(inMode.slice(0, cap).map((r) => r.name));
-      rows = rows.filter((r) => r.mode !== m || keep.has(r.name));
-    });
-
+    trim();
     persist();
     const board = list(row.mode, 50);
     const rank = board.findIndex((r) => r.name === row.name) + 1;
     return { ok: true, rank, rows: board };
+  }
+
+  /** Bulk-insert rows that are not on the board yet (the practice roster).
+      Idempotent: a restart, or a name already submitted by a player, keeps
+      the existing record and adds nothing. */
+  function seed(listToAdd) {
+    const incoming = (Array.isArray(listToAdd) ? listToAdd : []).map(normalise).filter(Boolean);
+    let added = 0;
+    incoming.forEach((row) => {
+      if (rows.some((r) => r.mode === row.mode && r.name === row.name)) return;
+      rows.push(row);
+      added++;
+    });
+    if (added) {
+      trim();
+      persist();
+    }
+    return added;
   }
 
   function size() {
@@ -117,7 +138,7 @@ function createLedger(filePath, options) {
   }
 
   load();
-  return { add, list, load, persist, size, normalise, cleanName };
+  return { add, list, load, persist, seed, size, normalise, cleanName };
 }
 
 module.exports = { createLedger, normalise, cleanName, compare, MODES };

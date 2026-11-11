@@ -145,7 +145,7 @@ Legend: ✅ parity · 🟡 partial/different · ❌ missing · ➕ ours only.
 | Rewarded ads | reroll/continue | none | ❌ | `REWARDED_ADS_ENABLED` | no ad code |
 | Suspended run | `SavedGame` snapshot | none | ❌ | save schema | no snapshot |
 | Store / characters | none | store, 35 survivors | ➕ | — | `storage.js`, `powers.js` |
-| Leaderboard | platform score | local ledger | ✅/➕ | `GameSnacks.score` | `ledger` test |
+| Leaderboard | platform score | local ledger + 60 cat callsigns seeded on both boards | ✅ | `GameSnacks.score` | `waves.test.js`, live board |
 
 ## 10. Audio and presentation
 
@@ -225,3 +225,19 @@ sink, rewarded ads and suspended runs, and the three distinct music beds
 **Reading correction:** the earlier note called the +158 h coffer "almost
 full". The actual formula (`672 − ceil(minutesLeft/15)`) means a fresh save
 holds **10 h of segments = 1,000 coins**, and fills over the next 158 h.
+
+## 15. Implemented in this pass — wave stages, idle siege, practice board
+
+| Change | Where | Verified by |
+|---|---|---|
+| A stage is **20 waves × 60 s** = the authored 1,200 s window, so wave 20 and the 20-minute clear are the same moment | `ZH.WAVE_SECONDS`, `ZH.WAVES_PER_STAGE`, `waveNumber` | `waves.test.js` asserts 20 × 60 = `TIME_LEVEL_COMPLETED` and the clamp |
+| HUD reads **WAVE n / 20**; endless keeps counting past the campaign length | `pushHud`, `updateHud`, `index.html` | browser: BUILD 25 shows `/20` |
+| Surviving wave 20 **deploys the next stage automatically**, carrying level, XP, weapons, supplies and vitals | `finishStage`, `captureRun`, `restoreRun` | browser: stage 1 → Stage 2 with SMG lvl 3 and power lvl 2 intact, WAVE 1/20, `frameErrors: 0` |
+| Standing still 1.5 s arms the **siege**: extra bodies from close range, 1.7 s → 0.65 s cadence, +12 over the field cap | `updateSiege`, `ZH.SIEGE` | `waves.test.js`; browser: 3 extra zombies in 7 s of standing |
+| Wave banner every fifth wave, siege warning, stage-clear banner, carried-run toast | `game.js`, `ui.js` | browser, live run |
+| **60 cat callsigns** seed both boards and the offline fallback; server seed is idempotent | `js/roster.js`, `server/index.js`, `ledger.seed`, `net.js` | `waves.test.js`; `/api/leaderboard` returns 50 ranked rows |
+
+**Why 60-second waves:** the stage's authored boss ladders run to 630 s and the
+20-minute clock is the existing win. Twenty 60-second waves fit that window
+exactly, so auto-advance triggers on wave 20 without skipping a single scripted
+boss zone. Shorter waves would have cut content off the end of every stage.

@@ -29,11 +29,28 @@ window.ZH = window.ZH || {};
     });
   }
 
-  function localBoard() {
+  /* The local board is the practice roster plus your own record, so a
+     flat-file host still shows a full board instead of a single line. */
+  function localRows(mode) {
     var s = ZH.Save.get();
-    return [
-      { name: s.name, mode: 'endless', wave: s.stats.bestEndless, kills: s.stats.endlessKills, local: true }
-    ];
+    var rows = (ZH.ROSTER && ZH.ROSTER.ghosts ? ZH.ROSTER.ghosts(mode) : []).slice();
+    var mine = mode === 'campaign'
+      ? { name: s.name, mode: 'campaign', wave: s.bestLevel || 0,
+          kills: s.stats.kills || 0,
+          score: (s.stats.kills || 0) * 10 + (s.bestLevel || 0) * 500, local: true }
+      : { name: s.name, mode: 'endless', wave: s.stats.bestEndless || 0,
+          kills: s.stats.endlessKills || 0,
+          score: (s.stats.endlessKills || 0) * 10 + (s.stats.bestEndless || 0) * 500, local: true };
+    rows.push(mine);
+    rows.sort(function (a, b) {
+      if (b.wave !== a.wave) return b.wave - a.wave;
+      if (b.score !== a.score) return b.score - a.score;
+      return (b.kills || 0) - (a.kills || 0);
+    });
+    var board = rows.slice(0, 50);
+    /* a new hunter (wave 0) is legitimately last; keep that row visible */
+    if (board.indexOf(mine) === -1) board[board.length - 1] = mine;
+    return board;
   }
 
   function leaderboard(mode) {
@@ -42,7 +59,7 @@ window.ZH = window.ZH || {};
         return { rows: data.rows || [], offline: false };
       })
       .catch(function () {
-        return { rows: localBoard(), offline: true };
+        return { rows: localRows(mode), offline: true };
       });
   }
 
