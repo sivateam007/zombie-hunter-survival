@@ -55,6 +55,11 @@ body { user-select: none; }
 
 body.touch #game { cursor: default; }
 
+.about-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.about-og { width: 100%; max-width: 480px; height: auto; border: 1px solid var(--line); border-radius: 6px; }
+.about-text p { margin: 8px 0; line-height: 1.5; }
+.about-credit { color: #ffb347; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 800; }
+
 /* GameSnacks portrait target: 790x1300. On narrow portrait viewports the
    playfield is letterboxed to that aspect ratio instead of stretching. */
 @media (orientation: portrait) and (max-width: 900px) {
@@ -577,9 +582,9 @@ p { margin: 0; line-height: 1.5; }
 .menu-row .btn { flex: 1; }
 .menu-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
   gap: 10px;
-  max-width: 460px;
+  max-width: 640px;
 }
 .stat {
   display: flex;
@@ -589,7 +594,7 @@ p { margin: 0; line-height: 1.5; }
   background: rgba(255, 255, 255, 0.03);
   border-left: 2px solid rgba(255, 179, 71, 0.5);
 }
-.stat span { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .stat small { font-size: 9px; letter-spacing: 0.14em; color: var(--dim); }
 .menu-right {
   position: relative;

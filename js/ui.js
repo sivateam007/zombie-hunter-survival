@@ -1404,6 +1404,7 @@ window.ZH = window.ZH || {};
       on('btn-achievements', 'click', function () { ZH.Audio.play('click'); self.showAchievements(); });
       on('btn-board', 'click', function () { ZH.Audio.play('click'); self.showLeaderboard('endless'); });
       on('btn-help', 'click', function () { ZH.Audio.play('click'); self.showHelp(); });
+      on('btn-about', 'click', function () { ZH.Audio.play('click'); self.showOnly('screen-about'); });
       on('btn-mute', 'click', function () { self.toggleMute(); });
       on('redeem-btn', 'click', function () { self.redeemCode(); });
       on('daily-reward', 'click', function () { self.claimDaily(); });

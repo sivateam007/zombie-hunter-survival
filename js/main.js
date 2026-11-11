@@ -49,7 +49,7 @@
     /* a small console signature for the deployed build */
     if (window.console) {
       console.log('%cMEOW ZOMBIE HUNTER', 'color:#ffb347;font-weight:bold;letter-spacing:2px');
-      console.log('Campaign: ' + (ZH.STAGES ? ZH.STAGES.length : 0) + ' stages · ' + ZH.WEAPON_ORDER.length + ' weapons · anime.js motion');
+      console.log('Campaign: ' + (ZH.STAGES ? ZH.STAGES.length : 0) + ' stages · ' + ZH.WEAPON_ORDER.length + ' weapons');
       console.log('%cDeveloped by SIVA', 'color:#9be15d;font-weight:bold;letter-spacing:1px');
       console.log('Build 11 · 16 stages, 19 city districts, life discharge, running cars, keyboard/gamepad controls');
     }

@@ -85,7 +85,7 @@
     <div id="weapon-slots" class="weapon-slots"></div>
     <div id="hud-items" class="hud-items"></div>
     <div class="enemy-count"><span class="pip hostile"></span><span id="hud-left">0</span> LEFT</div>
-    <div class="credit-mark">DEVELOPED BY <b>SIVA</b><span class="build"> · BUILD 49</span></div>
+    <div class="credit-mark">DEVELOPED BY <b>SIVA</b><span class="build"> · BUILD 50</span></div>
   </div>
 
   <!-- --------------------------- touch controls --------------------------- -->
@@ -124,6 +124,7 @@
             <button class="btn ghost" id="btn-achievements">ACHIEVEMENTS</button>
             <button class="btn ghost" id="btn-board">LEADERBOARD</button>
             <button class="btn ghost" id="btn-help">HOW TO PLAY</button>
+            <button class="btn ghost" id="btn-about">ABOUT</button>
           </div>
         </div>
         <div class="menu-stats" data-anim>
@@ -146,7 +147,7 @@
     </div>
     <div class="menu-foot">
       <span class="credit">Developed by <b>SIVA</b></span>
-      <span class="credit-sub">Original procedural art · built with anime.js</span>
+      <span class="credit-sub">Original procedural art</span>
       <button class="linkish" id="btn-mute">SOUND: ON</button>
     </div>
   </section>
@@ -371,9 +372,25 @@
     </div>
   </section>
 
+  <section id="screen-about" class="screen panel-screen">
+    <div class="panel">
+      <header class="panel-head">
+        <div><span class="kicker">ABOUT</span><h2>MEOW ZOMBIE HUNTER</h2></div>
+        <button class="btn small ghost" data-back="menu">BACK</button>
+      </header>
+      <div class="about-grid">
+        <img src="og-image.jpg" alt="Meow Zombie Hunter" class="about-og" loading="lazy">
+        <div class="about-text">
+          <p>A cat-eared top-down survival shooter. Twenty missions of twenty minutes each, endless night, and a lot of things that used to be people.</p>
+          <p>Original procedural art and code. No sprite sheets, no licensed assets.</p>
+          <p class="about-credit"><b>Developed by SIVA</b></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
 </div>
 
-<script src="js/vendor/anime.min.js?v=1"></script>
 <script src="js/rig.js?v=13"></script>
 <script src="js/arena.js?v=13"></script>
 <script src="js/weapons.js?v=7"></script>
@@ -388,7 +405,7 @@
 <script src="js/net.js?v=2"></script>
 <script src="js/game.js?v=51"></script>
 <script src="js/game-patch.js?v=2"></script>
-<script src="js/ui.js?v=34"></script>
+<script src="js/ui.js?v=35"></script>
 <script src="js/main.js?v=10"></script>
 </body>
 </html>
