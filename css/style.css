@@ -1250,7 +1250,11 @@ body.touch.in-game .enemy-count { display: none; }
   .result-actions { flex-wrap: wrap; }
   .result-actions .btn { flex: 1 1 100%; }
   .toast { bottom: calc(240px + env(safe-area-inset-bottom)); font-size: 11px; }
-  .board-head, .board-row { grid-template-columns: 26px 1fr 52px 56px 64px; font-size: 12px; padding: 7px 6px; }
+  .panel-head { flex-wrap: wrap; gap: 8px; }
+  .head-right { flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+  .head-right .btn { font-size: 10px; padding: 6px 8px; }
+  .board-head, .board-row { grid-template-columns: 22px 1fr 44px 48px 56px; gap: 4px; font-size: 12px; padding: 6px 4px; }
+  .board-head > *, .board-row > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 
 @media (max-height: 560px) and (orientation: landscape) {
