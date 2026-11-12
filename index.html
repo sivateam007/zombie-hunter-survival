@@ -18,7 +18,7 @@
 <meta name="twitter:description" content="Survive 25 districts of zombie cats — unlock 35 survivors with special powers, upgrade your loadout, and clear every stage.">
 <meta name="twitter:image" content="og-image.jpg">
 <link rel="icon" href="favicon.ico" type="image/x-icon">
-<link rel="stylesheet" href="css/style.css?v=26">
+<link rel="stylesheet" href="css/style.css?v=29">
 </head>
 <body>
 <div id="app">
@@ -84,7 +84,7 @@
     <div id="weapon-slots" class="weapon-slots"></div>
     <div id="hud-items" class="hud-items"></div>
     <div class="enemy-count"><span class="pip hostile"></span><span id="hud-left">0</span> LEFT</div>
-    <div class="credit-mark">DEVELOPED BY <b>SIVA</b><span class="build"> · BUILD 65</span></div>
+    <div class="credit-mark">DEVELOPED BY <b>SIVA</b><span class="build"> · BUILD 68</span></div>
   </div>
 
   <!-- --------------------------- touch controls --------------------------- -->
@@ -123,17 +123,12 @@
             <button class="btn ghost" id="btn-board">LEADERBOARD</button>
             <button class="btn ghost" id="btn-help">HOW TO PLAY</button>
           </div>
-          <div class="menu-row">
-            <button class="btn ghost" id="btn-achievements">ACHIEVEMENTS</button>
-            <button class="btn ghost" id="btn-about">ABOUT</button>
-          </div>
         </div>
         <div class="menu-stats" data-anim>
           <div class="stat"><span id="menu-coins">0</span><small>SCRAP</small></div>
           <div class="stat"><span id="menu-best">1</span><small>BEST MISSION</small></div>
           <div class="stat"><span id="menu-kills">0</span><small>KILLS</small></div>
           <div class="stat"><span id="menu-endless">0</span><small>BEST WAVE</small></div>
-          <div class="stat"><span id="menu-achievements">0/10</span><small>ACHIEVEMENTS</small></div>
         </div>
       </div>
       <div class="menu-right">
@@ -149,6 +144,8 @@
     <div class="menu-foot">
       <span class="credit">Developed by <b>SIVA</b></span>
       <span class="credit-sub">Original procedural art</span>
+      <button class="linkish" id="btn-achievements">ACHIEVEMENTS <span id="menu-achievements">0/10</span></button>
+      <button class="linkish" id="btn-about">ABOUT</button>
       <button class="linkish" id="btn-mute">SOUND: ON</button>
     </div>
   </section>

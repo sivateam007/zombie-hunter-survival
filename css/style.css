@@ -681,8 +681,10 @@ p { margin: 0; line-height: 1.5; }
   position: absolute;
   left: 0; right: 0; bottom: 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;
+  gap: 6px 14px;
   padding: 12px clamp(16px, 4vw, 56px);
   font-size: 10px;
   letter-spacing: 0.16em;
@@ -695,6 +697,7 @@ p { margin: 0; line-height: 1.5; }
 .menu-foot .credit b { color: var(--ink); font-weight: 800; letter-spacing: 0.28em; }
 .menu-foot .credit-sub { margin-left: 16px; padding-left: 16px; border-left: 1px solid var(--line); opacity: 0.75; }
 .menu-foot #btn-mute { margin-left: auto; }
+.menu-foot .linkish { padding: 6px 3px; min-height: 32px; }
 
 .panel-credit {
   margin-top: 18px;
@@ -1202,7 +1205,11 @@ body.touch.in-game .enemy-count { display: none; }
   .menu-layout { grid-template-columns: 1fr; padding-top: 32px; }
   .menu-right { display: none; }
   .menu-stats { grid-template-columns: repeat(2, 1fr); }
-  .menu-stats .stat:last-child { grid-column: 1 / -1; }
+  /* let the footer flow after the menu so it can never sit on top of a
+     control when the column is taller than the phone viewport */
+  .menu-screen { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; }
+  .menu-layout { margin: 0 auto; }
+  .menu-foot { position: static; margin-top: auto; }
   .help-grid { grid-template-columns: 1fr; }
   .result-stats { grid-template-columns: repeat(2, 1fr); }
   .brief-grid { grid-template-columns: 1fr; }
@@ -1232,6 +1239,9 @@ body.touch.in-game .enemy-count { display: none; }
   .menu-actions { max-width: none; }
   .menu-row { flex-wrap: wrap; }
   .menu-row .btn { flex: 1 1 calc(50% - 4px); }
+  .menu-foot { font-size: 9px; padding: 10px 14px; gap: 4px 12px; }
+  .menu-foot .credit-sub { display: none; }
+  .menu-foot .linkish { padding: 6px 3px; min-height: 32px; }
   .level-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
   .upgrade { grid-template-columns: 28px 1fr; }
   .upgrade .u-action { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; }
@@ -1250,7 +1260,9 @@ body.touch.in-game .enemy-count { display: none; }
   /* short landscape: lift the supply shelf clear of the joystick */
   .hud-items { bottom: calc(184px + env(safe-area-inset-bottom)); }
   .touch-btn { width: 62px; height: 62px; font-size: 10px; }
-  .menu-layout { grid-template-columns: 1fr 0.7fr; padding: 16px 24px; }
+  .menu-layout { grid-template-columns: 1fr 0.7fr; padding: 16px 24px; margin: 0 auto; }
+  .menu-screen { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; }
+  .menu-foot { position: static; margin-top: auto; }
   .logo { font-size: clamp(34px, 7vw, 64px); }
   .menu-stats { display: none; }
   .menu-right { display: flex; }
