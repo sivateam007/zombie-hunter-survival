@@ -814,13 +814,17 @@ p { margin: 0; line-height: 1.5; }
 }
 .upgrade {
   display: grid;
-  grid-template-columns: 34px 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "name action" "val action";
   align-items: center;
-  gap: 10px;
+  gap: 2px 10px;
   padding: 10px 12px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--line);
 }
+.upgrade .u-name { grid-area: name; }
+.upgrade .u-val { grid-area: val; }
+.upgrade .btn { grid-area: action; align-self: center; white-space: nowrap; }
 .upgrade .u-icon {
   display: grid;
   place-items: center;
@@ -829,7 +833,8 @@ p { margin: 0; line-height: 1.5; }
   color: var(--amber);
   font-size: 17px;
 }
-.upgrade .u-name { font-size: 14px; font-weight: 700; letter-spacing: 0.04em; }
+.upgrade .u-name { font-size: 14px; font-weight: 700; letter-spacing: 0.04em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upgrade .u-val { font-size: 11px; color: var(--dim); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .upgrade .u-desc { font-size: 11px; color: var(--dim); }
 .upgrade .u-pips { display: flex; gap: 3px; margin-top: 4px; }
 .upgrade .u-pips i {
@@ -1243,8 +1248,6 @@ body.touch.in-game .enemy-count { display: none; }
   .menu-foot .credit-sub { display: none; }
   .menu-foot .linkish { padding: 6px 3px; min-height: 32px; }
   .level-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-  .upgrade { grid-template-columns: 28px 1fr; }
-  .upgrade .u-action { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; }
   .panel { padding: 16px; }
   .screen { padding: 8px; overflow: auto; }
   .result-actions { flex-wrap: wrap; }
