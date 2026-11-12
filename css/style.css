@@ -554,7 +554,7 @@ p { margin: 0; line-height: 1.5; }
   font-weight: 700;
 }
 .logo {
-  font-size: clamp(40px, 8vw, 104px);
+  font-size: clamp(40px, 9vw, 128px);
   overflow-wrap: break-word;
   line-height: 0.84;
   font-weight: 900;
@@ -1209,7 +1209,7 @@ body.touch.in-game .enemy-count { display: none; }
 @media (max-width: 900px) {
   .menu-layout { grid-template-columns: 1fr; padding-top: 32px; }
   .menu-right { display: none; }
-  .menu-stats { grid-template-columns: repeat(2, 1fr); }
+  .menu-stats { grid-template-columns: repeat(2, 1fr); max-width: 460px; }
   /* let the footer flow after the menu so it can never sit on top of a
      control when the column is taller than the phone viewport */
   .menu-screen { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; }
@@ -1260,6 +1260,12 @@ body.touch.in-game .enemy-count { display: none; }
   .board-head > *, .board-row > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 
+/* Tablet-portrait band: the reference keeps all four utility buttons on one
+   row here, so only real phone widths fall back to the 2x2 grid. */
+@media (min-width: 481px) and (max-width: 640px) {
+  .menu-row .btn { flex: 1 1 calc(25% - 6px); }
+}
+
 @media (max-height: 560px) and (orientation: landscape) {
   .joystick { bottom: calc(74px + env(safe-area-inset-bottom)); width: 104px; height: 104px; }
   .joy-knob { width: 46px; height: 46px; margin: -23px 0 0 -23px; }
@@ -1276,6 +1282,12 @@ body.touch.in-game .enemy-count { display: none; }
   #menu-hunter { width: min(200px, 26vw); }
   .menu-actions { gap: 6px; }
   .btn { padding: 8px 14px; font-size: 14px; }
+}
+
+/* Short landscape on tablet widths: the reference lets the longer utility
+   labels wrap instead of overflowing, so do the same. */
+@media (max-height: 560px) and (orientation: landscape) and (max-width: 900px) {
+  .menu-row .btn { white-space: normal; font-size: 10px; }
 }
 
 /* ---- level-up chooser ----
