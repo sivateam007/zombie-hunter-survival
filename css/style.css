@@ -576,7 +576,7 @@ p { margin: 0; line-height: 1.5; }
 .logo-sub { color: var(--dim); max-width: 42ch; font-size: 15px; }
 .menu-actions { display: flex; flex-direction: column; gap: 8px; max-width: 430px; }
 .menu-row { display: flex; gap: 8px; }
-.menu-row .btn { flex: 1; }
+.menu-row .btn { flex: 1; min-width: 0; }
 .menu-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
@@ -1202,6 +1202,7 @@ body.touch.in-game .enemy-count { display: none; }
   .menu-layout { grid-template-columns: 1fr; padding-top: 32px; }
   .menu-right { display: none; }
   .menu-stats { grid-template-columns: repeat(2, 1fr); }
+  .menu-stats .stat:last-child { grid-column: 1 / -1; }
   .help-grid { grid-template-columns: 1fr; }
   .result-stats { grid-template-columns: repeat(2, 1fr); }
   .brief-grid { grid-template-columns: 1fr; }
@@ -1230,6 +1231,7 @@ body.touch.in-game .enemy-count { display: none; }
   .banner { top: 18%; }
   .menu-actions { max-width: none; }
   .menu-row { flex-wrap: wrap; }
+  .menu-row .btn { flex: 1 1 calc(50% - 4px); }
   .level-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
   .upgrade { grid-template-columns: 28px 1fr; }
   .upgrade .u-action { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; }
