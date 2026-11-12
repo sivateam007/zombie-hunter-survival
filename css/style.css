@@ -697,7 +697,8 @@ p { margin: 0; line-height: 1.5; }
 .menu-foot .credit b { color: var(--ink); font-weight: 800; letter-spacing: 0.28em; }
 .menu-foot .credit-sub { margin-left: 16px; padding-left: 16px; border-left: 1px solid var(--line); opacity: 0.75; }
 .menu-foot #btn-mute { margin-left: auto; }
-.menu-foot .linkish { padding: 6px 3px; min-height: 32px; }
+.menu-foot .linkish { padding: 6px 3px; min-height: 32px; position: relative; }
+.menu-foot .linkish::after { content: ''; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; }
 
 .panel-credit {
   margin-top: 18px;
