@@ -13,10 +13,10 @@ const { ZH } = require('./_setup');
 
 /* the explicit opening contract */
 const OPENING = {
-  average: 4,       // a typical second sits well under the cap
-  peak: 6,          // no swarm in the opening minutes
-  quietShare: 0.25, // at least this many seconds are near-empty
-  quietAt: 3,       // "quiet" means this many bodies or fewer
+  average: 7,       // the denser opening still sits under its cap
+  peak: 9,          // a readable opening, not an instant swarm
+  quietShare: 0.2,  // the lull still returns for part of every cycle
+  quietAt: 6,       // "quiet" means this many bodies or fewer at the new scale
   floor: 2          // never so empty that the stage stops being a survival run
 };
 
@@ -172,7 +172,7 @@ runs.forEach(({ stage, r }) => {
     where + ' keeps the street alive: ' + r.average.toFixed(1));
   assert.ok(r.average <= ZH.hordeBudget(720).near,
     where + ' sits under the late cap on average: ' + r.average.toFixed(1));
-  assert.ok(r.quietShareEarly >= 0.2,
+  assert.ok(r.quietShareEarly >= OPENING.quietShare,
     where + ' opens with lulls: ' + (r.quietShareEarly * 100).toFixed(0) + '% of the opening seconds <= ' + OPENING.quietAt);
   assert.ok(r.earlyAverage >= OPENING.floor - 1,
     where + ' still plays as a survival run: ' + r.earlyAverage.toFixed(1));
@@ -198,4 +198,4 @@ late.forEach(({ stage, r }) => {
   assert.ok(stage.waves.some((w) => w.bossZone), stage.name + ' still has its boss zone');
 });
 
-console.log('density.test.js ✓ medium opening, ramp growth, quiet stretches and deep ladders');
+console.log('density.test.js ✓ denser opening, ramp growth, quiet stretches and deep ladders');

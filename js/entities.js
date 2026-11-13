@@ -215,12 +215,12 @@
     /* the feed is pulsed: bodies arrive in a surge, then the street goes
        quiet while the hunter clears them. Continuous feeding pinned the
        field at the cap and read as a swarm. */
-    interval: { LOW: 1.25, MID: 0.8, HI: 0.5 },   /* seconds between spawns */
-    surge: { spawn: 3.5, rest: 4.2 },             /* a 7.7 s breath cycle */
-    nearCap: 6,                                   /* live bodies near the hunter */
-    hardCap: 22,                                  /* absolute bodies on the field */
-    targetAverage: 4,                             /* the medium target, NOT the cap */
-    swarmCeiling: 6,                             /* the opening minutes stay quiet */
+    interval: { LOW: 1.15, MID: 0.72, HI: 0.45 }, /* seconds between spawns */
+    surge: { spawn: 3.5, rest: 4.6 },             /* an 8.1 s breath cycle */
+    nearCap: 9,                                   /* live bodies near the hunter */
+    hardCap: 30,                                  /* absolute bodies on the field */
+    targetAverage: 7,                             /* the opening target, NOT the cap */
+    swarmCeiling: 9,                              /* the opening stays readable */
     /* ------------------------- the ramp -------------------------
        A run opens at the medium budget and grows from there: the field cap,
        the absolute ceiling, the feed interval and the per-wave cap all drift
@@ -229,13 +229,13 @@
        waves felt like the opening ones with tougher skins. */
     ramp: [
       /* the first two minutes hold the medium field the game was tuned for */
-      { at: 0,    near: 6,  hard: 22, feed: 1.00, wave: 1.00 },
-      { at: 120,  near: 6,  hard: 22, feed: 1.00, wave: 1.00 },
-      { at: 240,  near: 10, hard: 34, feed: 0.85, wave: 1.20 },
-      { at: 420,  near: 14, hard: 46, feed: 0.76, wave: 1.40 },
-      { at: 600,  near: 18, hard: 58, feed: 0.68, wave: 1.60 },
-      { at: 900,  near: 23, hard: 74, feed: 0.60, wave: 1.75 },
-      { at: 1200, near: 27, hard: 88, feed: 0.54, wave: 1.90 }
+      { at: 0,    near: 9,  hard: 30, feed: 1.00, wave: 1.00 },
+      { at: 120,  near: 9,  hard: 30, feed: 1.00, wave: 1.00 },
+      { at: 240,  near: 18, hard: 50, feed: 0.88, wave: 1.32 },
+      { at: 420,  near: 24, hard: 68, feed: 0.80, wave: 1.58 },
+      { at: 600,  near: 31, hard: 86, feed: 0.72, wave: 1.82 },
+      { at: 900,  near: 39, hard: 104, feed: 0.62, wave: 2.12 },
+      { at: 1200, near: 47, hard: 120, feed: 0.54, wave: 2.42 }
     ]
   };
 
