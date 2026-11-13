@@ -554,7 +554,7 @@ p { margin: 0; line-height: 1.5; }
   font-weight: 700;
 }
 .logo {
-  font-size: clamp(40px, 9vw, 128px);
+  font-size: clamp(40px, 9vw, 118px);
   overflow-wrap: break-word;
   line-height: 0.84;
   font-weight: 900;
@@ -581,7 +581,7 @@ p { margin: 0; line-height: 1.5; }
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
   gap: 10px;
-  max-width: 640px;
+  max-width: 460px;
 }
 .stat {
   display: flex;
