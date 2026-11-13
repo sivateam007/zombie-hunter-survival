@@ -586,7 +586,18 @@ window.ZH = window.ZH || {};
     var pos = this.findSpawnPoint(Math.max(320, half * 0.85), bias);
     // enemy HP scales with the stage multiplier, exactly like the original
     var mult = (this.stage && this.stage.multiplier) || 1;
-    var z = ZH.createEnemy(wave.enemy, pos.x, pos.y, mult, this.diff, this.waveCycle || 0);
+    /* ordinary horde waves occasionally field a tool-wielding zombie: a
+       hammer after the first minute, then wrenches and crowbars as the run
+       escalates. The authored wave still owns the timing and the cap. */
+    var type = wave.enemy;
+    if (type === 'zombieA' || type === 'zombieB' || type === 'zombieC' || type === 'zombieD') {
+      var toolRoll = Math.random();
+      var clock = this.elapsed || 0;
+      if (clock > 60 && toolRoll < 0.08) type = 'hammer';
+      else if (clock > 150 && toolRoll < 0.14) type = 'wrench';
+      else if (clock > 240 && toolRoll < 0.20) type = 'crowbar';
+    }
+    var z = ZH.createEnemy(type, pos.x, pos.y, mult, this.diff, this.waveCycle || 0);
     if (z) this.zombies.push(z);
   };
 
@@ -1764,15 +1775,18 @@ window.ZH = window.ZH || {};
           dead: e.dead ? clamp(e.deadT, 0, 1) : 0,
           pose: { t: this.t, moving: Math.hypot(e.moveX, e.moveY), walkPhase: e.walkPhase || 0 }
         });
-      } else if (cheap && cheap[e.seed] && !e.boss) {
+      } else if (cheap && cheap[e.seed] && !e.boss && !e.tool) {
         drawCheapZombie(ctx, e);
       } else {
         ZH.Rig.draw(ctx, {
           x: e.x, y: e.y, s: e.scale || 1, kind: 'zombie', variant: e.variant,
+          tool: e.tool || null,
           facing: e.facing || 1, aim: e.aimDir || 0,
           flash: e.hurtFlash || 0,
           seed: e.seed || 0,
-          pose: { t: this.t, moving: 0.7, walkPhase: e.walkPhase || 0 }
+          pose: { t: this.t, moving: 0.7, walkPhase: e.walkPhase || 0,
+            /* the tool winds up through the cooldown and lands as it expires */
+            swing: 1 - Math.min(1, (e.cdT || 0) / (e.cd || 1)) }
         });
         // boss health bar
         if (e.boss && e.hp) {

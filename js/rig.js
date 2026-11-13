@@ -630,6 +630,41 @@ window.ZH = window.ZH || {};
     }
   }
 
+  /* A tool is drawn in the zombie's forward hand. The handle points along the
+     arm; a swing rotates the head up and back down, so a hammer reads as a
+     hammer before it lands, not as a floating rectangle. */
+  function drawZombieTool(ctx, tool, x, y, ang, swing, meta) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(ang - swing * 1.05);
+    var steel = (meta && meta.metal) || '#8a949c';
+    var dark = (meta && meta.metalDark) || '#4a5258';
+    if (tool === 'hammer') {
+      ctx.fillStyle = '#6b4a2f';
+      roundRect(ctx, -2, -1.6, 26, 3.2, 1.4); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = dark;
+      roundRect(ctx, 22, -7.5, 9, 15, 2); ctx.fill();
+      ctx.fillStyle = steel;
+      roundRect(ctx, 26, -6, 4.5, 12, 1.2); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 0.9; ctx.stroke();
+    } else if (tool === 'wrench') {
+      ctx.strokeStyle = steel; ctx.lineWidth = 3.2; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-2, 0); ctx.lineTo(22, 0); ctx.stroke();
+      ctx.strokeStyle = dark; ctx.lineWidth = 2.4;
+      ctx.beginPath(); ctx.arc(24, 0, 4.6, -1.15, 1.15); ctx.stroke();
+      ctx.beginPath(); ctx.arc(24, 0, 2.0, -1.15, 1.15); ctx.stroke();
+    } else if (tool === 'crowbar') {
+      ctx.strokeStyle = '#b0452e'; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-2, 0); ctx.lineTo(19, 0);
+      ctx.quadraticCurveTo(27, 0, 25, -6); ctx.stroke();
+      ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.moveTo(25, -6); ctx.lineTo(29, -9);
+      ctx.moveTo(25, -6); ctx.lineTo(21, -10); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   /* ----------------------------- main entry ----------------------------- */
   /**
    * Draw a character.
@@ -654,6 +689,7 @@ window.ZH = window.ZH || {};
     var reload = clamp(p.reload || 0, 0, 1);
     var hurt = clamp(p.hurt || 0, 0, 1);
     var crouch = clamp(p.crouch || 0, 0, 1);
+    var swing = clamp(p.swing || 0, 0, 1);
     var dead = clamp(o.dead || 0, 0, 1);
     var bulk = (kind === 'hunter' ? 1 : zdef.bulk) * (p.bulkMul || 1);
     var hunch = kind === 'hunter' ? 0 : zdef.hunch;
@@ -865,6 +901,10 @@ window.ZH = window.ZH || {};
         ctx.moveTo(z2.ex, z2.ey);
         ctx.lineTo(z2.ex + 3.2, z2.ey + f * 1.8);
         ctx.stroke();
+      }
+      if (o.tool) {
+        var toolAng = Math.atan2(z2.ey - zsh, z2.ex - shoulderX) + 0.15;
+        drawZombieTool(ctx, o.tool, z2.ex, z2.ey, toolAng, swing, meta);
       }
 
       zombieHead(ctx, { skin: zskin, skinShade: zskS, bone: pal.bone, blood: pal.blood,

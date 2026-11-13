@@ -340,6 +340,9 @@
     zombieB:  { name: 'Zombie',        hp: 11,   speed: 120, dmg: 4,  range: 40,  cd: 1.0,  scale: .85, coins: 100,  variant: 'walker' },
     zombieC:  { name: 'Zombie',        hp: 12,   speed: 110, dmg: 4,  range: 40,  cd: 1.0,  scale: .85, coins: 100,  variant: 'crawler' },
     zombieD:  { name: 'Zombie',        hp: 13,   speed: 100, dmg: 4,  range: 40,  cd: 1.0,  scale: .85, coins: 100,  variant: 'crawler' },
+    hammer:   { name: 'Hammer Zombie', hp: 60,   speed: 85,  dmg: 14, range: 54,  cd: 1.6,  scale: 1.0, coins: 300,  variant: 'brute', tool: 'hammer', mass: 1 },
+    wrench:   { name: 'Wrench Zombie', hp: 35,   speed: 115, dmg: 9,  range: 46,  cd: 1.2,  scale: .9,  coins: 200,  variant: 'walker', tool: 'wrench' },
+    crowbar:  { name: 'Crowbar Zombie', hp: 28,  speed: 135, dmg: 7,  range: 44,  cd: 1.0,  scale: .9,  coins: 200,  variant: 'runner', tool: 'crowbar' },
 
     slime1:   { name: 'Slime',         hp: 10,   speed: 150, dmg: 3,  range: 10,  cd: 1.0,  scale: .85, coins: 100,  variant: 'crawler' },
     slime2:   { name: 'Big Slime',     hp: 100,  speed: 100, dmg: 5,  range: 10,  cd: 1.0,  scale: .85, coins: 300,  variant: 'crawler' },
@@ -522,6 +525,7 @@
       dead: false,
       removeT: 0.5,
       ranged: !!def.ranged,
+      tool: def.tool || null,
       spreadShots: def.spreadShots || 1,
       shotSpeed: def.shotSpeed || 520,
       stationary: !!def.static,
